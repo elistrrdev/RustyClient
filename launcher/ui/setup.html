@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rusty Client Setup</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+  <header class="titlebar">
+    <div class="titlebar-title">Rusty Client Setup</div>
+    <div class="window-controls">
+      <button class="window-button" data-window="minimize" aria-label="Minimize"><span data-icon="minus" data-size="16"></span></button>
+      <button class="window-button close" data-window="close" aria-label="Close"><span data-icon="x" data-size="16"></span></button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="rail">
+      <div class="art" aria-hidden="true">
+        <div class="glow one"></div>
+        <div class="glow two"></div>
+        <div class="grid"></div>
+        <div class="block b1"></div>
+        <div class="block b2"></div>
+        <div class="block b3"></div>
+        <div class="block b4"></div>
+      </div>
+      <ol class="steps" id="steps">
+        <li data-step="0"><span class="dot"></span><span>Welcome</span></li>
+        <li data-step="1"><span class="dot"></span><span>Shortcuts</span></li>
+        <li data-step="2"><span class="dot"></span><span>Location</span></li>
+        <li data-step="3"><span class="dot"></span><span>Install</span></li>
+        <li data-step="4"><span class="dot"></span><span>Finish</span></li>
+      </ol>
+    </aside>
+
+    <main class="panel">
+      <section class="page" data-page="0">
+        <div class="page-body">
+          <div class="eyebrow">Setup</div>
+          <h1>Welcome to Rusty Client</h1>
+          <p class="lead" id="welcome-text">This will install Rusty Client on your PC. It only takes a moment.</p>
+          <ul class="features">
+            <li><span class="feature-icon" data-icon="rocket" data-size="16"></span><span>Minecraft 26.1 to 26.3 in one click</span></li>
+            <li><span class="feature-icon" data-icon="sparkles" data-size="16"></span><span>Modules built right into the game</span></li>
+            <li><span class="feature-icon" data-icon="coffee" data-size="16"></span><span>Java and Fabric are set up for you</span></li>
+          </ul>
+        </div>
+        <footer class="actions">
+          <button class="button ghost" data-action="cancel">Cancel</button>
+          <button class="button primary" data-action="next">Next<span data-icon="chevron-right" data-size="16" data-stroke="2.4"></span></button>
+        </footer>
+      </section>
+
+      <section class="page" data-page="1">
+        <div class="page-body">
+          <div class="eyebrow">Step 1 of 2</div>
+          <h2>Shortcuts</h2>
+          <p class="lead">Choose where you want to find Rusty Client.</p>
+          <div class="options">
+            <button class="option checked" data-option="desktop" role="checkbox" aria-checked="true">
+              <span class="option-icon" data-icon="monitor" data-size="20"></span>
+              <span class="option-text"><strong>Desktop shortcut</strong><span>Start Rusty Client right from your desktop</span></span>
+              <span class="check"><span data-icon="check" data-size="14" data-stroke="3"></span></span>
+            </button>
+            <button class="option checked" data-option="startMenu" role="checkbox" aria-checked="true">
+              <span class="option-icon" data-icon="layers" data-size="20"></span>
+              <span class="option-text"><strong>Start menu shortcut</strong><span>Find Rusty Client in Start and in Windows search</span></span>
+              <span class="check"><span data-icon="check" data-size="14" data-stroke="3"></span></span>
+            </button>
+          </div>
+        </div>
+        <footer class="actions">
+          <button class="button ghost" data-action="back"><span data-icon="arrow-left" data-size="15"></span>Back</button>
+          <button class="button primary" data-action="next">Next<span data-icon="chevron-right" data-size="16" data-stroke="2.4"></span></button>
+        </footer>
+      </section>
+
+      <section class="page" data-page="2">
+        <div class="page-body">
+          <div class="eyebrow">Step 2 of 2</div>
+          <h2>Install location</h2>
+          <p class="lead">Pick where Rusty Client should live on this PC.</p>
+          <label class="label" for="parent">Location</label>
+          <div class="field-row">
+            <input class="field" id="parent" spellcheck="false" autocomplete="off">
+            <button class="button soft" data-action="browse"><span data-icon="folder-open" data-size="15"></span>Browse</button>
+          </div>
+          <label class="label" for="folder">Folder name</label>
+          <input class="field" id="folder" spellcheck="false" autocomplete="off">
+          <div class="target" id="target">
+            <span class="target-icon" data-icon="hard-drive" data-size="16"></span>
+            <span class="target-path" id="target-path"></span>
+          </div>
+          <div class="space" id="space"></div>
+        </div>
+        <footer class="actions">
+          <button class="button ghost" data-action="back"><span data-icon="arrow-left" data-size="15"></span>Back</button>
+          <button class="button primary" data-action="install" id="install-button"><span data-icon="download" data-size="15"></span>Install</button>
+        </footer>
+      </section>
+
+      <section class="page" data-page="3">
+        <div class="page-body">
+          <div class="eyebrow">Installing</div>
+          <h2 id="install-title">Installing Rusty Client</h2>
+          <p class="lead" id="install-lead">Copying files to your PC. This usually takes a few seconds.</p>
+          <div class="progress" id="progress">
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-meta">
+              <span class="progress-detail" id="progress-detail">Preparing</span>
+              <span class="progress-pct" id="progress-pct">0%</span>
+            </div>
+          </div>
+          <div class="error" id="install-error"></div>
+        </div>
+        <footer class="actions">
+          <button class="button ghost hidden" data-action="back-from-error" id="error-back"><span data-icon="arrow-left" data-size="15"></span>Back</button>
+          <button class="button primary hidden" data-action="retry" id="error-retry"><span data-icon="refresh-cw" data-size="15"></span>Try again</button>
+        </footer>
+      </section>
+
+      <section class="page" data-page="4">
+        <div class="page-body center">
+          <div class="done-badge"><span data-icon="check" data-size="30" data-stroke="2.6"></span></div>
+          <h1>Rusty Client is ready</h1>
+          <p class="lead" id="done-text">Everything is installed.</p>
+          <button class="option compact checked" data-option="launch" role="checkbox" aria-checked="true">
+            <span class="option-text"><strong>Launch Rusty Client now</strong></span>
+            <span class="check"><span data-icon="check" data-size="14" data-stroke="3"></span></span>
+          </button>
+        </div>
+        <footer class="actions">
+          <span></span>
+          <button class="button primary" data-action="finish">Finish</button>
+        </footer>
+      </section>
+    </main>
+  </div>
+
+  <div class="dialog-layer" id="dialog">
+    <div class="dialog">
+      <div class="dialog-icon" data-icon="circle-alert" data-size="22"></div>
+      <h3>Cancel setup?</h3>
+      <p>Rusty Client has not been installed yet.</p>
+      <div class="dialog-actions">
+        <button class="button soft" data-action="keep">Keep going</button>
+        <button class="button danger" data-action="quit">Cancel setup</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/icons.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

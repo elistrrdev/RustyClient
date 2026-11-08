@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rusty Client</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="titlebar">
+    <div class="titlebar-title">Rusty Client</div>
+    <div class="window-controls">
+      <button class="window-button" data-window="minimize" aria-label="Minimize"></button>
+      <button class="window-button" data-window="maximize" aria-label="Maximize"></button>
+      <button class="window-button close" data-window="close" aria-label="Close"></button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="sidebar">
+      <nav class="nav">
+        <button class="nav-item active" data-nav="home"><span class="nav-icon" data-icon="rocket"></span><span>Home</span></button>
+        <button class="nav-item" data-nav="settings"><span class="nav-icon" data-icon="settings"></span><span>Settings</span></button>
+      </nav>
+      <div class="account-wrap">
+        <div class="account-menu" id="account-menu"></div>
+        <button class="account" id="account"></button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="view active" data-view="home">
+        <div class="home">
+          <div class="hero-row">
+            <div class="hero" id="hero">
+              <div class="hero-media" id="hero-media"></div>
+              <div class="hero-shade"></div>
+              <button class="glass-button mods-button" id="mods-button"><span data-icon="puzzle"></span><span>Mods</span></button>
+              <div class="hero-bottom">
+                <div class="launch-status" id="launch-status"></div>
+                <div class="launch-row">
+                  <button class="launch-button" id="launch-button">
+                    <span class="launch-fill" id="launch-fill"></span>
+                    <span class="launch-content" id="launch-content"></span>
+                  </button>
+                  <div class="version-picker" id="version-picker">
+                    <div class="version-menu" id="version-menu"></div>
+                    <button class="version-button" id="version-button"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tiles" id="tiles"></div>
+          </div>
+          <div class="section-head">
+            <h2>Latest News</h2>
+            <button class="text-button" id="view-all">View all</button>
+          </div>
+          <div class="news-grid" id="news-preview"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="news">
+        <div class="page">
+          <div class="page-head">
+            <button class="back-button" data-nav="home" aria-label="Back"><span data-icon="arrow-left"></span></button>
+            <h1>News</h1>
+            <span class="page-sub">Straight from Mojang</span>
+          </div>
+          <div class="news-grid all" id="news-all"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="settings">
+        <div class="page" id="settings-page"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-layer" id="modal-layer"></div>
+  <div class="toasts" id="toasts"></div>
+</div>
+<script src="/icons.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

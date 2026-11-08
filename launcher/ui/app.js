@@ -1,0 +1,1153 @@
+"use strict";
+
+const TOKEN = location.hash.slice(1);
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+const ACCENTS = ["#1ab0dd", "#e8693a", "#f2c14e", "#5fcf8f", "#8f7cf7", "#f2638c"];
+
+const state = {
+  frame: "win11",
+  maximized: false,
+  totalMemory: 8192,
+  settings: null,
+  content: { groups: [], news: [] },
+  accounts: { active: "", list: [] },
+  task: { active: false, phase: "", detail: "", progress: 0, error: "" },
+  game: { running: false, version: "", major: "", crash: null },
+  auth: { state: "idle", message: "" },
+  view: "home",
+  modal: null,
+  shownCrash: 0,
+  accountsKey: "",
+};
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+function icon(name, size = 16, stroke = 2) {
+  const body = ICONS[name] || "";
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
+const PLAY_ICON = `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10" fill="currentColor"/><path d="M8.3 6.7v6.6l5.4-3.3z" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+const STOP_ICON = `<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="4" width="12" height="12" rx="3" fill="currentColor"/></svg>`;
+
+function hydrateIcons(root = document) {
+  $$("[data-icon]", root).forEach((el) => {
+    const size = Number(el.dataset.size || 18);
+    el.innerHTML = icon(el.dataset.icon, size, el.dataset.stroke || 2);
+  });
+}
+
+async function api(path, { method = "GET", body, raw } = {}) {
+  const headers = { "x-rusty-token": TOKEN };
+  let payload;
+  if (raw !== undefined) {
+    payload = raw;
+    headers["content-type"] = "application/octet-stream";
+  } else if (body !== undefined) {
+    payload = JSON.stringify(body);
+    headers["content-type"] = "application/json";
+  }
+  const response = await fetch("/api" + path, { method, headers, body: payload });
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (_) {
+    data = {};
+  }
+  if (!response.ok) {
+    throw new Error(data.error || "Something went wrong. Please try again.");
+  }
+  return data;
+}
+
+function toast(message, kind = "info", duration = 4800) {
+  const host = $("#toasts");
+  const el = document.createElement("div");
+  const glyph = kind === "error" ? "circle-alert" : kind === "success" ? "check" : "info";
+  el.className = `toast ${kind}`;
+  el.innerHTML = `<span class="toast-icon">${icon(glyph, 16)}</span><span>${esc(message)}</span>`;
+  host.appendChild(el);
+  const remove = () => {
+    el.classList.add("leaving");
+    setTimeout(() => el.remove(), 220);
+  };
+  el.addEventListener("click", remove);
+  setTimeout(remove, duration);
+  while (host.children.length > 4) host.firstElementChild.remove();
+}
+
+function ago(value) {
+  if (!value) return "";
+  const date = new Date(value.length === 10 ? value + "T12:00:00Z" : value);
+  const days = Math.floor((Date.now() - date.getTime()) / 86400000);
+  if (Number.isNaN(days)) return "";
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+  if (days < 365) {
+    const months = Math.floor(days / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  }
+  const years = Math.floor(days / 365);
+  return years === 1 ? "1 year ago" : `${years} years ago`;
+}
+
+function formatMemory(mb) {
+  return `${(mb / 1024).toFixed(1)} GB`;
+}
+
+function formatSize(bytes) {
+  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+function fadeImage(img) {
+  const show = () => requestAnimationFrame(() => requestAnimationFrame(() => img.classList.add("shown")));
+  if (img.complete && img.naturalWidth) show();
+  else img.addEventListener("load", show, { once: true });
+}
+
+function groups() {
+  return state.content.groups || [];
+}
+
+function selectedGroup() {
+  const list = groups();
+  return list.find((g) => g.major === state.settings?.selectedMajor) || list[0] || null;
+}
+
+function selectedVersion() {
+  const group = selectedGroup();
+  if (!group) return null;
+  const chosen = state.settings?.selectedVersions?.[group.major];
+  return group.versions.some((v) => v.id === chosen) ? chosen : group.versions[0]?.id || null;
+}
+
+function activeAccount() {
+  const list = state.accounts.list || [];
+  return list.find((a) => a.uuid === state.accounts.active) || list[0] || null;
+}
+
+let saveTimer = 0;
+function saveSettings(immediate = false) {
+  clearTimeout(saveTimer);
+  const run = async () => {
+    try {
+      await api("/settings", { method: "POST", body: state.settings });
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  };
+  if (immediate) run();
+  else saveTimer = setTimeout(run, 350);
+}
+
+function applyAccent() {
+  document.documentElement.style.setProperty("--accent", state.settings?.accent || ACCENTS[0]);
+}
+
+function setView(view) {
+  state.view = view;
+  $$(".view").forEach((el) => el.classList.toggle("active", el.dataset.view === view));
+  const nav = view === "news" ? "home" : view;
+  $$(".nav-item").forEach((el) => el.classList.toggle("active", el.dataset.nav === nav));
+  closeMenus();
+}
+
+function closeMenus() {
+  $("#version-picker").classList.remove("open");
+  $("#account-menu").classList.remove("open");
+  $("#account").classList.remove("open");
+}
+
+function renderWindowButtons() {
+  document.body.classList.toggle("maximized", state.maximized);
+  const minimize = $('[data-window="minimize"]');
+  const maximize = $('[data-window="maximize"]');
+  const close = $('[data-window="close"]');
+  if (!minimize.innerHTML) minimize.innerHTML = icon("minus", 16);
+  if (!close.innerHTML) close.innerHTML = icon("x", 16);
+  const want = state.maximized ? "copy" : "square";
+  if (maximize.dataset.glyph !== want) {
+    maximize.dataset.glyph = want;
+    maximize.innerHTML = icon(want, 13);
+    maximize.setAttribute("aria-label", state.maximized ? "Restore" : "Maximize");
+  }
+}
+
+let heroUrl = null;
+function renderHero() {
+  const group = selectedGroup();
+  const url = group?.image || "";
+  if (url === heroUrl) return;
+  heroUrl = url;
+  const media = $("#hero-media");
+  const previous = $$("img", media);
+  if (!url) {
+    previous.forEach((img) => img.classList.remove("shown"));
+    media.classList.toggle("skeleton", groups().length === 0);
+    return;
+  }
+  media.classList.remove("skeleton");
+  const img = new Image();
+  img.alt = "";
+  img.draggable = false;
+  img.decoding = "async";
+  img.onload = () => {
+    if (heroUrl !== url) return;
+    media.appendChild(img);
+    fadeImage(img);
+    setTimeout(() => previous.forEach((old) => old.remove()), 600);
+  };
+  img.src = url;
+}
+
+function renderTiles() {
+  const host = $("#tiles");
+  const list = groups();
+  if (!list.length) {
+    host.innerHTML = '<div class="tile skeleton"></div>'.repeat(3);
+    return;
+  }
+  const current = selectedGroup()?.major;
+  const key = list.map((g) => g.major + g.image).join("|");
+  if (host.dataset.key !== key) {
+    host.dataset.key = key;
+    host.innerHTML = list
+      .map(
+        (g) => `<button class="tile" data-major="${esc(g.major)}">${g.image ? `<img src="${esc(g.image)}" alt="" draggable="false">` : ""}<span class="tile-label">${esc(g.major)}</span></button>`
+      )
+      .join("");
+    $$("img", host).forEach(fadeImage);
+  }
+  $$(".tile", host).forEach((el) => el.classList.toggle("active", el.dataset.major === current));
+}
+
+function renderVersionPicker() {
+  const button = $("#version-button");
+  const menu = $("#version-menu");
+  const group = selectedGroup();
+  const version = selectedVersion();
+  button.innerHTML = `<span>${esc(version || "--")}</span><span class="chev">${icon("chevron-down", 14, 2.4)}</span>`;
+  if (!group) {
+    menu.innerHTML = "";
+    return;
+  }
+  menu.innerHTML = group.versions
+    .map(
+      (v) => `<button class="version-option ${v.id === version ? "selected" : ""}" data-version="${esc(v.id)}"><span>${esc(v.id)}</span>${v.id === version ? `<span class="check">${icon("check", 14, 2.6)}</span>` : ""}</button>`
+    )
+    .join("");
+}
+
+let launchMarkup = "";
+function renderLaunch() {
+  const button = $("#launch-button");
+  const content = $("#launch-content");
+  const fill = $("#launch-fill");
+  const status = $("#launch-status");
+  let markup;
+  let cls = "launch-button";
+  let statusHtml = "";
+
+  if (state.game.running) {
+    cls += " running";
+    markup = `<span class="idle-label">Playing</span><span class="hover-label">Stop</span>${STOP_ICON}`;
+    statusHtml = `<span>Minecraft ${esc(state.game.version)} is running</span>`;
+  } else if (state.task.active) {
+    cls += " busy";
+    const pct = Math.round((state.task.progress || 0) * 100);
+    markup = `<span>${esc(state.task.phase || "Preparing")}</span><span class="pct">${pct}%</span>`;
+    fill.style.width = `${pct}%`;
+    statusHtml = `<span>${esc(state.task.detail || "Getting things ready")}</span>`;
+  } else {
+    markup = `<span>Launch</span>${PLAY_ICON}`;
+    fill.style.width = "0%";
+  }
+
+  button.className = cls;
+  if (markup !== launchMarkup) {
+    launchMarkup = markup;
+    content.innerHTML = markup;
+  }
+  if (statusHtml) status.innerHTML = statusHtml;
+  status.classList.toggle("visible", Boolean(statusHtml));
+}
+
+function newsCard(item) {
+  return `<button class="news-card" data-url="${esc(item.url)}" title="${esc(item.text || item.title)}">
+    <div class="news-image">${item.image ? `<img src="${esc(item.image)}" alt="" draggable="false" loading="lazy">` : ""}</div>
+    <div class="news-body">
+      <div class="news-category">${esc(item.category)}</div>
+      <div class="news-title">${esc(item.title)}</div>
+      <div class="news-date">${esc(ago(item.date))}</div>
+    </div>
+  </button>`;
+}
+
+function renderNews() {
+  const news = state.content.news || [];
+  const preview = $("#news-preview");
+  const all = $("#news-all");
+  if (!news.length) {
+    preview.innerHTML = '<div class="news-card skeleton"></div>'.repeat(3);
+    all.innerHTML = '<div class="news-card skeleton"></div>'.repeat(6);
+    return;
+  }
+  const key = news.map((n) => n.id).join("|");
+  if (preview.dataset.key === key) return;
+  preview.dataset.key = key;
+  preview.innerHTML = news.slice(0, 3).map(newsCard).join("");
+  all.innerHTML = news.map(newsCard).join("");
+  $$(".news-image img").forEach(fadeImage);
+}
+
+function avatarMarkup(account, extra = "") {
+  if (!account) return `<span class="avatar placeholder ${extra}">${icon("user-plus", 15)}</span>`;
+  return `<span class="avatar ${extra}" data-skin="${esc(account.skinUrl || "")}" data-name="${esc(account.name)}"></span>`;
+}
+
+const skinCache = new Map();
+function loadSkin(url) {
+  if (!skinCache.has(url)) {
+    skinCache.set(
+      url,
+      new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      })
+    );
+  }
+  return skinCache.get(url);
+}
+
+function paintAvatars(root = document) {
+  $$(".avatar[data-name]", root).forEach((el) => {
+    if (el.dataset.painted) return;
+    el.dataset.painted = "1";
+    const letter = () => {
+      el.classList.add("placeholder");
+      el.innerHTML = `<span style="font-weight:700;font-size:12px">${esc((el.dataset.name || "?").charAt(0).toUpperCase())}</span>`;
+    };
+    const url = el.dataset.skin;
+    if (!url) return letter();
+    loadSkin(url)
+      .then((img) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 8;
+        canvas.height = 8;
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 8, 8, 8, 8, 0, 0, 8, 8);
+        ctx.drawImage(img, 40, 8, 8, 8, 0, 0, 8, 8);
+        el.innerHTML = "";
+        el.appendChild(canvas);
+      })
+      .catch(letter);
+  });
+}
+
+function renderAccount() {
+  const account = activeAccount();
+  const button = $("#account");
+  if (!account) {
+    button.innerHTML = `${avatarMarkup(null)}<span class="account-text"><span class="account-name">Sign in</span><span class="account-sub">Microsoft account</span></span><span class="account-chevron">${icon("chevron-right", 15)}</span>`;
+  } else {
+    button.innerHTML = `${avatarMarkup(account)}<span class="account-text"><span class="account-name">${esc(account.name)}</span><span class="account-sub">Microsoft account</span></span><span class="account-chevron">${icon("chevron-down", 15)}</span>`;
+  }
+  const menu = $("#account-menu");
+  const list = state.accounts.list || [];
+  menu.innerHTML =
+    `<div class="menu-label">Accounts</div>` +
+    list
+      .map(
+        (a) => `<button class="menu-item ${a.uuid === account?.uuid ? "selected" : ""}" data-select="${esc(a.uuid)}">${avatarMarkup(a)}<span class="grow">${esc(a.name)}</span>${a.uuid === account?.uuid ? `<span class="check">${icon("check", 14, 2.6)}</span>` : ""}</button>`
+      )
+      .join("") +
+    `<div class="menu-sep"></div>
+     <button class="menu-item" data-action="add-account">${icon("user-plus", 16)}<span class="grow">Add account</span></button>
+     ${account ? `<button class="menu-item danger" data-action="sign-out">${icon("log-out", 16)}<span class="grow">Sign out</span></button>` : ""}`;
+  paintAvatars(button);
+  paintAvatars(menu);
+  renderSettingsAccounts();
+}
+
+function settingRow(title, hint, control, extra = "") {
+  return `<div class="row ${extra}"><div class="row-text"><span class="row-title">${title}</span>${hint ? `<span class="row-hint">${hint}</span>` : ""}</div>${control}</div>`;
+}
+
+function toggleMarkup(key, on) {
+  return `<button class="toggle ${on ? "on" : ""}" data-toggle="${key}" role="switch" aria-checked="${on}"></button>`;
+}
+
+function maxMemory() {
+  return Math.max(2048, Math.floor(state.totalMemory / 512) * 512);
+}
+
+function renderSettings() {
+  const s = state.settings;
+  const max = maxMemory();
+  const page = $("#settings-page");
+  page.innerHTML = `
+  <div class="page-head"><h1>Settings</h1></div>
+  <div class="settings-grid">
+    <div class="settings-col">
+      <div class="group-label">Game</div>
+      <div class="row stack">
+        <div class="slider-head"><span class="row-title">Memory</span><span class="slider-value" id="memory-value">${formatMemory(s.memoryMb)}</span></div>
+        <div class="slider" id="memory-slider" data-min="1024" data-max="${max}" data-step="512">
+          <div class="slider-track"><div class="slider-fill"></div></div>
+          <div class="slider-thumb"></div>
+        </div>
+        <div class="slider-scale"><span>1 GB</span><span>${Math.round(max / 1024)} GB</span></div>
+      </div>
+      ${settingRow("Fullscreen", "Start Minecraft in fullscreen", toggleMarkup("fullscreen", s.fullscreen))}
+      ${settingRow("Custom resolution", "Window size when the game opens", toggleMarkup("customResolution", s.customResolution), s.fullscreen ? "disabled" : "")}
+      <div class="row ${s.customResolution && !s.fullscreen ? "" : "disabled"}" id="resolution-row">
+        <div class="row-text"><span class="row-title">Window size</span></div>
+        <div class="resolution">
+          <input class="field" id="res-width" type="number" min="320" max="15360" value="${s.width}">
+          <span class="times">x</span>
+          <input class="field" id="res-height" type="number" min="240" max="8640" value="${s.height}">
+        </div>
+      </div>
+
+      <div class="group-label">Java</div>
+      ${settingRow("Use custom Java", "Rusty Client downloads the right Java for you by default", toggleMarkup("customJava", s.customJava))}
+      <div class="row stack ${s.customJava ? "" : "disabled"}" id="java-row">
+        <span class="row-title">Java executable</span>
+        <input class="field mono" id="java-path" placeholder="C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe" value="${esc(s.javaPath)}" spellcheck="false">
+      </div>
+      <div class="row stack">
+        <span class="row-title">JVM arguments</span>
+        <input class="field mono" id="jvm-args" placeholder="-XX:+UnlockExperimentalVMOptions" value="${esc(s.jvmArgs)}" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="settings-col">
+      <div class="group-label">Launcher</div>
+      <div class="row stack">
+        <span class="row-title">When the game starts</span>
+        <div class="segmented" id="on-launch">
+          ${[["keep", "Keep open"], ["minimize", "Minimize"], ["hide", "Hide"]]
+            .map(([v, label]) => `<button class="segment ${s.onLaunch === v ? "active" : ""}" data-value="${v}">${label}</button>`)
+            .join("")}
+        </div>
+      </div>
+      <div class="row stack">
+        <span class="row-title">Accent color</span>
+        <div class="swatches" id="swatches">
+          ${ACCENTS.map((c) => `<button class="swatch" data-color="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}
+          <label class="swatch picker" title="Custom color">${icon("palette", 15)}<input type="color" id="accent-picker" value="${esc(s.accent)}"></label>
+        </div>
+      </div>
+      ${settingRow("Install Fabric API", "Keeps Fabric API installed and up to date", toggleMarkup("autoFabricApi", s.autoFabricApi))}
+
+      <div class="group-label">Accounts</div>
+      <div id="settings-accounts"></div>
+
+      <div class="group-label">Folders</div>
+      ${settingRow("Game folder", "Worlds, resource packs and screenshots", `<button class="chip-button" data-open="game">${icon("folder-open", 14)}Open</button>`)}
+      ${settingRow("Mods folder", "Mods for the selected version", `<button class="chip-button" data-open="mods">${icon("folder-open", 14)}Open</button>`)}
+      ${settingRow("Launcher folder", "Downloads, Java and launcher data", `<button class="chip-button" data-open="launcher">${icon("folder-open", 14)}Open</button>`)}
+    </div>
+  </div>`;
+  updateSlider();
+  updateSwatches();
+  renderSettingsAccounts();
+}
+
+function renderSettingsAccounts() {
+  const host = $("#settings-accounts");
+  if (!host) return;
+  const list = state.accounts.list || [];
+  const active = activeAccount();
+  host.innerHTML =
+    list
+      .map(
+        (a) => `<div class="row account-row">${avatarMarkup(a)}<div class="row-text"><span class="row-title">${esc(a.name)}</span><span class="row-hint">${a.uuid === active?.uuid ? "Active account" : "Microsoft account"}</span></div>
+        ${a.uuid === active?.uuid ? '<span class="badge">Active</span>' : `<button class="chip-button" data-select="${esc(a.uuid)}">Use</button>`}
+        <button class="icon-button danger" data-remove="${esc(a.uuid)}" title="Remove account">${icon("trash-2", 15)}</button></div>`
+      )
+      .join("") +
+    settingRow(list.length ? "Add another account" : "No account yet", list.length ? "" : "Sign in with Microsoft to play", `<button class="chip-button accent" data-action="add-account">${icon("user-plus", 14)}Sign in</button>`);
+  paintAvatars(host);
+}
+
+function updateSlider() {
+  const slider = $("#memory-slider");
+  if (!slider) return;
+  const min = Number(slider.dataset.min);
+  const max = Number(slider.dataset.max);
+  const value = Math.min(max, Math.max(min, state.settings.memoryMb));
+  const pct = ((value - min) / (max - min)) * 100;
+  $(".slider-fill", slider).style.width = `${pct}%`;
+  $(".slider-thumb", slider).style.left = `${pct}%`;
+  $("#memory-value").textContent = formatMemory(value);
+}
+
+function updateSwatches() {
+  const current = (state.settings.accent || "").toLowerCase();
+  $$("#swatches .swatch[data-color]").forEach((el) => el.classList.toggle("active", el.dataset.color === current));
+  const picker = $("#swatches .picker");
+  if (picker) picker.classList.toggle("active", !ACCENTS.includes(current));
+}
+
+function setSetting(key, value) {
+  state.settings[key] = value;
+  saveSettings();
+}
+
+function openModal(markup, kind, wide = false) {
+  const layer = $("#modal-layer");
+  state.modal = kind;
+  layer.innerHTML = `<div class="modal ${wide ? "wide" : ""}" data-kind="${kind}">${markup}</div>`;
+  hydrateIcons(layer);
+  requestAnimationFrame(() => layer.classList.add("open"));
+}
+
+function closeModal(kind) {
+  if (kind && state.modal !== kind) return;
+  const layer = $("#modal-layer");
+  state.modal = null;
+  layer.classList.remove("open");
+  setTimeout(() => {
+    if (!state.modal) layer.innerHTML = "";
+  }, 220);
+}
+
+function renderAuthModal() {
+  const waiting = state.auth.state === "waiting";
+  const markup = `<div class="modal-center">
+    <div class="spinner"></div>
+    <h3>${waiting ? "Sign in with Microsoft" : "Signing you in"}</h3>
+    <p>${esc(state.auth.message || "")}</p>
+    ${waiting ? '<div class="modal-actions"><button class="chip-button" data-action="cancel-login">Cancel</button></div>' : ""}
+  </div>`;
+  if (state.modal === "auth") {
+    $(".modal", $("#modal-layer")).innerHTML = markup;
+  } else {
+    openModal(markup, "auth");
+  }
+}
+
+function handleAuth(previous) {
+  const current = state.auth.state;
+  if (current === "waiting" || current === "working") {
+    if (previous !== current || state.modal !== "auth") renderAuthModal();
+    return;
+  }
+  if (state.modal === "auth") closeModal("auth");
+  if (current === "done") {
+    toast(state.auth.message || "Signed in", "success");
+    api("/auth/dismiss", { method: "POST" }).catch(() => {});
+  } else if (current === "error") {
+    toast(state.auth.message || "Sign-in failed", "error", 7000);
+    api("/auth/dismiss", { method: "POST" }).catch(() => {});
+  }
+}
+
+function handleCrash() {
+  const crash = state.game.crash;
+  if (!crash || crash.id === state.shownCrash) return;
+  state.shownCrash = crash.id;
+  const log = (crash.log || []).join("\n");
+  openModal(
+    `<div class="modal-center">
+      <div class="modal-icon danger">${icon("circle-alert", 24)}</div>
+      <h3>Minecraft closed unexpectedly</h3>
+      <p>Minecraft ${esc(crash.version)} stopped with exit code ${esc(crash.code)}.</p>
+      ${log ? `<div class="log-box">${esc(log)}</div>` : ""}
+      <div class="modal-actions">
+        ${crash.report ? `<button class="chip-button" data-crash-report="${esc(crash.report)}">${icon("external-link", 14)}Crash report</button>` : ""}
+        <button class="chip-button" data-open="logs">${icon("folder-open", 14)}Logs</button>
+        <button class="chip-button accent" data-action="close-crash">Close</button>
+      </div>
+    </div>`,
+    "crash"
+  );
+  const box = $(".log-box");
+  if (box) box.scrollTop = box.scrollHeight;
+}
+
+let lastTaskError = "";
+function handleTaskError() {
+  const error = state.task.error;
+  if (!state.task.active && error && error !== lastTaskError) {
+    lastTaskError = error;
+    toast(error, "error", 8000);
+    api("/launch/dismiss", { method: "POST" }).catch(() => {});
+  }
+  if (!error) lastTaskError = "";
+}
+
+function applyState(data) {
+  const previousAuth = state.auth.state;
+  if (data.task) state.task = data.task;
+  if (data.game) state.game = data.game;
+  if (data.auth) state.auth = data.auth;
+  if (typeof data.maximized === "boolean") state.maximized = data.maximized;
+  if (data.accounts) {
+    const key = JSON.stringify(data.accounts);
+    state.accounts = data.accounts;
+    if (key !== state.accountsKey) {
+      state.accountsKey = key;
+      renderAccount();
+    }
+  }
+  renderWindowButtons();
+  renderLaunch();
+  handleAuth(previousAuth);
+  handleCrash();
+  handleTaskError();
+}
+
+function busy() {
+  return state.task.active || state.auth.state === "waiting" || state.auth.state === "working";
+}
+
+async function poll() {
+  try {
+    applyState(await api("/state"));
+  } catch (_) {
+  } finally {
+    setTimeout(poll, busy() ? 250 : 1000);
+  }
+}
+
+function ensureSelection() {
+  const list = groups();
+  if (!list.length || !state.settings) return;
+  if (!list.some((g) => g.major === state.settings.selectedMajor)) {
+    state.settings.selectedMajor = list[0].major;
+    saveSettings();
+  }
+}
+
+function renderContent() {
+  ensureSelection();
+  renderHero();
+  renderTiles();
+  renderVersionPicker();
+  renderNews();
+}
+
+let contentRetry = 0;
+async function refreshContent(force = false) {
+  clearTimeout(contentRetry);
+  try {
+    const content = await api(`/content${force ? "?force=1" : ""}`);
+    if (content && content.groups) {
+      state.content = content;
+      renderContent();
+    }
+  } catch (_) {
+  }
+  const empty = !groups().length || !(state.content.news || []).length;
+  contentRetry = setTimeout(() => refreshContent(), empty ? 15000 : 30 * 60 * 1000);
+}
+
+function selectMajor(major) {
+  state.settings.selectedMajor = major;
+  saveSettings();
+  renderContent();
+}
+
+function selectVersion(version) {
+  const group = selectedGroup();
+  if (!group) return;
+  state.settings.selectedVersions = { ...(state.settings.selectedVersions || {}), [group.major]: version };
+  saveSettings();
+  renderVersionPicker();
+}
+
+async function startLogin() {
+  closeMenus();
+  try {
+    applyState(await api("/auth/login", { method: "POST" }));
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+async function launch() {
+  if (state.game.running) {
+    openModal(
+      `<div class="modal-center">
+        <div class="modal-icon danger">${icon("power", 24)}</div>
+        <h3>Stop Minecraft?</h3>
+        <p>Anything you have not saved in game will be lost.</p>
+        <div class="modal-actions">
+          <button class="chip-button" data-action="close-modal">Cancel</button>
+          <button class="chip-button accent" data-action="confirm-stop">Stop game</button>
+        </div>
+      </div>`,
+      "confirm"
+    );
+    return;
+  }
+  if (state.task.active) return;
+  if (!activeAccount()) {
+    toast("Sign in with your Microsoft account to play.");
+    startLogin();
+    return;
+  }
+  const version = selectedVersion();
+  if (!version) {
+    toast("The version list is still loading. Check your internet connection.", "error");
+    return;
+  }
+  try {
+    applyState(await api("/launch", { method: "POST", body: { version } }));
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+let modsMajor = null;
+async function openMods() {
+  const group = selectedGroup();
+  if (!group) {
+    toast("The version list is still loading.", "error");
+    return;
+  }
+  modsMajor = group.major;
+  openModal(
+    `<div class="modal-head">
+      <h3>Mods</h3><span class="badge">${esc(group.major)}</span><span class="spacer"></span>
+      <label class="chip-button accent">${icon("plus", 14)}Add mods<input type="file" id="mod-input" accept=".jar" multiple hidden></label>
+      <button class="chip-button" data-open="mods">${icon("folder-open", 14)}Folder</button>
+      <button class="icon-button" data-action="close-modal" aria-label="Close">${icon("x", 16)}</button>
+    </div>
+    <div class="mods-body" id="mods-body"><div class="empty"><div class="spinner"></div></div></div>
+    <div class="drop-zone" id="drop-zone">Drop .jar files to install them</div>`,
+    "mods",
+    true
+  );
+  const modal = $(".modal", $("#modal-layer"));
+  modal.style.position = "relative";
+  try {
+    renderMods((await api(`/mods?major=${encodeURIComponent(modsMajor)}`)).mods);
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+function renderMods(mods) {
+  const body = $("#mods-body");
+  if (!body) return;
+  if (!mods.length) {
+    body.innerHTML = `<div class="empty"><div class="modal-icon">${icon("package", 24)}</div><strong>No mods installed yet</strong><span>Drop .jar files here or use Add mods. Fabric API is installed for you on launch.</span></div>`;
+    return;
+  }
+  body.innerHTML = mods
+    .map(
+      (m) => `<div class="mod-row ${m.enabled ? "" : "off"}" data-file="${esc(m.file)}">
+        <div class="mod-icon">${m.icon ? `<img src="/api/mods/icon?major=${encodeURIComponent(modsMajor)}&file=${encodeURIComponent(m.file)}&t=${TOKEN}" alt="" draggable="false">` : icon("package", 18)}</div>
+        <div class="mod-text">
+          <div class="mod-title"><span class="mod-name">${esc(m.name)}</span>${m.version ? `<span class="mod-version">${esc(m.version)}</span>` : ""}${m.managed ? '<span class="badge">Auto</span>' : ""}</div>
+          <div class="mod-desc">${esc(m.description || m.file)} <span style="color:var(--faint)">- ${formatSize(m.size)}</span></div>
+        </div>
+        <button class="toggle ${m.enabled ? "on" : ""}" data-mod-toggle role="switch" aria-checked="${m.enabled}"></button>
+        <button class="icon-button danger" data-mod-delete title="Remove">${icon("trash-2", 15)}</button>
+      </div>`
+    )
+    .join("");
+  $$(".mod-icon img", body).forEach((img) => {
+    img.addEventListener("load", () => {
+      if (img.naturalWidth <= 32) img.classList.add("pixel");
+    });
+    img.addEventListener("error", () => {
+      img.parentElement.innerHTML = icon("package", 18);
+    });
+  });
+}
+
+async function uploadMods(files) {
+  const jars = [...files].filter((f) => f.name.toLowerCase().endsWith(".jar"));
+  if (!jars.length) {
+    toast("Only .jar files can be installed as mods.", "error");
+    return;
+  }
+  for (const file of jars) {
+    try {
+      const data = await api(`/mods/upload?major=${encodeURIComponent(modsMajor)}&name=${encodeURIComponent(file.name)}`, {
+        method: "POST",
+        raw: await file.arrayBuffer(),
+      });
+      renderMods(data.mods);
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+  toast(jars.length === 1 ? `Installed ${jars[0].name}` : `Installed ${jars.length} mods`, "success");
+}
+
+async function openFolder(folder, extra = {}) {
+  let major = selectedGroup()?.major || state.game.major;
+  if (state.modal === "mods" && modsMajor) major = modsMajor;
+  if (state.modal === "crash" && state.game.major) major = state.game.major;
+  try {
+    await api("/open", { method: "POST", body: { folder, major, ...extra } });
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+function bindSlider() {
+  document.addEventListener("pointerdown", (event) => {
+    const slider = event.target.closest(".slider");
+    if (!slider) return;
+    const min = Number(slider.dataset.min);
+    const max = Number(slider.dataset.max);
+    const step = Number(slider.dataset.step);
+    const update = (x) => {
+      const rect = slider.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (x - rect.left) / rect.width));
+      const value = Math.round((min + ratio * (max - min)) / step) * step;
+      state.settings.memoryMb = Math.min(max, Math.max(min, value));
+      updateSlider();
+    };
+    slider.setPointerCapture(event.pointerId);
+    slider.classList.add("dragging");
+    update(event.clientX);
+    const move = (e) => update(e.clientX);
+    const up = () => {
+      slider.classList.remove("dragging");
+      slider.removeEventListener("pointermove", move);
+      slider.removeEventListener("pointerup", up);
+      slider.removeEventListener("pointercancel", up);
+      saveSettings();
+    };
+    slider.addEventListener("pointermove", move);
+    slider.addEventListener("pointerup", up);
+    slider.addEventListener("pointercancel", up);
+  });
+}
+
+function bindEvents() {
+  document.addEventListener("click", async (event) => {
+    const target = event.target;
+
+    const windowButton = target.closest("[data-window]");
+    if (windowButton) {
+      api(`/window/${windowButton.dataset.window}`, { method: "POST" }).catch(() => {});
+      return;
+    }
+
+    const nav = target.closest("[data-nav]");
+    if (nav) {
+      setView(nav.dataset.nav);
+      return;
+    }
+
+    if (target.closest("#view-all")) {
+      setView("news");
+      return;
+    }
+
+    const card = target.closest(".news-card[data-url]");
+    if (card) {
+      api("/open", { method: "POST", body: { url: card.dataset.url } }).catch((e) => toast(e.message, "error"));
+      return;
+    }
+
+    const tile = target.closest(".tile[data-major]");
+    if (tile) {
+      closeMenus();
+      selectMajor(tile.dataset.major);
+      return;
+    }
+
+    if (target.closest("#version-button")) {
+      $("#account-menu").classList.remove("open");
+      $("#version-picker").classList.toggle("open");
+      return;
+    }
+
+    const option = target.closest("[data-version]");
+    if (option) {
+      selectVersion(option.dataset.version);
+      $("#version-picker").classList.remove("open");
+      return;
+    }
+
+    if (target.closest("#launch-button")) {
+      closeMenus();
+      launch();
+      return;
+    }
+
+    if (target.closest("#mods-button")) {
+      closeMenus();
+      openMods();
+      return;
+    }
+
+    if (target.closest("#account")) {
+      if (!activeAccount()) {
+        startLogin();
+        return;
+      }
+      $("#version-picker").classList.remove("open");
+      const open = !$("#account-menu").classList.contains("open");
+      $("#account-menu").classList.toggle("open", open);
+      $("#account").classList.toggle("open", open);
+      return;
+    }
+
+    const select = target.closest("[data-select]");
+    if (select) {
+      closeMenus();
+      try {
+        applyState(await api("/auth/select", { method: "POST", body: { uuid: select.dataset.select } }));
+      } catch (error) {
+        toast(error.message, "error");
+      }
+      return;
+    }
+
+    const remove = target.closest("[data-remove]");
+    if (remove) {
+      if (!remove.classList.contains("confirm")) {
+        remove.classList.add("confirm");
+        remove.textContent = "Remove";
+        setTimeout(() => {
+          if (remove.isConnected) {
+            remove.classList.remove("confirm");
+            remove.innerHTML = icon("trash-2", 15);
+          }
+        }, 3000);
+        return;
+      }
+      try {
+        applyState(await api("/auth/remove", { method: "POST", body: { uuid: remove.dataset.remove } }));
+      } catch (error) {
+        toast(error.message, "error");
+      }
+      return;
+    }
+
+    const action = target.closest("[data-action]");
+    if (action) {
+      const name = action.dataset.action;
+      if (name === "add-account") startLogin();
+      if (name === "sign-out") {
+        closeMenus();
+        const account = activeAccount();
+        if (account) {
+          try {
+            applyState(await api("/auth/remove", { method: "POST", body: { uuid: account.uuid } }));
+            toast(`Signed out of ${account.name}`);
+          } catch (error) {
+            toast(error.message, "error");
+          }
+        }
+      }
+      if (name === "cancel-login") {
+        api("/auth/cancel", { method: "POST" }).then(applyState).catch(() => {});
+      }
+      if (name === "close-crash") {
+        closeModal("crash");
+        api("/crash/dismiss", { method: "POST" }).catch(() => {});
+      }
+      if (name === "close-modal") closeModal();
+      if (name === "confirm-stop") {
+        closeModal();
+        api("/launch/stop", { method: "POST" }).then(applyState).catch(() => {});
+      }
+      return;
+    }
+
+    const open = target.closest("[data-open]");
+    if (open) {
+      openFolder(open.dataset.open);
+      return;
+    }
+
+    const report = target.closest("[data-crash-report]");
+    if (report) {
+      openFolder("crash", { path: report.dataset.crashReport });
+      return;
+    }
+
+    const toggle = target.closest("[data-toggle]");
+    if (toggle) {
+      const key = toggle.dataset.toggle;
+      const value = !state.settings[key];
+      toggle.classList.toggle("on", value);
+      toggle.setAttribute("aria-checked", value);
+      setSetting(key, value);
+      if (key === "customJava") $("#java-row").classList.toggle("disabled", !value);
+      if (key === "customResolution" || key === "fullscreen") {
+        $("#resolution-row").classList.toggle("disabled", !(state.settings.customResolution && !state.settings.fullscreen));
+        const resToggle = $('[data-toggle="customResolution"]').closest(".row");
+        resToggle.classList.toggle("disabled", state.settings.fullscreen);
+      }
+      return;
+    }
+
+    const segment = target.closest("#on-launch .segment");
+    if (segment) {
+      $$("#on-launch .segment").forEach((el) => el.classList.toggle("active", el === segment));
+      setSetting("onLaunch", segment.dataset.value);
+      return;
+    }
+
+    const swatch = target.closest(".swatch[data-color]");
+    if (swatch) {
+      state.settings.accent = swatch.dataset.color;
+      applyAccent();
+      updateSwatches();
+      saveSettings();
+      return;
+    }
+
+    const modToggle = target.closest("[data-mod-toggle]");
+    if (modToggle) {
+      const row = modToggle.closest(".mod-row");
+      const enabled = !modToggle.classList.contains("on");
+      try {
+        renderMods((await api("/mods/toggle", { method: "POST", body: { major: modsMajor, file: row.dataset.file, enabled } })).mods);
+      } catch (error) {
+        toast(error.message, "error");
+      }
+      return;
+    }
+
+    const modDelete = target.closest("[data-mod-delete]");
+    if (modDelete) {
+      if (!modDelete.classList.contains("confirm")) {
+        modDelete.classList.add("confirm");
+        modDelete.textContent = "Remove";
+        setTimeout(() => {
+          if (modDelete.isConnected) {
+            modDelete.classList.remove("confirm");
+            modDelete.innerHTML = icon("trash-2", 15);
+          }
+        }, 3000);
+        return;
+      }
+      const row = modDelete.closest(".mod-row");
+      try {
+        renderMods((await api("/mods/delete", { method: "POST", body: { major: modsMajor, file: row.dataset.file } })).mods);
+      } catch (error) {
+        toast(error.message, "error");
+      }
+      return;
+    }
+
+    if (event.target === $("#modal-layer") && (state.modal === "mods" || state.modal === "confirm")) {
+      closeModal();
+      return;
+    }
+
+    if (!target.closest(".version-picker") && !target.closest(".account-wrap")) closeMenus();
+  });
+
+  document.addEventListener("change", (event) => {
+    if (event.target.id === "mod-input") {
+      uploadMods(event.target.files);
+      event.target.value = "";
+    }
+    if (event.target.id === "res-width" || event.target.id === "res-height") {
+      const width = Math.min(15360, Math.max(320, Number($("#res-width").value) || 1280));
+      const height = Math.min(8640, Math.max(240, Number($("#res-height").value) || 720));
+      $("#res-width").value = width;
+      $("#res-height").value = height;
+      state.settings.width = width;
+      state.settings.height = height;
+      saveSettings();
+    }
+  });
+
+  document.addEventListener("input", (event) => {
+    if (event.target.id === "java-path") setSetting("javaPath", event.target.value);
+    if (event.target.id === "jvm-args") setSetting("jvmArgs", event.target.value);
+    if (event.target.id === "accent-picker") {
+      state.settings.accent = event.target.value.toLowerCase();
+      applyAccent();
+      updateSwatches();
+      saveSettings();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeMenus();
+      if (state.modal === "mods" || state.modal === "confirm") closeModal();
+    }
+    if (event.ctrlKey && ["+", "-", "=", "0"].includes(event.key)) event.preventDefault();
+    if (event.key === "F5" || (event.ctrlKey && event.key.toLowerCase() === "r")) event.preventDefault();
+  });
+
+  document.addEventListener("wheel", (event) => {
+    if (event.ctrlKey) event.preventDefault();
+  }, { passive: false });
+
+  let dragDepth = 0;
+  document.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    if (state.modal !== "mods") return;
+    dragDepth++;
+    $("#drop-zone")?.classList.add("visible");
+  });
+  document.addEventListener("dragleave", () => {
+    if (state.modal !== "mods") return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (!dragDepth) $("#drop-zone")?.classList.remove("visible");
+  });
+  document.addEventListener("dragover", (event) => event.preventDefault());
+  document.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dragDepth = 0;
+    $("#drop-zone")?.classList.remove("visible");
+    if (state.modal === "mods" && event.dataTransfer?.files?.length) uploadMods(event.dataTransfer.files);
+  });
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => api("/state").then(applyState).catch(() => {}), 120);
+  });
+}
+
+async function boot() {
+  hydrateIcons();
+  bindEvents();
+  bindSlider();
+  let data;
+  for (let attempt = 0; attempt < 20 && !data; attempt++) {
+    try {
+      data = await api("/boot");
+    } catch (_) {
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+  if (!data) return;
+  document.body.classList.add(data.frame);
+  state.frame = data.frame;
+  state.totalMemory = data.totalMemory || 8192;
+  state.settings = data.settings;
+  if (data.content && data.content.groups) state.content = data.content;
+  applyAccent();
+  renderSettings();
+  renderContent();
+  applyState(data);
+  renderAccount();
+  refreshContent();
+  poll();
+}
+
+boot();
