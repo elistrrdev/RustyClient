@@ -25,6 +25,9 @@ pub fn start(version_id: String) -> Result<(), String> {
     if core.game.lock().unwrap().running {
         return Err("Minecraft is already running.".into());
     }
+    if crate::update::installing() {
+        return Err("Rusty Client is installing an update and restarts in a moment.".into());
+    }
     let Some((entry, major)) = install::resolve_entry(&version_id) else {
         return Err("This version is not available yet. Check your internet connection.".into());
     };
@@ -245,6 +248,7 @@ async fn spawn_game(
     account: &Account,
     prepared: Prepared,
 ) -> Result<(), String> {
+    apply_language(&prepared.game_dir, &settings.language);
     let (args, classpath) = build_arguments(id, settings, account, &prepared);
     let args = use_argfile(args, &classpath, &paths::versions().join(id));
     let mut command = tokio::process::Command::new(&prepared.java);
@@ -261,6 +265,9 @@ async fn spawn_game(
         .map_err(|e| format!("Could not start Java: {e}"))?;
 
     let started = now_secs();
+    if let Some(pid) = child.id() {
+        let _ = std::fs::write(paths::game_pid_file(), pid.to_string());
+    }
     let (kill_tx, mut kill_rx) = oneshot::channel();
     *core.kill.lock().unwrap() = Some(kill_tx);
     {
@@ -302,6 +309,7 @@ async fn spawn_game(
         let _ = tokio::time::timeout(std::time::Duration::from_secs(2), reader).await;
     }
     core.kill.lock().unwrap().take();
+    let _ = std::fs::remove_file(paths::game_pid_file());
 
     let code = status.and_then(|s| s.code()).unwrap_or(-1);
     let crashed = !killed && code != 0;
@@ -321,10 +329,28 @@ async fn spawn_game(
             });
         }
     }
-    if on_launch != "keep" || crashed {
+    if !crashed && core.settings().close_on_exit {
+        win::post(win::WM_APP_CLOSE);
+    } else if on_launch != "keep" || crashed {
         win::post(win::WM_APP_RESTORE);
     }
     Ok(())
+}
+
+fn apply_language(game_dir: &Path, language: &str) {
+    if language.is_empty() {
+        return;
+    }
+    let file = game_dir.join("options.txt");
+    let current = std::fs::read_to_string(&file).unwrap_or_default();
+    let mut lines: Vec<String> = current
+        .lines()
+        .filter(|line| !line.starts_with("lang:"))
+        .map(str::to_string)
+        .collect();
+    lines.push(format!("lang:{language}"));
+    let _ = std::fs::create_dir_all(game_dir);
+    let _ = write_atomic(&file, (lines.join("\n") + "\n").as_bytes());
 }
 
 async fn pump<R: tokio::io::AsyncRead + Unpin>(reader: BufReader<R>, log: Arc<Mutex<VecDeque<String>>>) {

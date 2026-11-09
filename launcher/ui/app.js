@@ -15,6 +15,8 @@ const state = {
   accounts: { active: "", list: [] },
   task: { active: false, phase: "", detail: "", progress: 0, error: "" },
   game: { running: false, version: "", major: "", crash: null },
+  update: {},
+  aboutBuild: "",
   auth: { state: "idle", message: "" },
   view: "home",
   modal: null,
@@ -157,6 +159,8 @@ function applyAccent() {
 
 function setView(view) {
   state.view = view;
+  if (view === "settings") loadStorage();
+  if (view === "about") renderAbout();
   $$(".view").forEach((el) => el.classList.toggle("active", el.dataset.view === view));
   const nav = view === "news" ? "home" : view;
   $$(".nav-item").forEach((el) => el.classList.toggle("active", el.dataset.nav === nav));
@@ -164,6 +168,7 @@ function setView(view) {
 }
 
 function closeMenus() {
+  closeSelect();
   $("#version-picker").classList.remove("open");
   $("#account-menu").classList.remove("open");
   $("#account").classList.remove("open");
@@ -425,6 +430,7 @@ function renderSettings() {
         <span class="row-title">JVM arguments</span>
         <input class="field mono" id="jvm-args" placeholder="-XX:+UnlockExperimentalVMOptions" value="${esc(s.jvmArgs)}" spellcheck="false">
       </div>
+      ${settingRow("Game language", "Applied every time Minecraft starts", `<button class="select-button" id="language-select"><span class="grow">${esc(languageLabel(s.language))}</span>${icon("chevron-down", 15)}</button>`)}
     </div>
 
     <div class="settings-col">
@@ -437,6 +443,7 @@ function renderSettings() {
             .join("")}
         </div>
       </div>
+      ${settingRow("Close when the game closes", "Quits Rusty Client after Minecraft exits normally", toggleMarkup("closeOnExit", s.closeOnExit))}
       <div class="row stack">
         <span class="row-title">Accent color</span>
         <div class="swatches" id="swatches">
@@ -444,6 +451,10 @@ function renderSettings() {
           <button class="swatch picker" id="accent-picker" title="Custom color" aria-label="Custom color">${icon("palette", 15)}</button>
         </div>
       </div>
+
+      <div class="group-label">Storage</div>
+      ${settingRow("Launcher cache", '<span id="storage-launcher">Calculating</span>', `<button class="chip-button" data-clear="launcher">${icon("trash-2", 14)}Clear</button>`)}
+      ${settingRow("Game cache", '<span id="storage-game">Calculating</span>', `<button class="chip-button" data-clear="game">${icon("trash-2", 14)}Clear</button>`)}
     </div>
   </div>`;
   updateSlider();
@@ -526,7 +537,7 @@ function openColorPicker(anchor) {
       ${window.EyeDropper ? `<button class="color-tool" id="color-eyedropper" title="Pick from screen">${icon("pipette", 15)}</button>` : ""}
     </div>`;
   document.body.appendChild(pop);
-  colorPicker = { pop, anchor, h, s, v };
+  colorPicker = { pop, anchor, h, s, v, top: anchor.getBoundingClientRect().top };
   paintColorPicker(true);
   placeColorPicker();
   anchor.classList.add("open");
@@ -640,6 +651,226 @@ function closeColorPicker() {
 }
 
 
+const LANGUAGES = [
+  ["", "Set in game"],
+  ["en_us", "English (US)"],
+  ["en_gb", "English (UK)"],
+  ["de_de", "Deutsch"],
+  ["fr_fr", "Français"],
+  ["es_es", "Español (España)"],
+  ["es_mx", "Español (México)"],
+  ["it_it", "Italiano"],
+  ["pt_br", "Português (Brasil)"],
+  ["pt_pt", "Português (Portugal)"],
+  ["nl_nl", "Nederlands"],
+  ["pl_pl", "Polski"],
+  ["cs_cz", "Čeština"],
+  ["sk_sk", "Slovenčina"],
+  ["hu_hu", "Magyar"],
+  ["ro_ro", "Română"],
+  ["sv_se", "Svenska"],
+  ["nb_no", "Norsk bokmål"],
+  ["da_dk", "Dansk"],
+  ["fi_fi", "Suomi"],
+  ["tr_tr", "Türkçe"],
+  ["el_gr", "Ελληνικά"],
+  ["ru_ru", "Русский"],
+  ["uk_ua", "Українська"],
+  ["bg_bg", "Български"],
+  ["ja_jp", "日本語"],
+  ["ko_kr", "한국어"],
+  ["zh_cn", "简体中文"],
+  ["zh_tw", "繁體中文"],
+  ["ar_sa", "العربية"],
+  ["he_il", "עברית"],
+  ["hi_in", "हिन्दी"],
+  ["th_th", "ไทย"],
+  ["vi_vn", "Tiếng Việt"],
+  ["id_id", "Bahasa Indonesia"],
+];
+
+const LINKS = [
+  ["github", "GitHub repository", "https://github.com/elistrrdev/RustyClient"],
+  ["tag", "Releases", "https://github.com/elistrrdev/RustyClient/releases"],
+  ["bug", "Report a bug", "https://github.com/elistrrdev/RustyClient/issues/new"],
+  ["scale", "License", "https://github.com/elistrrdev/RustyClient/blob/main/LICENSE"],
+];
+
+const FOLDERS = [
+  ["hard-drive", "App data", "root"],
+  ["gamepad-2", "Game folder", "game"],
+  ["puzzle", "Mods", "mods"],
+  ["image", "Resource packs", "resourcepacks"],
+  ["earth", "Worlds", "saves"],
+  ["camera", "Screenshots", "screenshots"],
+  ["sliders-horizontal", "Config", "config"],
+  ["scroll-text", "Game logs", "logs"],
+];
+
+function languageLabel(code) {
+  return (LANGUAGES.find(([c]) => c === code) || LANGUAGES[0])[1];
+}
+
+let selectPop = null;
+
+function openSelect(anchor, options, current, onPick) {
+  closeSelect();
+  const pop = document.createElement("div");
+  pop.className = "select-pop";
+  pop.innerHTML = options
+    .map(([value, label]) => `<button class="select-option ${value === current ? "selected" : ""}" data-value="${esc(value)}"><span class="grow">${esc(label)}</span>${value === current ? `<span class="check">${icon("check", 14, 2.6)}</span>` : ""}</button>`)
+    .join("");
+  document.body.appendChild(pop);
+  const rect = anchor.getBoundingClientRect();
+  pop.style.width = `${Math.max(rect.width, 200)}px`;
+  let left = Math.min(rect.left, window.innerWidth - 12 - pop.offsetWidth);
+  let top = rect.bottom + 6;
+  const room = window.innerHeight - 12 - top;
+  if (room < Math.min(pop.scrollHeight, 180)) {
+    pop.style.maxHeight = `${Math.min(pop.scrollHeight, rect.top - 18)}px`;
+    top = rect.top - 6 - pop.offsetHeight;
+  } else {
+    pop.style.maxHeight = `${Math.min(300, room)}px`;
+  }
+  pop.style.left = `${Math.max(12, left)}px`;
+  pop.style.top = `${Math.max(12, top)}px`;
+  anchor.classList.add("open");
+  selectPop = { pop, anchor, top: rect.top };
+  const selected = $(".select-option.selected", pop);
+  if (selected) pop.scrollTop = selected.offsetTop - pop.clientHeight / 2 + selected.offsetHeight / 2;
+  pop.addEventListener("click", (event) => {
+    const option = event.target.closest(".select-option");
+    if (!option) return;
+    onPick(option.dataset.value);
+    closeSelect();
+  });
+  requestAnimationFrame(() => pop.classList.add("open"));
+}
+
+function closeSelect() {
+  if (!selectPop) return;
+  const { pop, anchor } = selectPop;
+  selectPop = null;
+  anchor.classList.remove("open");
+  pop.classList.remove("open");
+  setTimeout(() => pop.remove(), 160);
+}
+
+async function loadStorage(data) {
+  try {
+    const sizes = data || (await api("/storage"));
+    const launcher = $("#storage-launcher");
+    const game = $("#storage-game");
+    if (launcher) launcher.textContent = `${formatSize(sizes.launcher)} - news, version lists and browser data${sizes.browserPending ? ". Browser data clears on the next start" : ""}`;
+    if (game) game.textContent = `${formatSize(sizes.game)} - game logs, crash reports and Fabric cache`;
+  } catch (_) {}
+}
+
+async function clearStorage(button) {
+  const target = button.dataset.clear;
+  button.disabled = true;
+  try {
+    const data = await api("/storage/clear", { method: "POST", body: { target } });
+    await loadStorage(data);
+    toast(data.freed > 0 ? `Freed ${formatSize(data.freed)}` : "Nothing to clear right now", "success");
+  } catch (error) {
+    toast(error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function updateText(update) {
+  switch (update?.state) {
+    case "checking":
+      return "Checking for updates";
+    case "current":
+      return "Up to date";
+    case "downloading":
+      return `Downloading ${update.version}`;
+    case "installing":
+      return `Installing ${update.version}`;
+    case "error":
+      return "Could not update";
+    case "skipped":
+      return "Update check skipped while Minecraft runs";
+    default:
+      return "";
+  }
+}
+
+let updateKey = "";
+function renderUpdate(update) {
+  const key = JSON.stringify(update || {});
+  if (key === updateKey) return;
+  updateKey = key;
+  state.update = update || {};
+  const pill = $("#update-pill");
+  const active = update && (update.state === "downloading" || update.state === "installing");
+  pill.classList.toggle("visible", !!active);
+  if (active) {
+    const pct = Math.round((update.progress || 0) * 100);
+    pill.innerHTML = `<div class="update-head"><span class="update-icon">${icon(update.state === "installing" ? "refresh-cw" : "download", 14)}</span><span class="grow">${update.state === "installing" ? "Restarting to update" : `Updating to ${esc(update.version)}`}</span>${update.state === "downloading" ? `<span class="update-pct">${pct}%</span>` : ""}</div><div class="update-track"><div class="update-fill" style="width:${update.state === "installing" ? 100 : pct}%"></div></div>`;
+  }
+  const status = $("#about-update");
+  if (status) status.textContent = updateText(update) || `${state.aboutBuild || ""} build`;
+}
+
+function dependencyCard(iconMarkup, name, sub, value, id = "") {
+  return `<div class="dep-card"><span class="dep-icon">${iconMarkup}</span><div class="dep-text"><span class="dep-name">${esc(name)}</span><span class="dep-sub" ${id ? `id="${id}"` : ""}>${esc(sub)}</span></div><span class="dep-value ${value ? "" : "missing"}">${esc(value || "Not installed yet")}</span></div>`;
+}
+
+async function renderAbout() {
+  const page = $("#about-page");
+  const group = selectedGroup();
+  const version = selectedVersion() || "";
+  if (!page.innerHTML) page.innerHTML = `<div class="page-head"><h1>About</h1></div><div class="empty"><div class="spinner"></div></div>`;
+  let info;
+  try {
+    info = await api(`/about?version=${encodeURIComponent(version)}`);
+  } catch (error) {
+    toast(error.message, "error");
+    return;
+  }
+  state.aboutBuild = info.build;
+  const major = group?.major || "";
+  page.innerHTML = `
+  <div class="page-head"><h1>About</h1></div>
+  <div class="group-label">Dependencies</div>
+  <div class="about-grid">
+    ${dependencyCard('<span class="dep-logo"></span>', "Rusty Client", updateText(state.update) || `${info.build} build`, info.launcher, "about-update")}
+    ${dependencyCard(icon("app-window", 17), "Chromium", `Embedded through CEF ${info.cef}`, info.chromium)}
+    ${dependencyCard(icon("cog", 17), "Rust", "Compiler the launcher was built with", info.rust)}
+    ${dependencyCard(icon("coffee", 17), "Java", "Mojang runtime, downloaded for you", info.java)}
+    ${dependencyCard(icon("box", 17), "Minecraft", "Selected version", info.minecraft)}
+    ${dependencyCard(icon("layers", 17), "Fabric Loader", `Latest stable for ${info.minecraft || "the selected version"}`, info.fabricLoader)}
+    ${dependencyCard(icon("puzzle", 17), "Fabric API", "Installed and updated on every launch", info.fabricApi)}
+    ${dependencyCard(icon("monitor", 17), info.windows, "Operating system build", info.windowsBuild)}
+  </div>
+  <div class="group-label">Folders${major ? ` <span class="badge">${esc(major)}</span>` : ""}</div>
+  <div class="about-grid">
+    ${FOLDERS.map(([glyph, label, folder]) => `<button class="about-button" data-open="${folder}" ${folder !== "root" && !major ? "disabled" : ""}>${icon(glyph, 16)}<span>${label}</span></button>`).join("")}
+  </div>
+  <div class="group-label">Quick links</div>
+  <div class="about-grid">
+    ${LINKS.map(([glyph, label, url]) => `<button class="about-button" data-link="${url}">${icon(glyph, 16)}<span>${label}</span>${icon("external-link", 13)}</button>`).join("")}
+  </div>
+  <p class="about-foot">Rusty Client is free software under the GPL-3.0 license. Not affiliated with Mojang Studios or Microsoft.</p>`;
+}
+
+function anchorMoved(popup) {
+  return Math.abs(popup.anchor.getBoundingClientRect().top - popup.top) > 24;
+}
+
+document.addEventListener(
+  "scroll",
+  (event) => {
+    if (selectPop && !selectPop.pop.contains(event.target) && anchorMoved(selectPop)) closeSelect();
+    if (colorPicker && !colorPicker.pop.contains(event.target) && anchorMoved(colorPicker)) closeColorPicker();
+  },
+  true
+);
+
 function setSetting(key, value) {
   state.settings[key] = value;
   saveSettings();
@@ -742,6 +973,7 @@ function applyState(data) {
       renderAccount();
     }
   }
+  if (data.update) renderUpdate(data.update);
   renderWindowButtons();
   renderLaunch();
   handleAuth(previousAuth);
@@ -990,6 +1222,7 @@ function bindEvents() {
   document.addEventListener("click", async (event) => {
     const target = event.target;
     if (colorPicker && !target.closest(".color-pop") && !target.closest("#accent-picker")) closeColorPicker();
+    if (selectPop && !target.closest(".select-pop") && !target.closest("#language-select")) closeSelect();
 
     const windowButton = target.closest("[data-window]");
     if (windowButton) {
@@ -1097,6 +1330,31 @@ function bindEvents() {
         closeModal();
         api("/launch/stop", { method: "POST" }).then(applyState).catch(() => {});
       }
+      return;
+    }
+
+    const languageButton = target.closest("#language-select");
+    if (languageButton) {
+      if (selectPop) {
+        closeSelect();
+        return;
+      }
+      openSelect(languageButton, LANGUAGES, state.settings.language || "", (value) => {
+        $(".grow", languageButton).textContent = languageLabel(value);
+        setSetting("language", value);
+      });
+      return;
+    }
+
+    const clear = target.closest("[data-clear]");
+    if (clear) {
+      clearStorage(clear);
+      return;
+    }
+
+    const link = target.closest("[data-link]");
+    if (link) {
+      api("/open", { method: "POST", body: { url: link.dataset.link } }).catch((e) => toast(e.message, "error"));
       return;
     }
 
@@ -1251,6 +1509,7 @@ function bindEvents() {
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
     closeColorPicker();
+    closeSelect();
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => api("/state").then(applyState).catch(() => {}), 120);
   });

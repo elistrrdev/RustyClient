@@ -18,6 +18,8 @@ mod runtime;
 #[cfg(feature = "setup")]
 mod setup;
 mod state;
+mod storage;
+mod update;
 #[cfg(not(any(feature = "portable", feature = "setup")))]
 mod uninstall;
 mod win;
@@ -26,6 +28,9 @@ use cef::*;
 
 fn main() {
     let is_browser = !std::env::args().any(|arg| arg.starts_with("--type="));
+    if is_browser {
+        win::wait_for_previous_instance();
+    }
 
     #[cfg(not(any(feature = "portable", feature = "setup")))]
     if is_browser && std::env::args().any(|arg| arg == "--uninstall") {
@@ -38,6 +43,17 @@ fn main() {
 
     if !runtime::load(is_browser) {
         std::process::exit(1);
+    }
+
+    #[cfg(feature = "setup")]
+    if is_browser && std::env::args().any(|arg| arg == "--update") {
+        setup::update();
+        return;
+    }
+
+    #[cfg(not(feature = "setup"))]
+    if is_browser {
+        storage::clear_browser_cache_if_requested();
     }
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = args::Args::new();
@@ -59,6 +75,7 @@ fn main() {
             let _ = content::get(false).await;
         });
         auth::refresh_profiles_in_background();
+        update::start();
         app::run(
             args.as_main_args(),
             win::WindowSpec {

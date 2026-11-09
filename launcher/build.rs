@@ -20,6 +20,16 @@ fn main() {
     println!("cargo::rerun-if-env-changed=DEP_CEF_DLL_WRAPPER_CEF_DIR");
     println!("cargo::rerun-if-env-changed=RUSTY_SETUP_PAYLOAD");
 
+    let rustc = std::env::var("RUSTC").unwrap_or_else(|_| "rustc".into());
+    let rustc_version = std::process::Command::new(rustc)
+        .arg("--version")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .and_then(|v| v.split_whitespace().nth(1).map(str::to_string))
+        .unwrap_or_default();
+    println!("cargo::rustc-env=RUSTY_RUSTC_VERSION={rustc_version}");
+
     let resource = if setup { "RustyClientSetup.rc" } else { "RustyClient.rc" };
     embed_resource::compile(resource, embed_resource::NONE)
         .manifest_required()

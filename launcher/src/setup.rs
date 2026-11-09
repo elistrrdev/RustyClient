@@ -52,6 +52,44 @@ fn launcher() -> &'static [u8] {
     })
 }
 
+pub fn update() {
+    if let Some(location) = registry::read("InstallLocation") {
+        let target = PathBuf::from(location);
+        let desktop = registry::read("RustyDesktopShortcut").is_some();
+        let start_menu = registry::read("RustyStartMenuShortcut").is_some();
+        for _ in 0..80 {
+            if !launcher_running() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+        }
+        match install(&target, desktop, start_menu) {
+            Ok(()) => launch_as_user(&target.join("RustyClient.exe").to_string_lossy()),
+            Err(error) => crate::runtime::fail(&format!("Rusty Client could not be updated.\n\n{error}")),
+        }
+    }
+    remove_temp_runtime();
+}
+
+fn remove_temp_runtime() {
+    let script = format!("ping 127.0.0.1 -n 4 >nul & rmdir /s /q \"{}\"", embedded::base().to_string_lossy());
+    let _ = std::process::Command::new("cmd")
+        .arg("/c")
+        .raw_arg(script)
+        .current_dir(std::env::temp_dir())
+        .creation_flags(CREATE_NO_WINDOW)
+        .spawn();
+}
+
+fn launch_as_user(exe: &str) {
+    let verb = win::wide("open");
+    let explorer = win::wide("explorer.exe");
+    let args = win::wide(&format!("\"{exe}\""));
+    unsafe {
+        ShellExecuteW(std::ptr::null_mut(), verb.as_ptr(), explorer.as_ptr(), args.as_ptr(), std::ptr::null(), SW_SHOWNORMAL);
+    }
+}
+
 pub fn run(main_args: &MainArgs) {
     app::run(
         main_args,
@@ -65,13 +103,7 @@ pub fn run(main_args: &MainArgs) {
         },
         embedded::base().join("cache"),
     );
-    let script = format!("ping 127.0.0.1 -n 4 >nul & rmdir /s /q \"{}\"", embedded::base().to_string_lossy());
-    let _ = std::process::Command::new("cmd")
-        .arg("/c")
-        .raw_arg(script)
-        .current_dir(std::env::temp_dir())
-        .creation_flags(CREATE_NO_WINDOW)
-        .spawn();
+    remove_temp_runtime();
 }
 
 fn program_files() -> String {
@@ -410,12 +442,7 @@ fn finish(request: &Incoming) -> Reply {
     let launch = request.json::<FinishRequest>().map(|f| f.launch).unwrap_or(false);
     let installed = STATUS.lock().unwrap().installed.clone();
     if launch && !installed.is_empty() {
-        let verb = win::wide("open");
-        let explorer = win::wide("explorer.exe");
-        let args = win::wide(&format!("\"{installed}\""));
-        unsafe {
-            ShellExecuteW(std::ptr::null_mut(), verb.as_ptr(), explorer.as_ptr(), args.as_ptr(), std::ptr::null(), SW_SHOWNORMAL);
-        }
+        launch_as_user(&installed);
     }
     win::post(win::WM_APP_CLOSE);
     Reply::json(json!({}))

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Rusty Client" width="140">
+  <img src="assets/logo.png" alt="Rusty Client" width="140">
 </p>
 
 <h1 align="center">Rusty Client</h1>

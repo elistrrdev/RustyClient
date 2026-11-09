@@ -14,6 +14,8 @@ pub struct Settings {
     pub fullscreen: bool,
     pub jvm_args: String,
     pub on_launch: String,
+    pub close_on_exit: bool,
+    pub language: String,
     pub accent: String,
     pub selected_major: String,
     pub selected_versions: HashMap<String, String>,
@@ -30,6 +32,8 @@ impl Default for Settings {
             fullscreen: false,
             jvm_args: String::new(),
             on_launch: "hide".into(),
+            close_on_exit: false,
+            language: String::new(),
             accent: DEFAULT_ACCENT.into(),
             selected_major: String::new(),
             selected_versions: HashMap::new(),
@@ -81,7 +85,19 @@ impl Settings {
             self.client_id = uuid::Uuid::new_v4().simple().to_string();
         }
         self.jvm_args = self.jvm_args.replace(['\r', '\n'], " ");
+        if !is_language_code(&self.language) {
+            self.language.clear();
+        }
     }
+}
+
+fn is_language_code(value: &str) -> bool {
+    let Some((lang, region)) = value.split_once('_') else {
+        return false;
+    };
+    (2..=3).contains(&lang.len())
+        && (2..=4).contains(&region.len())
+        && value.chars().all(|c| c.is_ascii_lowercase() || c == '_')
 }
 
 fn is_hex_color(value: &str) -> bool {

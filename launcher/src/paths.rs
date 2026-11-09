@@ -63,6 +63,10 @@ pub fn mods(major: &str) -> PathBuf {
     instance(major).join("mods")
 }
 
+pub fn game_pid_file() -> PathBuf {
+    root().join("game.pid")
+}
+
 pub fn settings_file() -> PathBuf {
     root().join("settings.json")
 }

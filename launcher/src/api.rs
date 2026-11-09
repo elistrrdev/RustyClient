@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use crate::bridge::{Incoming, Reply};
 use crate::config::Settings;
 use crate::state::core;
-use crate::{auth, content, launch, mods, paths, win};
+use crate::{auth, content, launch, mods, paths, storage, update, win};
 
 pub async fn route(route: &str, request: &Incoming) -> Reply {
     match route {
@@ -16,6 +16,9 @@ pub async fn route(route: &str, request: &Incoming) -> Reply {
         "/window/close" => window(win::WM_APP_CLOSE),
         "/open" => open(request),
         "/settings" => save_settings(request),
+        "/about" => about(request),
+        "/storage" => Reply::json(storage::sizes()),
+        "/storage/clear" => clear_storage(request),
         "/auth/login" => {
             auth::start_login();
             Reply::json(state_json())
@@ -72,6 +75,7 @@ fn state_json() -> Value {
         "auth": core.auth.lock().unwrap().clone(),
         "accounts": accounts_json(),
         "maximized": win::is_maximized(),
+        "update": update::status(),
     })
 }
 
@@ -106,7 +110,13 @@ fn open(request: &Incoming) -> Reply {
     let major = open.major.unwrap_or_default();
     let known = content::SUPPORTED_MAJORS.contains(&major.as_str());
     let target = match open.folder.as_deref() {
+        Some("root") => paths::root().to_path_buf(),
+        Some("game") if known => paths::instance(&major),
         Some("mods") if known => paths::mods(&major),
+        Some("resourcepacks") if known => paths::instance(&major).join("resourcepacks"),
+        Some("screenshots") if known => paths::instance(&major).join("screenshots"),
+        Some("saves") if known => paths::instance(&major).join("saves"),
+        Some("config") if known => paths::instance(&major).join("config"),
         Some("logs") if known => paths::instance(&major).join("logs"),
         Some("crash") => {
             let path = std::path::PathBuf::from(open.path.unwrap_or_default());
@@ -121,6 +131,94 @@ fn open(request: &Incoming) -> Reply {
     let _ = std::fs::create_dir_all(&target);
     win::shell_open(&target.to_string_lossy());
     Reply::json(json!({}))
+}
+
+fn java_version() -> Option<String> {
+    let entries = std::fs::read_dir(paths::runtimes()).ok()?;
+    let mut found: Vec<String> = entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let release = std::fs::read_to_string(entry.path().join("release")).ok()?;
+            release
+                .lines()
+                .find_map(|line| line.strip_prefix("JAVA_VERSION="))
+                .map(|v| v.trim().trim_matches('"').to_string())
+        })
+        .collect();
+    found.sort_by_key(|v| v.split(['.', '_', '+']).map(|p| p.parse::<u64>().unwrap_or(0)).collect::<Vec<_>>());
+    found.pop()
+}
+
+fn fabric_loader_version(game: &str) -> Option<String> {
+    let bytes = std::fs::read(paths::meta().join("fabric").join(format!("{game}.json"))).ok()?;
+    let profile: Value = serde_json::from_slice(&bytes).ok()?;
+    profile["libraries"].as_array()?.iter().find_map(|lib| {
+        lib["name"]
+            .as_str()?
+            .strip_prefix("net.fabricmc:fabric-loader:")
+            .map(str::to_string)
+    })
+}
+
+fn fabric_api_version(major: &str) -> Option<String> {
+    let bytes = std::fs::read(paths::instance(major).join(".rustyclient").join("managed.json")).ok()?;
+    let record: Value = serde_json::from_slice(&bytes).ok()?;
+    let file = record["fabricApi"]["file"].as_str()?;
+    Some(
+        file.trim_start_matches("fabric-api-")
+            .trim_end_matches(".jar")
+            .to_string(),
+    )
+}
+
+fn about(request: &Incoming) -> Reply {
+    let version = request.param("version").to_string();
+    let major = content::major_of(&version);
+    let cef = String::from_utf8_lossy(cef::sys::CEF_VERSION).trim_end_matches('\0').to_string();
+    let chromium = format!(
+        "{}.{}.{}.{}",
+        cef::sys::CHROME_VERSION_MAJOR,
+        cef::sys::CHROME_VERSION_MINOR,
+        cef::sys::CHROME_VERSION_BUILD,
+        cef::sys::CHROME_VERSION_PATCH
+    );
+    Reply::json(json!({
+        "launcher": update::VERSION,
+        "build": if cfg!(feature = "portable") { "Portable" } else { "Installed" },
+        "cef": cef.split('+').next().unwrap_or_default(),
+        "chromium": chromium,
+        "rust": env!("RUSTY_RUSTC_VERSION"),
+        "windows": if win::is_win11() { "Windows 11" } else { "Windows 10" },
+        "windowsBuild": format!("{}.{}.{}", win::os_version().0, win::os_version().1, win::os_version().2),
+        "java": java_version(),
+        "minecraft": major.as_ref().map(|_| version.clone()),
+        "fabricLoader": major.as_ref().and_then(|_| fabric_loader_version(&version)),
+        "fabricApi": major.as_deref().and_then(fabric_api_version),
+    }))
+}
+
+#[derive(Deserialize)]
+struct ClearRequest {
+    target: String,
+}
+
+fn clear_storage(request: &Incoming) -> Reply {
+    let Some(clear) = request.json::<ClearRequest>() else {
+        return Reply::error("Invalid request.");
+    };
+    let result = match clear.target.as_str() {
+        "launcher" => storage::clear_launcher(),
+        "game" => storage::clear_game(),
+        _ => return Reply::error("Unknown cache."),
+    };
+    match result {
+        Ok(freed) => {
+            let mut sizes = storage::sizes();
+            sizes["freed"] = json!(freed);
+            Reply::json(sizes)
+        }
+        Err(error) => Reply::error(error),
+    }
 }
 
 fn save_settings(request: &Incoming) -> Reply {

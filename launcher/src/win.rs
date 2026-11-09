@@ -10,7 +10,7 @@ use windows_sys::Win32::Graphics::Gdi::*;
 use windows_sys::Win32::Security::Cryptography::*;
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::System::SystemInformation::*;
-use windows_sys::Win32::System::Threading::CreateMutexW;
+use windows_sys::Win32::System::Threading::{CreateMutexW, OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject};
 use windows_sys::Win32::UI::HiDpi::*;
 use windows_sys::Win32::UI::Shell::*;
 use windows_sys::Win32::UI::WindowsAndMessaging::*;
@@ -169,6 +169,32 @@ pub fn shell_open(target: &str) -> bool {
         let file = wide(target);
         let result = ShellExecuteW(null_mut(), verb.as_ptr(), file.as_ptr(), null(), null(), SW_SHOWNORMAL);
         result as isize > 32
+    }
+}
+
+#[cfg(not(feature = "portable"))]
+pub fn shell_run(file: &std::path::Path, parameters: &str) -> bool {
+    unsafe {
+        let verb = wide("open");
+        let file = wide(&file.to_string_lossy());
+        let parameters = wide(parameters);
+        let result = ShellExecuteW(null_mut(), verb.as_ptr(), file.as_ptr(), parameters.as_ptr(), null(), SW_SHOWNORMAL);
+        result as isize > 32
+    }
+}
+
+pub fn wait_for_previous_instance() {
+    let Some(pid) = std::env::args()
+        .find_map(|arg| arg.strip_prefix("--after-update=").and_then(|p| p.parse::<u32>().ok()))
+    else {
+        return;
+    };
+    unsafe {
+        let handle = OpenProcess(PROCESS_SYNCHRONIZE, 0, pid);
+        if !handle.is_null() {
+            WaitForSingleObject(handle, 20_000);
+            CloseHandle(handle);
+        }
     }
 }
 
