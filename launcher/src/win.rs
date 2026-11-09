@@ -217,7 +217,7 @@ pub fn apply_dark_frame(hwnd: HWND) {
 }
 
 unsafe fn app_icon(instance: HINSTANCE, cx: SYSTEM_METRICS_INDEX, cy: SYSTEM_METRICS_INDEX) -> HICON {
-    unsafe { LoadImageW(instance, 1 as _, IMAGE_ICON, GetSystemMetrics(cx), GetSystemMetrics(cy), LR_DEFAULTCOLOR) as HICON }
+    unsafe { LoadImageW(instance, 2 as _, IMAGE_ICON, GetSystemMetrics(cx), GetSystemMetrics(cy), LR_DEFAULTCOLOR) as HICON }
 }
 
 pub fn create_main_window(spec: &WindowSpec) -> HWND {

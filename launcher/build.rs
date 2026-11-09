@@ -12,6 +12,7 @@ fn main() {
 
     println!("cargo::rerun-if-changed=RustyClient.rc");
     println!("cargo::rerun-if-changed=RustyClient.ico");
+    println!("cargo::rerun-if-changed=RustyClientWindow.ico");
     println!("cargo::rerun-if-changed=RustyClient.manifest");
     println!("cargo::rerun-if-changed=RustyClientSetup.rc");
     println!("cargo::rerun-if-changed=RustyClientSetup.manifest");

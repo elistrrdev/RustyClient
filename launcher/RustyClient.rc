@@ -1,5 +1,6 @@
 #define RT_MANIFEST 24
 1 ICON "RustyClient.ico"
+2 ICON "RustyClientWindow.ico"
 1 RT_MANIFEST "RustyClient.manifest"
 
 1 VERSIONINFO
