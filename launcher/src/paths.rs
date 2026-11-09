@@ -59,6 +59,15 @@ pub fn instance(major: &str) -> PathBuf {
     instances().join(sanitize(major))
 }
 
+pub fn create_instance_folders() {
+    for major in crate::content::SUPPORTED_MAJORS {
+        let dir = instance(major);
+        for name in ["mods", "resourcepacks", "saves", "screenshots", "config", "logs"] {
+            let _ = std::fs::create_dir_all(dir.join(name));
+        }
+    }
+}
+
 pub fn mods(major: &str) -> PathBuf {
     instance(major).join("mods")
 }

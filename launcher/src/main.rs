@@ -71,6 +71,7 @@ fn main() {
     #[cfg(not(feature = "setup"))]
     {
         let _ = state::core();
+        paths::create_instance_folders();
         state::runtime().spawn(async {
             let _ = content::get(false).await;
         });
