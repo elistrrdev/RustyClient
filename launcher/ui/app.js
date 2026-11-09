@@ -845,6 +845,7 @@ async function renderAbout() {
     ${dependencyCard(icon("box", 17), "Minecraft", "Selected version", info.minecraft)}
     ${dependencyCard(icon("layers", 17), "Fabric Loader", `Latest stable for ${info.minecraft || "the selected version"}`, info.fabricLoader)}
     ${dependencyCard(icon("puzzle", 17), "Fabric API", "Installed and updated on every launch", info.fabricApi)}
+    ${dependencyCard(icon("sparkles", 17), "Rusty Client mod", "In-game client, loaded on every launch", info.clientMod)}
     ${dependencyCard(icon("monitor", 17), info.windows, "Operating system build", info.windowsBuild)}
   </div>
   <div class="group-label">Folders${major ? ` <span class="badge">${esc(major)}</span>` : ""}</div>

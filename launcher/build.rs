@@ -67,6 +67,8 @@ fn main() {
         }
     }
 
+    write_client_mods(&out_dir, setup);
+
     if setup {
         let payload = PathBuf::from(std::env::var("RUSTY_SETUP_PAYLOAD").expect("RUSTY_SETUP_PAYLOAD must point at the installed build"));
         println!("cargo::rerun-if-changed={}", payload.display());
@@ -123,4 +125,49 @@ fn write_pack(files: &[(PathBuf, String)], target: &Path) {
     }
     encoder.finish().unwrap().flush().unwrap();
     std::fs::rename(&partial, target).unwrap();
+}
+
+fn write_client_mods(out_dir: &Path, setup: bool) {
+    println!("cargo::rerun-if-env-changed=RUSTY_CLIENT_JARS");
+    let client = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("..").join("client");
+    let properties = client.join("gradle.properties");
+    println!("cargo::rerun-if-changed={}", properties.display());
+    let mod_version = std::fs::read_to_string(&properties)
+        .unwrap_or_default()
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("mod_version=").map(|v| v.trim().to_string()))
+        .unwrap_or_default();
+
+    let required = std::env::var_os("RUSTY_CLIENT_JARS").map(PathBuf::from);
+    let dir = required.clone().unwrap_or_else(|| client.join("build").join("jars"));
+    println!("cargo::rerun-if-changed={}", dir.display());
+
+    let mut jars: Vec<(String, PathBuf)> = Vec::new();
+    if !setup {
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if let Some(major) = name.strip_prefix("rustyclient-").and_then(|n| n.strip_suffix(".jar")) {
+                    println!("cargo::rerun-if-changed={}", entry.path().display());
+                    jars.push((major.to_string(), entry.path()));
+                }
+            }
+        }
+        jars.sort();
+        if required.is_some() && jars.is_empty() {
+            panic!("no client jars found in {}", dir.display());
+        }
+    }
+
+    let mut table = String::new();
+    let mut output = zstd::stream::Encoder::new(Vec::new(), 19).unwrap();
+    for (major, path) in &jars {
+        let bytes = std::fs::read(path).expect("read client jar");
+        table.push_str(&format!("    (\"{major}\", {}, \"{}\"),\n", bytes.len(), hex::encode(Sha1::digest(&bytes))));
+        output.write_all(&bytes).unwrap();
+    }
+    let pack = output.finish().unwrap();
+    std::fs::write(out_dir.join("client-mods.zst"), pack).unwrap();
+    let source = format!("pub const MOD_VERSION: &str = \"{mod_version}\";\npub const JARS: &[(&str, u64, &str)] = &[\n{table}];\n");
+    std::fs::write(out_dir.join("client_mods.rs"), source).unwrap();
 }

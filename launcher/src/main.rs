@@ -6,6 +6,7 @@ mod api;
 mod app;
 mod auth;
 mod bridge;
+mod client;
 mod config;
 mod content;
 mod install;

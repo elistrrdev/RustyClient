@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "rustyclient",
+	"version": "${version}",
+	"name": "Rusty Client",
+	"description": "The Rusty Client in-game client.",
+	"authors": ["elistrrdev"],
+	"contact": {
+		"homepage": "https://github.com/elistrrdev/RustyClient",
+		"sources": "https://github.com/elistrrdev/RustyClient"
+	},
+	"license": "GPL-3.0-only",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.rustyclient.RustyClient"]
+	},
+	"mixins": ["rustyclient.mixins.json", "rustyclient.version.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~${mc}",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

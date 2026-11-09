@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.rustyclient.mixin.version",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"VersionMixins$Clock",
+		"VersionMixins$Fire",
+		"VersionMixins$Hand",
+		"VersionMixins$Motion"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

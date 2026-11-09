@@ -1,4 +1,5 @@
 use std::collections::{HashMap, VecDeque};
+use std::io::{LineWriter, Write};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::{Arc, Mutex};
@@ -177,6 +178,7 @@ fn build_arguments(
     if let Some(logging) = &prepared.logging_arg {
         jvm.push(logging.clone());
     }
+    jvm.push(format!("-Dfabric.addMods={}", prepared.client_mod.to_string_lossy()));
     jvm.extend(split_args(&settings.jvm_args));
 
     let main_class = prepared
@@ -251,6 +253,7 @@ async fn spawn_game(
     apply_language(&prepared.game_dir, &settings.language);
     let (args, classpath) = build_arguments(id, settings, account, &prepared);
     let args = use_argfile(args, &classpath, &paths::versions().join(id));
+    let output = open_output_log(&prepared, &args, account);
     let mut command = tokio::process::Command::new(&prepared.java);
     command
         .args(&args)
@@ -260,9 +263,13 @@ async fn spawn_game(
         .stderr(Stdio::piped())
         .creation_flags(CREATE_NO_WINDOW)
         .kill_on_drop(false);
-    let mut child = command
-        .spawn()
-        .map_err(|e| format!("Could not start Java: {e}"))?;
+    let mut child = match command.spawn() {
+        Ok(child) => child,
+        Err(error) => {
+            write_line(&output, &format!("could not start java: {error}"));
+            return Err(format!("Could not start Java: {error}"));
+        }
+    };
 
     let started = now_secs();
     if let Some(pid) = child.id() {
@@ -290,10 +297,10 @@ async fn spawn_game(
     let log: Arc<Mutex<VecDeque<String>>> = Arc::new(Mutex::new(VecDeque::with_capacity(400)));
     let mut readers = Vec::new();
     if let Some(stdout) = child.stdout.take() {
-        readers.push(tokio::spawn(pump(BufReader::new(stdout), log.clone())));
+        readers.push(tokio::spawn(pump(BufReader::new(stdout), log.clone(), output.clone())));
     }
     if let Some(stderr) = child.stderr.take() {
-        readers.push(tokio::spawn(pump(BufReader::new(stderr), log.clone())));
+        readers.push(tokio::spawn(pump(BufReader::new(stderr), log.clone(), output.clone())));
     }
 
     let mut killed = false;
@@ -312,6 +319,7 @@ async fn spawn_game(
     let _ = std::fs::remove_file(paths::game_pid_file());
 
     let code = status.and_then(|s| s.code()).unwrap_or(-1);
+    write_line(&output, &format!("process exited with code {code}"));
     let crashed = !killed && code != 0;
     {
         let mut game = core.game.lock().unwrap();
@@ -353,9 +361,39 @@ fn apply_language(game_dir: &Path, language: &str) {
     let _ = write_atomic(&file, (lines.join("\n") + "\n").as_bytes());
 }
 
-async fn pump<R: tokio::io::AsyncRead + Unpin>(reader: BufReader<R>, log: Arc<Mutex<VecDeque<String>>>) {
+type OutputLog = Arc<Mutex<Option<LineWriter<std::fs::File>>>>;
+
+const OUTPUT_LOG: &str = "rustyclient-launch.log";
+
+fn open_output_log(prepared: &Prepared, args: &[String], account: &Account) -> OutputLog {
+    let dir = prepared.game_dir.join("logs");
+    let _ = std::fs::create_dir_all(&dir);
+    let file = std::fs::File::create(dir.join(OUTPUT_LOG)).ok().map(LineWriter::new);
+    let output: OutputLog = Arc::new(Mutex::new(file));
+    let hide = |text: &str| {
+        if account.mc_token.is_empty() {
+            text.to_string()
+        } else {
+            text.replace(&account.mc_token, "<hidden>")
+        }
+    };
+    write_line(&output, &format!("rusty client {}", crate::update::VERSION));
+    write_line(&output, &format!("java: {}", prepared.java.to_string_lossy()));
+    write_line(&output, &format!("arguments: {}", hide(&args.join(" "))));
+    write_line(&output, "");
+    output
+}
+
+fn write_line(output: &OutputLog, line: &str) {
+    if let Some(file) = output.lock().unwrap().as_mut() {
+        let _ = writeln!(file, "{line}");
+    }
+}
+
+async fn pump<R: tokio::io::AsyncRead + Unpin>(reader: BufReader<R>, log: Arc<Mutex<VecDeque<String>>>, output: OutputLog) {
     let mut lines = reader.lines();
     while let Ok(Some(line)) = lines.next_line().await {
+        write_line(&output, &line);
         let mut log = log.lock().unwrap();
         if log.len() >= 400 {
             log.pop_front();

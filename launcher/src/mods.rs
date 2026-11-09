@@ -60,9 +60,6 @@ fn managed_files(major: &str) -> Vec<String> {
     if let Some(file) = record["fabricApi"]["file"].as_str() {
         files.push(file.to_string());
     }
-    if let Ok(entries) = std::fs::read_dir(paths::bundled_client_mods(major)) {
-        files.extend(entries.filter_map(Result::ok).map(|e| e.file_name().to_string_lossy().to_string()));
-    }
     files
 }
 

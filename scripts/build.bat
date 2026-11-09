@@ -8,6 +8,25 @@ if errorlevel 1 exit /b 1
 pushd "%~dp0.."
 if not exist target\stage mkdir target\stage
 
+rem in-game client jars, embedded into the installed and portable launcher
+echo building the in-game client
+if not defined RUSTY_CLIENT_JDK set "RUSTY_CLIENT_JDK=%ProgramFiles%\BellSoft\LibericaJDK-25"
+if not exist "%RUSTY_CLIENT_JDK%\bin\java.exe" (
+    echo could not find jdk 25 at %RUSTY_CLIENT_JDK%, set RUSTY_CLIENT_JDK
+    goto failed
+)
+pushd client
+set "JAVA_HOME=%RUSTY_CLIENT_JDK%"
+call "%CD%\gradlew.bat" collectJars --no-daemon
+set "GRADLE_RESULT=%ERRORLEVEL%"
+popd
+if not "%GRADLE_RESULT%"=="0" goto failed
+if exist target\stage\client rmdir /s /q target\stage\client
+mkdir target\stage\client
+copy /y client\build\jars\rustyclient-*.jar target\stage\client\ >nul
+if errorlevel 1 goto failed
+set "RUSTY_CLIENT_JARS=%CD%\target\stage\client"
+
 rem installed build, it ships inside the installer next to the cef files
 echo building the installed launcher
 cargo build --release -p RustyClient

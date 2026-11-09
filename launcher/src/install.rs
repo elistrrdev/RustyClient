@@ -9,6 +9,7 @@ use serde_json::{Value, json};
 use sha1::{Digest, Sha1};
 use tokio::io::AsyncWriteExt;
 
+use crate::client;
 use crate::config::{Settings, write_atomic};
 use crate::content::{self, VersionEntry};
 use crate::paths;
@@ -21,6 +22,7 @@ const RESOURCES: &str = "https://resources.download.minecraft.net";
 const FABRIC_META: &str = "https://meta.fabricmc.net/v2";
 const MODRINTH: &str = "https://api.modrinth.com/v2";
 const FABRIC_API_PROJECT: &str = "P7dR8mSH";
+const RUNTIME_MARKER: &str = "v2";
 
 #[derive(Clone, Debug)]
 pub struct Download {
@@ -38,6 +40,7 @@ pub struct Prepared {
     pub natives_dir: PathBuf,
     pub game_dir: PathBuf,
     pub logging_arg: Option<String>,
+    pub client_mod: PathBuf,
 }
 
 #[derive(Default)]
@@ -353,13 +356,14 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
     core.set_task("Preparing", "Checking Java runtime", 0.06);
     let component = version["javaVersion"]["component"].as_str().unwrap_or("java-runtime-epsilon").to_string();
     let (files, java, java_marker) = java_runtime(core, &component).await?;
-    downloads.extend(files);
+    let runtime_deep = !verified || java_marker.is_some();
+    let mut checks: Vec<(Download, bool)> = downloads.into_iter().map(|d| (d, !verified)).collect();
+    checks.extend(files.into_iter().map(|d| (d, runtime_deep)));
 
-    let deep = !verified;
     core.set_task("Checking files", "Verifying game files", 0.08);
     let checked = Arc::new(AtomicUsize::new(0));
-    let total_checks = downloads.len().max(1);
-    let missing: Vec<Download> = futures_util::stream::iter(downloads.into_iter().map(|download| {
+    let total_checks = checks.len().max(1);
+    let missing: Vec<Download> = futures_util::stream::iter(checks.into_iter().map(|(download, deep)| {
         let checked = checked.clone();
         let core = core.clone();
         async move {
@@ -398,11 +402,16 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
     let game_dir = paths::instance(major);
     let _ = tokio::fs::create_dir_all(game_dir.join("mods")).await;
 
-    core.set_task("Preparing", "Updating mods", 0.98);
-    if fabric.is_some() {
-        let _ = sync_fabric_api(core, &entry.id, major).await;
-        sync_bundled_mods(major).await;
+    if fabric.is_none() {
+        return Err("Fabric could not be loaded for this version. Check your internet connection and try again.".into());
     }
+    core.set_task("Preparing", "Updating mods", 0.98);
+    let _ = sync_fabric_api(core, &entry.id, major).await;
+    remove_stray_client_jars(major).await;
+    let major_owned = major.to_string();
+    let client_mod = tokio::task::spawn_blocking(move || client::install(&major_owned))
+        .await
+        .map_err(|_| "Could not prepare the Rusty Client mod.".to_string())??;
 
     Ok(Prepared {
         version,
@@ -412,35 +421,35 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
         natives_dir,
         game_dir,
         logging_arg,
+        client_mod,
     })
 }
 
 async fn java_runtime(core: &Core, component: &str) -> Result<(Vec<Download>, PathBuf, Option<(PathBuf, String)>), String> {
     let root = paths::runtimes().join(component);
-    let javaw = root.join("bin").join("javaw.exe");
+    let java = root.join("bin").join("java.exe");
     let marker = root.join(".rusty-runtime");
     let manifest_cache = paths::meta().join(format!("runtime-{component}.json"));
 
     let runtimes = match fetch_json(core, JAVA_RUNTIMES).await {
         Ok(value) => value,
         Err(error) => {
-            if javaw.is_file() {
-                return Ok((Vec::new(), javaw, None));
+            if java.is_file() {
+                return Ok((Vec::new(), java, None));
             }
             return Err(error);
         }
     };
     let Some(info) = runtimes["windows-x64"][component].as_array().and_then(|a| a.first()).cloned() else {
-        if javaw.is_file() {
-            return Ok((Vec::new(), javaw, None));
+        if java.is_file() {
+            return Ok((Vec::new(), java, None));
         }
         return Err(format!("Mojang does not offer the {component} Java runtime for this system."));
     };
     let manifest_sha = info["manifest"]["sha1"].as_str().unwrap_or_default().to_string();
+    let marker_value = format!("{RUNTIME_MARKER}:{manifest_sha}");
     let installed = tokio::fs::read_to_string(&marker).await.unwrap_or_default();
-    if installed.trim() == manifest_sha && javaw.is_file() {
-        return Ok((Vec::new(), javaw, None));
-    }
+    let current = installed.trim() == marker_value && java.is_file();
     let manifest = json_file(
         core,
         info["manifest"]["url"].as_str().unwrap_or_default(),
@@ -469,7 +478,8 @@ async fn java_runtime(core: &Core, component: &str) -> Result<(Vec<Download>, Pa
             _ => {}
         }
     }
-    Ok((downloads, javaw, Some((marker, manifest_sha))))
+    let pending = (!current).then_some((marker, marker_value));
+    Ok((downloads, java, pending))
 }
 
 async fn fabric_profile(core: &Core, game: &str) -> Option<Value> {
@@ -590,7 +600,9 @@ async fn try_download(core: &Core, item: &Download, progress: &AtomicU64, counte
     if !response.status().is_success() {
         return Err(format!("server answered {}", response.status().as_u16()));
     }
-    let partial = item.path.with_extension("rusty-part");
+    let mut partial_name = item.path.file_name().unwrap_or_default().to_os_string();
+    partial_name.push(".rusty-part");
+    let partial = item.path.with_file_name(partial_name);
     let mut file = tokio::fs::File::create(&partial).await.map_err(|e| e.to_string())?;
     let mut hasher = Sha1::new();
     let mut stream = response.bytes_stream();
@@ -709,22 +721,15 @@ async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
     Some(())
 }
 
-async fn sync_bundled_mods(major: &str) {
-    let source = paths::bundled_client_mods(major);
-    let Ok(mut entries) = tokio::fs::read_dir(&source).await else {
+async fn remove_stray_client_jars(major: &str) {
+    let Ok(mut entries) = tokio::fs::read_dir(paths::mods(major)).await else {
         return;
     };
-    let mods = paths::mods(major);
     while let Ok(Some(entry)) = entries.next_entry().await {
-        let name = entry.file_name().to_string_lossy().to_string();
-        if !name.to_ascii_lowercase().ends_with(".jar") {
-            continue;
-        }
-        let target = mods.join(&name);
-        let source_len = entry.metadata().await.map(|m| m.len()).unwrap_or(0);
-        let target_len = tokio::fs::metadata(&target).await.map(|m| m.len()).ok();
-        if target_len != Some(source_len) && !mods.join(format!("{name}.disabled")).exists() {
-            let _ = tokio::fs::copy(entry.path(), &target).await;
+        let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
+        let jar = name.ends_with(".jar") || name.ends_with(".jar.disabled");
+        if jar && name.starts_with("rustyclient-") {
+            let _ = tokio::fs::remove_file(entry.path()).await;
         }
     }
 }

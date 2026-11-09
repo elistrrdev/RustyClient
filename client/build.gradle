@@ -1,0 +1,60 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+}
+
+subprojects {
+	apply plugin: 'net.fabricmc.fabric-loom'
+
+	def mc = project.property('mc_minor')
+
+	version = rootProject.property('mod_version')
+	group = 'com.rustyclient'
+
+	base {
+		archivesName = "rustyclient-$mc"
+	}
+
+	sourceSets {
+		main {
+			java.srcDirs += rootProject.file('src/main/java')
+			resources.srcDirs += rootProject.file('src/main/resources')
+		}
+	}
+
+	dependencies {
+		minecraft "com.mojang:minecraft:${project.property('minecraft_version')}"
+		implementation "net.fabricmc:fabric-loader:${rootProject.property('loader_version')}"
+		implementation "net.fabricmc.fabric-api:fabric-api:${project.property('fabric_api_version')}"
+	}
+
+	processResources {
+		def props = [version: rootProject.property('mod_version'), mc: mc]
+		inputs.properties props
+		filesMatching('fabric.mod.json') {
+			expand props
+		}
+	}
+
+	tasks.withType(JavaCompile).configureEach {
+		options.release = 25
+		options.encoding = 'UTF-8'
+	}
+
+	java {
+		sourceCompatibility = JavaVersion.VERSION_25
+		targetCompatibility = JavaVersion.VERSION_25
+	}
+
+	jar {
+		archiveFileName = "rustyclient-${mc}.jar"
+		from(rootProject.file('../LICENSE')) {
+			rename { 'LICENSE_rustyclient' }
+		}
+	}
+}
+
+tasks.register('collectJars', Copy) {
+	dependsOn subprojects.collect { it.tasks.named('build') }
+	from subprojects.collect { it.layout.buildDirectory.file("libs/rustyclient-${it.property('mc_minor')}.jar") }
+	into layout.buildDirectory.dir('jars')
+}

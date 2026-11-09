@@ -169,7 +169,9 @@ pub fn write_atomic(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()>
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let tmp = path.with_extension("tmp");
+    let mut tmp_name = path.file_name().unwrap_or_default().to_os_string();
+    tmp_name.push(".tmp");
+    let tmp = path.with_file_name(tmp_name);
     std::fs::write(&tmp, bytes)?;
     std::fs::rename(&tmp, path)
 }

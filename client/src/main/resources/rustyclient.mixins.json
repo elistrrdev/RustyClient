@@ -1,0 +1,28 @@
+{
+	"required": true,
+	"package": "com.rustyclient.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"BossOverlayAccessor",
+		"CameraMixin",
+		"ChatAccessor",
+		"ChatMixins$Copy",
+		"ChatMixins$Messages",
+		"EntityMixin",
+		"FogMixins$Lava",
+		"FogMixins$Water",
+		"GameRendererMixin",
+		"InputMixins$Scroll",
+		"LightmapMixin",
+		"OverlayTextureAccessor",
+		"RenderMixins$NameBackground",
+		"RenderMixins$OwnName",
+		"RenderMixins$Physics",
+		"ScreenMixin",
+		"WorldMixins$Events",
+		"WorldMixins$Weather"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

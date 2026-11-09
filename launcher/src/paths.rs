@@ -84,10 +84,6 @@ pub fn accounts_file() -> PathBuf {
     root().join("accounts.dat")
 }
 
-pub fn bundled_client_mods(major: &str) -> PathBuf {
-    exe_dir().join("client").join(sanitize(major))
-}
-
 pub fn sanitize(name: &str) -> String {
     name.chars()
         .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
