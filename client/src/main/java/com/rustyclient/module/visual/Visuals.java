@@ -169,7 +169,7 @@ public final class Visuals {
 		private boolean savedSmooth;
 
 		public Zoom() {
-			super("Zoom", "zoom-in", Category.VISUAL, true);
+			super("Zoom", "zoom-in", Category.VISUAL, false);
 		}
 
 		@Override

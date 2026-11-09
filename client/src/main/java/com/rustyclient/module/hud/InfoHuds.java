@@ -162,7 +162,7 @@ public final class InfoHuds {
 			d.rect(w / 2f - 0.5f, 0, 1, 3, accent());
 			if (degrees.on()) {
 				String deg = Math.round(heading) % 360 + "°";
-				d.textCenter(deg, w / 2f, 19.5f, Fonts.Style.MONO_MEDIUM, 7, textColor.argb());
+				d.textCenter(deg, w / 2f, 19.5f, Fonts.Style.SEMIBOLD, 7, textColor.argb());
 			}
 		}
 	}
@@ -274,7 +274,7 @@ public final class InfoHuds {
 				panel(d, w, editing ? row : 0.1f);
 				if (editing) {
 					d.textShadowed("Speed II", 26, 7, Fonts.Style.SEMIBOLD, 9, textColor.argb(), shadow.on());
-					d.textShadowed("1:30", 26, 16, Fonts.Style.MONO, 7, Theme.fade(textColor.argb(), 0.7f), shadow.on());
+					d.textShadowed("1:30", 26, 16, Fonts.Style.MEDIUM, 7, Theme.fade(textColor.argb(), 0.7f), shadow.on());
 				}
 				return;
 			}
@@ -293,7 +293,7 @@ public final class InfoHuds {
 				}
 				float tx = icons.on() ? 26 : 5;
 				d.textShadowed(name(e), tx, y + 7, Fonts.Style.SEMIBOLD, 9, effectColor(e.getEffect()), shadow.on());
-				d.textShadowed(time(e), tx, y + 16, Fonts.Style.MONO, 7, Theme.fade(textColor.argb(), 0.75f), shadow.on());
+				d.textShadowed(time(e), tx, y + 16, Fonts.Style.MEDIUM, 7, Theme.fade(textColor.argb(), 0.75f), shadow.on());
 				d.alpha(prev);
 				y += row;
 			}

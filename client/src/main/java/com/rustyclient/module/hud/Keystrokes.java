@@ -28,7 +28,7 @@ public final class Keystrokes extends HudModule {
 	private long last = System.nanoTime();
 
 	public Keystrokes() {
-		super("Keystrokes", "keyboard", Category.HUD, true, 0.01, 0.3);
+		super("Keystrokes", "keyboard", Category.HUD, false, 0.01, 0.3);
 	}
 
 	@Override
@@ -93,7 +93,7 @@ public final class Keystrokes extends HudModule {
 		int color = Theme.mix(textColor.argb(), Theme.INK, t);
 		if (cps.on()) {
 			d.textCenter(label, x + w / 2f, y + h / 2f - 3.5f, Fonts.Style.BOLD, 8, color);
-			d.textCenter(clicks + " CPS", x + w / 2f, y + h / 2f + 5f, Fonts.Style.MONO_MEDIUM, 5.5f, Theme.fade(color, 0.8f));
+			d.textCenter(clicks + " CPS", x + w / 2f, y + h / 2f + 5f, Fonts.Style.SEMIBOLD, 5.5f, Theme.fade(color, 0.8f));
 		} else {
 			d.textCenter(label, x + w / 2f, y + h / 2f, Fonts.Style.BOLD, 8.5f, color);
 		}

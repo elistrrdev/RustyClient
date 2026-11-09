@@ -122,7 +122,7 @@ final class ColorPicker {
 		float ry = hy + hh + 14;
 		if (target.alpha) {
 			d.textMid("Opacity", px, ry + 6, Fonts.Style.SEMIBOLD, 12, Theme.TEXT_3);
-			d.textRight(Math.round(alpha * 100) + "%", px + pw, ry + 6, Fonts.Style.MONO, 11, Theme.accentText());
+			d.textRight(Math.round(alpha * 100) + "%", px + pw, ry + 6, Fonts.Style.MEDIUM, 11, Theme.accentText());
 			float ty = ry + 18;
 			d.round(px, ty - 2.5f, pw, 5, 2.5f, Theme.SURFACE_3);
 			d.round(px, ty - 2.5f, Math.max(5, pw * alpha), 5, 2.5f, Theme.accent());
@@ -140,7 +140,7 @@ final class ColorPicker {
 		if (focused) {
 			d.ring(fx, ry, fw, 32, 8, 1, Theme.accent());
 		}
-		hex.draw(ui, fx + 10, ry + 16, fw - 20, "#RRGGBB", focused, Fonts.Style.MONO_MEDIUM, 12);
+		hex.draw(ui, fx + 10, ry + 16, fw - 20, "#RRGGBB", focused, Fonts.Style.SEMIBOLD, 12);
 		ui.click(fx, ry, fw, 32, () -> screen.focused = hex);
 	}
 

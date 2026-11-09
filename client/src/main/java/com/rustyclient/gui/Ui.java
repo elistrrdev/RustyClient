@@ -1,9 +1,11 @@
 package com.rustyclient.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.rustyclient.core.Theme;
 import com.rustyclient.module.ClientSettings;
 import com.rustyclient.render.Draw;
 import com.rustyclient.render.Fonts;
+import net.minecraft.client.input.MouseButtonEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +34,20 @@ public final class Ui {
 	private float clipX = -1e9f, clipY = -1e9f, clipW = 2e9f, clipH = 2e9f;
 	public Drag activeDrag;
 	public boolean blockHover;
+
+	public static int button(MouseButtonEvent event) {
+		int button = event.button();
+		if (button == InputConstants.MOUSE_BUTTON_LEFT) {
+			return 0;
+		}
+		if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
+			return 1;
+		}
+		if (button == InputConstants.MOUSE_BUTTON_MIDDLE) {
+			return 2;
+		}
+		return -1;
+	}
 
 	public void begin(Draw d, float mouseUnitsX, float mouseUnitsY, float dt) {
 		this.d = d;

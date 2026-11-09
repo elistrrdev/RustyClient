@@ -128,7 +128,13 @@ public final class Draw {
 	}
 
 	public void circle(float cx, float cy, float r, int argb) {
-		round(cx - r, cy - r, r * 2, r * 2, r, argb);
+		if ((argb >>> 24) == 0 || alpha <= 0f) {
+			return;
+		}
+		int size = Math.max(1, Math.round(r * 2 * s));
+		int x0 = Math.round(ox + cx * s - size / 2f);
+		int y0 = Math.round(oy + cy * s - size / 2f);
+		blit(Shapes.disc(size), x0, y0, size, size, 0, 0, size, size, col(argb));
 	}
 
 	private void shape(float x, float y, float w, float h, float r, int thickness, int blur, int argb) {

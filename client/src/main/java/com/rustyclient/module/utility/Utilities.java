@@ -43,7 +43,7 @@ public final class Utilities {
 		private boolean sneakWas;
 
 		public ToggleSprint() {
-			super("Toggle Sprint", "footprints", Category.UTILITY, true, 0.01, 0.97);
+			super("Toggle Sprint", "footprints", Category.UTILITY, false, 0.01, 0.97);
 			background.set(false);
 			showLabel.set(false);
 		}
@@ -159,7 +159,7 @@ public final class Utilities {
 		private long since;
 
 		public ScreenshotHelper() {
-			super("Screenshot Helper", "camera", Category.UTILITY, true);
+			super("Screenshot Helper", "camera", Category.UTILITY, false);
 		}
 
 		private Path dir() {
@@ -255,7 +255,7 @@ public final class Utilities {
 		public final ChoiceSetting format = choice("Timestamp format", APPEARANCE, "24 hour", "24 hour", "12 hour", "With seconds");
 
 		public Chat() {
-			super("Chat", "message-square", Category.UTILITY, true);
+			super("Chat", "message-square", Category.UTILITY, false);
 		}
 
 		public static Chat active() {

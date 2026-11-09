@@ -122,10 +122,10 @@ public final class CombatHuds {
 			String name = t.getName().getString();
 			d.textShadowed(name, tx, 13, Fonts.Style.BOLD, 10, Theme.TEXT, shadow.on());
 			String hpText = String.format(Locale.ROOT, "%.1f", hp + t.getAbsorptionAmount());
-			d.textShadowed(hpText, tx, 25, Fonts.Style.MONO_MEDIUM, 8, Theme.TEXT_3, shadow.on());
+			d.textShadowed(hpText, tx, 25, Fonts.Style.SEMIBOLD, 8, Theme.TEXT_3, shadow.on());
 			if (mc.player != null && t != mc.player) {
 				String dist = String.format(Locale.ROOT, "%.1fm", mc.player.distanceTo(t));
-				d.textRight(dist, w - 8, 13, Fonts.Style.MONO, 7.5f, Theme.MUTED);
+				d.textRight(dist, w - 8, 13, Fonts.Style.MEDIUM, 7.5f, Theme.MUTED);
 			}
 			float bx = tx, by = 34, bw = w - tx - 8, bh = 6;
 			d.round(bx, by, bw, bh, 3, Theme.SURFACE_3);
@@ -237,7 +237,7 @@ public final class CombatHuds {
 					break;
 				}
 				d.textMid(e.getKey(), 6, y, Fonts.Style.SEMIBOLD, 8.5f, textColor.argb());
-				d.textRight(String.valueOf(e.getValue()), w - 6, y, Fonts.Style.MONO_MEDIUM, 8.5f, Theme.accent());
+				d.textRight(String.valueOf(e.getValue()), w - 6, y, Fonts.Style.SEMIBOLD, 8.5f, Theme.accent());
 				y += row;
 			}
 		}

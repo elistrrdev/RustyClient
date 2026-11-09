@@ -61,7 +61,7 @@ public final class Widgets {
 	}
 
 	public static float keyChip(Ui ui, String label, float right, float cy, boolean listening) {
-		float w = Math.max(44, ui.d.width(label, Fonts.Style.MONO_MEDIUM, 11) + 22);
+		float w = Math.max(44, ui.d.width(label, Fonts.Style.SEMIBOLD, 11) + 22);
 		float h = 26;
 		float x = right - w;
 		int bg = listening ? Theme.accentSoft() : Theme.SURFACE_3;
@@ -69,7 +69,7 @@ public final class Widgets {
 		if (listening) {
 			ui.d.ring(x, cy - h / 2f, w, h, 6, 1, Theme.accent());
 		}
-		ui.d.textCenter(label, x + w / 2f, cy, Fonts.Style.MONO_MEDIUM, 11, listening ? Theme.accentText() : Theme.TEXT_2);
+		ui.d.textCenter(label, x + w / 2f, cy, Fonts.Style.SEMIBOLD, 11, listening ? Theme.accentText() : Theme.TEXT_2);
 		return w;
 	}
 }

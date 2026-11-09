@@ -225,7 +225,7 @@ final class ConfigView {
 		Ui ui = screen.ui;
 		Draw d = ui.d;
 		d.textMid(setting.name, x, y + 13, Fonts.Style.SEMIBOLD, 13, Theme.TEXT_2);
-		d.textRight(setting.text(), x + w - 6, y + 13, Fonts.Style.MONO, 11, Theme.accentText());
+		d.textRight(setting.text(), x + w - 6, y + 13, Fonts.Style.MEDIUM, 11, Theme.accentText());
 		float ty = y + 40;
 		float tx = x, tw = w - 6;
 		String key = "sl" + System.identityHashCode(setting);
@@ -298,7 +298,7 @@ final class ConfigView {
 			}
 		});
 		String hex = Theme.hex(setting.argb());
-		d.textMid(hex, sx + 42, sy + 15, Fonts.Style.MONO, 11, Theme.MUTED);
+		d.textMid(hex, sx + 42, sy + 15, Fonts.Style.MEDIUM, 11, Theme.MUTED);
 	}
 
 	private void swatchBox(float x, float y, int color, boolean active) {

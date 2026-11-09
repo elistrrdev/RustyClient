@@ -10,9 +10,7 @@ public final class Fonts {
 	public enum Style {
 		MEDIUM("outfit-medium.ttf"),
 		SEMIBOLD("outfit-semibold.ttf"),
-		BOLD("outfit-bold.ttf"),
-		MONO("dm-mono-regular.ttf"),
-		MONO_MEDIUM("dm-mono-medium.ttf");
+		BOLD("outfit-bold.ttf");
 
 		final String file;
 

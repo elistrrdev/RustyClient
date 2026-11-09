@@ -22,7 +22,7 @@ public final class SimpleHuds {
 		private final BoolSetting rightClicks = bool("Show right clicks", GENERAL, false);
 
 		public Cps() {
-			super("CPS", "mouse", Category.HUD, true, 0.01, 0.52);
+			super("CPS", "mouse", Category.HUD, false, 0.01, 0.52);
 		}
 
 		@Override
@@ -38,7 +38,7 @@ public final class SimpleHuds {
 
 	public static final class Fps extends TextHud {
 		public Fps() {
-			super("FPS", "gauge", Category.HUD, true, 0.01, 0.01);
+			super("FPS", "gauge", Category.HUD, false, 0.01, 0.01);
 		}
 
 		@Override

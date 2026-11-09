@@ -86,7 +86,7 @@ public final class ChatMixins {
 		@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
 		private void rusty$copy(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
 			Utilities.Chat chat = Utilities.Chat.active();
-			if (chat == null || !chat.copy.on() || event.button() != 1) {
+			if (chat == null || !chat.copy.on() || com.rustyclient.gui.Ui.button(event) != 1) {
 				return;
 			}
 			Minecraft mc = Minecraft.getInstance();

@@ -5,6 +5,7 @@ import java.util.Map;
 
 public final class Shapes {
 	private static final Map<Long, Tex> CACHE = new HashMap<>();
+	private static final Map<Integer, Tex> DISCS = new HashMap<>();
 
 	private Shapes() {
 	}
@@ -19,11 +20,33 @@ public final class Shapes {
 		return tex;
 	}
 
+	public static Tex disc(int size) {
+		return DISCS.computeIfAbsent(size, Shapes::buildDisc);
+	}
+
 	public static void clear() {
 		for (Tex tex : CACHE.values()) {
 			tex.close();
 		}
 		CACHE.clear();
+		for (Tex tex : DISCS.values()) {
+			tex.close();
+		}
+		DISCS.clear();
+	}
+
+	private static Tex buildDisc(int size) {
+		float[] coverage = new float[size * size];
+		float c = size / 2f;
+		for (int y = 0; y < size; y++) {
+			for (int x = 0; x < size; x++) {
+				float dx = x + 0.5f - c;
+				float dy = y + 0.5f - c;
+				float dist = (float) Math.sqrt(dx * dx + dy * dy) - c;
+				coverage[y * size + x] = clamp(0.5f - dist);
+			}
+		}
+		return Tex.alpha("disc", size, size, coverage);
 	}
 
 	private static Tex build(int radius, int thickness, int blur) {

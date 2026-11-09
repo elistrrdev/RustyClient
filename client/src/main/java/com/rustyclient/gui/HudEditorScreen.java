@@ -167,7 +167,7 @@ public final class HudEditorScreen extends Screen {
 		mouseY = event.y();
 		float m = px(event.x()), n = px(event.y());
 		int button = buttonAt(m, n);
-		if (button >= 0 && event.button() == 0) {
+		if (button >= 0 && Ui.button(event) == 0) {
 			if (button == 0) {
 				onClose();
 			} else if (button == 1) {
@@ -185,7 +185,7 @@ public final class HudEditorScreen extends Screen {
 			}
 			float x = hud.pixelX(), y = hud.pixelY(), w = hud.pixelWidth(), h = hud.pixelHeight();
 			float pad = 2 * gs, hs = 7 * gs;
-			if (event.button() == 0 && m >= x + w + pad - hs && n >= y + h + pad - hs && m < x + w + pad + hs && n < y + h + pad + hs) {
+			if (Ui.button(event) == 0 && m >= x + w + pad - hs && n >= y + h + pad - hs && m < x + w + pad + hs && n < y + h + pad + hs) {
 				scaling = hud;
 				scaleStart = hud.scale.v();
 				scaleStartW = Math.max(1, w);
@@ -194,7 +194,7 @@ public final class HudEditorScreen extends Screen {
 				return true;
 			}
 			if (m >= x - pad && n >= y - pad && m < x + w + pad && n < y + h + pad) {
-				if (event.button() == 1) {
+				if (Ui.button(event) == 1) {
 					parent.openConfig(hud);
 					parent.resetOpenAnimation();
 					Compat.setScreen(parent);

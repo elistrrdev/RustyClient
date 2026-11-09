@@ -44,7 +44,7 @@ final class ProfileView {
 		float tx = hx + head + 24;
 		d.textMid(name, tx, cardY + 46, Fonts.Style.BOLD, 22, Theme.TEXT);
 		String uuid = mc.getUser().getProfileId() == null ? "Offline" : mc.getUser().getProfileId().toString();
-		d.textMid(uuid, tx, cardY + 76, Fonts.Style.MONO, 12, Theme.MUTED);
+		d.textMid(uuid, tx, cardY + 76, Fonts.Style.MEDIUM, 12, Theme.MUTED);
 		String badge = "Rusty Client " + RustyClient.version();
 		float bw = d.width(badge, Fonts.Style.SEMIBOLD, 11) + 20;
 		d.round(tx, cardY + 92, bw, 22, 11, Theme.accentSoft());

@@ -34,6 +34,7 @@ public final class RustyScreen extends Screen {
 	public static final float RAIL_W = 63;
 	public static final float CONTENT_X = 84;
 	public static final float PAD_R = 20;
+	public static final float DEFAULT_FIT = 0.66f;
 
 	private static Page lastPage = Page.MODULES;
 	private static Category lastCategory = null;
@@ -117,7 +118,7 @@ public final class RustyScreen extends Screen {
 		float userScale = settings == null ? 1f : settings.uiScale.f();
 		int ww = Draw.windowWidth();
 		int wh = Draw.windowHeight();
-		scale = Math.max(0.45f, Math.min(ww * 0.9f / PANEL_W, wh * 0.88f / PANEL_H) * userScale);
+		scale = Math.max(0.45f, Math.min(ww * DEFAULT_FIT / PANEL_W, wh * DEFAULT_FIT / PANEL_H) * userScale);
 		scale = Math.min(scale, Math.min(ww * 0.98f / PANEL_W, wh * 0.98f / PANEL_H));
 		float openT = Math.min(1f, (now - opened) / 1e9f / 0.18f);
 		float closeT = closing ? Math.min(1f, (now - closeStart) / 1e9f / 0.12f) : 0f;
@@ -319,12 +320,6 @@ public final class RustyScreen extends Screen {
 		float ht = ui.anim("card" + module.id, hover ? 1f : 0f, 16f);
 		d.round(x, y, w, h, 12, Theme.mix(Theme.SURFACE, Theme.SURFACE_2, ht));
 		float et = ui.anim("en" + module.id, module.enabled() ? 1f : 0f, 14f);
-		float gx = x + w - 24, gy = y + 22;
-		boolean hoverGear = ui.hover(gx - 12, gy - 12, 24, 24);
-		if (hoverGear) {
-			d.circle(gx, gy, 12, Theme.SURFACE_3);
-		}
-		d.icon("settings", gx, gy, 14, hoverGear ? Theme.TEXT : Theme.MUTED);
 		d.icon(module.icon, x + w / 2f, y + 62, 32, Theme.mix(Theme.MUTED, Theme.accent(), et));
 		d.textCenter(module.name, x + w / 2f, y + 119, Fonts.Style.BOLD, 14, Theme.TEXT);
 		float bx = x + 14, by = y + 140, bw = w - 28, bh = 32;
@@ -334,7 +329,7 @@ public final class RustyScreen extends Screen {
 		d.round(bx, by, bw, bh, 8, Theme.mix(off, on, et));
 		d.textCenter(module.enabled() ? "Enabled" : "Disabled", bx + bw / 2f, by + bh / 2f, Fonts.Style.BOLD, 12.5f, Theme.mix(Theme.MUTED, Theme.INK, et));
 		ui.click(x, y, w, h, b -> {
-			if (b == 1) {
+			if (b == 0 || b == 1) {
 				openConfig(module);
 			}
 		});
@@ -345,7 +340,6 @@ public final class RustyScreen extends Screen {
 				openConfig(module);
 			}
 		});
-		ui.click(gx - 12, gy - 12, 24, 24, () -> openConfig(module));
 	}
 
 	@Override
@@ -373,14 +367,14 @@ public final class RustyScreen extends Screen {
 		}
 		TextInput before = focused;
 		focused = null;
-		if (configView.popupPress(x, y, event.button())) {
+		if (configView.popupPress(x, y, Ui.button(event))) {
 			return true;
 		}
-		boolean hit = ui.press(x, y, event.button());
+		boolean hit = ui.press(x, y, Ui.button(event));
 		if (focused == null && before != null && before != search) {
 			before.commit();
 		}
-		if (!hit && event.button() == 0 && (x < 0 || y < 0 || x > PANEL_W || y > PANEL_H)) {
+		if (!hit && Ui.button(event) == 0 && (x < 0 || y < 0 || x > PANEL_W || y > PANEL_H)) {
 			onClose();
 		}
 		return true;

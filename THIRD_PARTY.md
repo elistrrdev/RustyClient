@@ -10,7 +10,6 @@ The in-game client bundles static instances `client/src/main/resources/assets/ru
 
 Copyright 2020 The DM Mono Project Authors. Licensed under the SIL Open Font License 1.1.
 Bundled as `launcher/ui/fonts/dm-mono-400.woff2` and `launcher/ui/fonts/dm-mono-500.woff2` (latin subset from Fontsource).
-The in-game client bundles `client/src/main/resources/assets/rustyclient/fonts/dm-mono-regular.ttf` and `dm-mono-medium.ttf` from google/fonts.
 
 ## Lucide icons
 
