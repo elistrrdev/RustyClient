@@ -5,20 +5,6 @@
   font-display: block;
 }
 
-@font-face {
-  font-family: "DM Mono";
-  src: url("/fonts/dm-mono-400.woff2") format("woff2");
-  font-weight: 100 450;
-  font-display: block;
-}
-
-@font-face {
-  font-family: "DM Mono";
-  src: url("/fonts/dm-mono-500.woff2") format("woff2");
-  font-weight: 451 900;
-  font-display: block;
-}
-
 :root {
   --accent: #1ab0dd;
   --accent-hover: color-mix(in oklab, var(--accent) 86%, white);
@@ -41,7 +27,6 @@
   --danger: #ef5b52;
   --ease: cubic-bezier(.2, .7, .2, 1);
   --sans: "Outfit", "Segoe UI Variable Text", "Segoe UI", sans-serif;
-  --mono: "DM Mono", "Cascadia Mono", Consolas, monospace;
 }
 
 * {
@@ -428,7 +413,7 @@ h2 {
 }
 
 .target-path {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11.5px;
   color: var(--text-2);
   white-space: nowrap;
@@ -510,7 +495,7 @@ h2 {
 
 .progress-detail {
   color: var(--muted);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 11.5px;
   white-space: nowrap;
   overflow: hidden;
@@ -518,7 +503,7 @@ h2 {
 }
 
 .progress-pct {
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-weight: 700;
   color: var(--accent-text);
 }

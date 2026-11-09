@@ -6,11 +6,6 @@ Copyright 2021 The Outfit Project Authors. Licensed under the SIL Open Font Lice
 Bundled as `launcher/ui/fonts/outfit.woff2`.
 The in-game client bundles static instances `client/src/main/resources/assets/rustyclient/fonts/outfit-medium.ttf`, `outfit-semibold.ttf` and `outfit-bold.ttf` (weights 500, 600 and 700), made with the fontTools instancer from the Google Fonts variable font.
 
-## DM Mono
-
-Copyright 2020 The DM Mono Project Authors. Licensed under the SIL Open Font License 1.1.
-Bundled as `launcher/ui/fonts/dm-mono-400.woff2` and `launcher/ui/fonts/dm-mono-500.woff2` (latin subset from Fontsource).
-
 ## Lucide icons
 
 Copyright (c) Lucide Contributors. Licensed under the ISC License.
