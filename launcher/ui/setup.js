@@ -60,13 +60,6 @@ function showPage(index) {
     page.classList.toggle("active", n === index);
     page.classList.toggle("left", n < index);
   });
-  $$("#steps li").forEach((li) => {
-    const n = Number(li.dataset.step);
-    li.classList.toggle("active", n === index);
-    li.classList.toggle("done", n < index);
-    const dot = $(".dot", li);
-    dot.innerHTML = n < index ? icon("check", 11, 3.4) : "";
-  });
   $('[data-window="close"]').disabled = index === 3 && state.installing;
   const focus = $(`.page[data-page="${index}"] .button.primary`);
   if (focus && index !== previous) setTimeout(() => focus.focus({ preventScroll: true }), 260);

@@ -159,7 +159,7 @@ fn read_request(request: &Request) -> Incoming {
         .unwrap_or_default();
     let mut body = Vec::new();
     if let Some(post) = request.post_data() {
-        let mut elements = Vec::with_capacity(post.element_count());
+        let mut elements: Vec<Option<PostDataElement>> = (0..post.element_count()).map(|_| None).collect();
         post.elements(Some(&mut elements));
         for element in elements.into_iter().flatten() {
             let size = element.bytes_count();

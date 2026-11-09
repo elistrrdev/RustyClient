@@ -57,9 +57,9 @@ pub fn run(main_args: &MainArgs) {
         main_args,
         win::WindowSpec {
             title: "Rusty Client Setup",
-            width: 780,
+            width: 532,
             height: 500,
-            min_width: 780,
+            min_width: 532,
             min_height: 500,
             resizable: false,
         },

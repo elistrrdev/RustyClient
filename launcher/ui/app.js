@@ -449,7 +449,7 @@ function renderSettings() {
         <span class="row-title">Accent color</span>
         <div class="swatches" id="swatches">
           ${ACCENTS.map((c) => `<button class="swatch" data-color="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}
-          <label class="swatch picker" title="Custom color">${icon("palette", 15)}<input type="color" id="accent-picker" value="${esc(s.accent)}"></label>
+          <button class="swatch picker" id="accent-picker" title="Custom color" aria-label="Custom color">${icon("palette", 15)}</button>
         </div>
       </div>
       ${settingRow("Install Fabric API", "Keeps Fabric API installed and up to date", toggleMarkup("autoFabricApi", s.autoFabricApi))}
@@ -503,6 +503,177 @@ function updateSwatches() {
   const picker = $("#swatches .picker");
   if (picker) picker.classList.toggle("active", !ACCENTS.includes(current));
 }
+
+function setAccent(hex) {
+  state.settings.accent = hex.toLowerCase();
+  applyAccent();
+  updateSwatches();
+  saveSettings();
+}
+
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHex(r, g, b) {
+  return "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+}
+
+function rgbToHsv(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  let h = 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+  }
+  return [(h * 60 + 360) % 360, max ? d / max : 0, max];
+}
+
+function hsvToRgb(h, s, v) {
+  const f = (n) => {
+    const k = (n + h / 60) % 6;
+    return (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255;
+  };
+  return [f(5), f(3), f(1)];
+}
+
+let colorPicker = null;
+
+function openColorPicker(anchor) {
+  const rgb = hexToRgb(state.settings.accent) || hexToRgb(ACCENTS[0]);
+  const [h, s, v] = rgbToHsv(...rgb);
+  const pop = document.createElement("div");
+  pop.className = "color-pop";
+  pop.innerHTML = `
+    <div class="color-area"><div class="color-area-thumb"></div></div>
+    <div class="color-hue"><div class="color-hue-thumb"></div></div>
+    <div class="color-row">
+      <span class="color-preview"></span>
+      <label class="color-hex"><span>#</span><input id="color-hex" maxlength="6" spellcheck="false" autocomplete="off"></label>
+      ${window.EyeDropper ? `<button class="color-tool" id="color-eyedropper" title="Pick from screen">${icon("pipette", 15)}</button>` : ""}
+    </div>`;
+  document.body.appendChild(pop);
+  colorPicker = { pop, anchor, h, s, v };
+  paintColorPicker(true);
+  placeColorPicker();
+  anchor.classList.add("open");
+  requestAnimationFrame(() => pop.classList.add("open"));
+
+  const drag = (el, apply) => {
+    el.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      el.setPointerCapture(event.pointerId);
+      const move = (e) => {
+        const rect = el.getBoundingClientRect();
+        apply(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)), Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height)));
+        paintColorPicker(true);
+        commitColorPicker();
+      };
+      const up = () => {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerup", up);
+        el.removeEventListener("pointercancel", up);
+        el.classList.remove("dragging");
+      };
+      move(event);
+      el.classList.add("dragging");
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerup", up);
+      el.addEventListener("pointercancel", up);
+    });
+  };
+  drag($(".color-area", pop), (x, y) => {
+    colorPicker.s = x;
+    colorPicker.v = 1 - y;
+  });
+  drag($(".color-hue", pop), (x) => {
+    colorPicker.h = x * 359.9;
+  });
+
+  const hex = $("#color-hex", pop);
+  hex.addEventListener("input", () => {
+    const clean = hex.value.replace(/[^0-9a-f]/gi, "").slice(0, 6);
+    if (clean !== hex.value) hex.value = clean;
+    const value = hexToRgb(clean);
+    if (!value) return;
+    [colorPicker.h, colorPicker.s, colorPicker.v] = rgbToHsv(...value);
+    paintColorPicker(false);
+    commitColorPicker();
+  });
+  hex.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") closeColorPicker();
+  });
+  hex.addEventListener("blur", () => paintColorPicker(true));
+
+  const dropper = $("#color-eyedropper", pop);
+  if (dropper) {
+    dropper.addEventListener("click", async () => {
+      try {
+        const result = await new EyeDropper().open();
+        const value = hexToRgb(result.sRGBHex);
+        if (value && colorPicker) {
+          [colorPicker.h, colorPicker.s, colorPicker.v] = rgbToHsv(...value);
+          paintColorPicker(true);
+          commitColorPicker();
+        }
+      } catch (_) {}
+    });
+  }
+}
+
+function currentPickerHex() {
+  const { h, s, v } = colorPicker;
+  return rgbToHex(...hsvToRgb(h, s, v));
+}
+
+function paintColorPicker(updateField) {
+  if (!colorPicker) return;
+  const { pop, h, s, v } = colorPicker;
+  const hex = currentPickerHex();
+  pop.style.setProperty("--hue", `hsl(${h} 100% 50%)`);
+  pop.style.setProperty("--picked", hex);
+  const thumb = $(".color-area-thumb", pop);
+  thumb.style.left = `${s * 100}%`;
+  thumb.style.top = `${(1 - v) * 100}%`;
+  $(".color-hue-thumb", pop).style.left = `${(h / 360) * 100}%`;
+  if (updateField) $("#color-hex", pop).value = hex.slice(1);
+}
+
+function commitColorPicker() {
+  if (!colorPicker) return;
+  const hex = currentPickerHex();
+  if (hex !== state.settings.accent) setAccent(hex);
+}
+
+function placeColorPicker() {
+  if (!colorPicker) return;
+  const { pop, anchor } = colorPicker;
+  const rect = anchor.getBoundingClientRect();
+  let left = rect.left;
+  if (left + pop.offsetWidth > window.innerWidth - 12) left = rect.right - pop.offsetWidth;
+  let top = rect.bottom + 8;
+  if (top + pop.offsetHeight > window.innerHeight - 12) top = rect.top - 8 - pop.offsetHeight;
+  pop.style.left = `${Math.max(12, left)}px`;
+  pop.style.top = `${Math.max(12, top)}px`;
+}
+
+function closeColorPicker() {
+  if (!colorPicker) return;
+  const { pop, anchor } = colorPicker;
+  colorPicker = null;
+  anchor.classList.remove("open");
+  pop.classList.remove("open");
+  setTimeout(() => pop.remove(), 180);
+}
+
 
 function setSetting(key, value) {
   state.settings[key] = value;
@@ -839,6 +1010,7 @@ function bindSlider() {
 function bindEvents() {
   document.addEventListener("click", async (event) => {
     const target = event.target;
+    if (colorPicker && !target.closest(".color-pop") && !target.closest("#accent-picker")) closeColorPicker();
 
     const windowButton = target.closest("[data-window]");
     if (windowButton) {
@@ -1007,10 +1179,15 @@ function bindEvents() {
 
     const swatch = target.closest(".swatch[data-color]");
     if (swatch) {
-      state.settings.accent = swatch.dataset.color;
-      applyAccent();
-      updateSwatches();
-      saveSettings();
+      setAccent(swatch.dataset.color);
+      closeColorPicker();
+      return;
+    }
+
+    const pickerButton = target.closest("#accent-picker");
+    if (pickerButton) {
+      if (colorPicker) closeColorPicker();
+      else openColorPicker(pickerButton);
       return;
     }
 
@@ -1075,17 +1252,12 @@ function bindEvents() {
   document.addEventListener("input", (event) => {
     if (event.target.id === "java-path") setSetting("javaPath", event.target.value);
     if (event.target.id === "jvm-args") setSetting("jvmArgs", event.target.value);
-    if (event.target.id === "accent-picker") {
-      state.settings.accent = event.target.value.toLowerCase();
-      applyAccent();
-      updateSwatches();
-      saveSettings();
-    }
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeMenus();
+      closeColorPicker();
       if (state.modal === "mods" || state.modal === "confirm") closeModal();
     }
     if (event.ctrlKey && ["+", "-", "=", "0"].includes(event.key)) event.preventDefault();
@@ -1118,6 +1290,7 @@ function bindEvents() {
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
+    closeColorPicker();
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => api("/state").then(applyState).catch(() => {}), 120);
   });
