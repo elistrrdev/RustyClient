@@ -78,7 +78,7 @@ public final class RustyClient implements ClientModInitializer {
 		if (Compat.screen() != null) {
 			menuKeyDown = true;
 			for (Module module : Modules.all()) {
-				module.pollKey(true);
+				module.holdKey();
 			}
 			return;
 		}

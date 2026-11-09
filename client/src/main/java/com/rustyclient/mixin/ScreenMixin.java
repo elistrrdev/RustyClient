@@ -3,9 +3,7 @@ package com.rustyclient.mixin;
 import com.rustyclient.core.Modules;
 import com.rustyclient.module.utility.Utilities;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,10 +26,7 @@ public abstract class ScreenMixin {
 		if (blur == null || !blur.enabled()) {
 			return;
 		}
-		Object self = this;
-		boolean container = self instanceof AbstractContainerScreen<?> && blur.containers.on();
-		boolean chat = self instanceof ChatScreen && blur.chat.on();
-		if (!container && !chat) {
+		if (!blur.blurs(this)) {
 			return;
 		}
 		extractBlurredBackground(g);

@@ -78,7 +78,6 @@ public final class ModuleList {
 		Modules.register(new Waypoints());
 		Modules.register(new Utilities.HotbarLock());
 		Modules.register(new Utilities.MenuBlur());
-		Modules.register(new CombatHuds.TargetHud());
 		Modules.register(new CombatHuds.HitDelay());
 		Modules.register(new CombatHuds.TotemPops());
 	}

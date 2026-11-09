@@ -14,6 +14,13 @@ import java.util.Map;
 public final class FontAtlas {
 	private static final int SIZE = 1024;
 	private static final int PAD = 2;
+	private static final int[] CONTRAST = new int[256];
+
+	static {
+		for (int i = 0; i < 256; i++) {
+			CONTRAST[i] = Math.round((float) Math.pow(i / 255.0, 0.8) * 255f);
+		}
+	}
 
 	public record Glyph(int u, int v, int w, int h, int ox, int oy, float advance) {
 	}
@@ -36,7 +43,7 @@ public final class FontAtlas {
 
 	public FontAtlas(Font base, int pixelSize) {
 		this.font = base.deriveFont((float) pixelSize);
-		this.frc = new FontRenderContext(null, true, true);
+		this.frc = new FontRenderContext(null, true, false);
 		this.canvas = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
 		LineMetrics metrics = font.getLineMetrics("Hxg", frc);
 		this.ascent = metrics.getAscent();
@@ -94,6 +101,20 @@ public final class FontAtlas {
 		}
 	}
 
+	private void sharpen(int x0, int y0, int w, int h) {
+		int[] row = new int[w];
+		for (int y = y0; y < y0 + h; y++) {
+			canvas.getRGB(x0, y, w, 1, row, 0, w);
+			for (int i = 0; i < w; i++) {
+				int a = row[i] >>> 24;
+				if (a > 0 && a < 255) {
+					row[i] = (CONTRAST[a] << 24) | (row[i] & 0xFFFFFF);
+				}
+			}
+			canvas.setRGB(x0, y, w, 1, row, 0, w);
+		}
+	}
+
 	private Glyph rasterize(int codepoint) {
 		String s = new String(Character.toChars(codepoint));
 		if (!font.canDisplay(codepoint)) {
@@ -119,13 +140,14 @@ public final class FontAtlas {
 		int gy = cursorY;
 		Graphics2D g = canvas.createGraphics();
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 		g.setColor(java.awt.Color.WHITE);
 		g.drawGlyphVector(gv, gx + 1 - bounds.x, gy + 1 - bounds.y);
 		g.dispose();
+		sharpen(gx, gy, w, h);
 		cursorX += w + PAD;
 		rowHeight = Math.max(rowHeight, h);
 		dirty = true;

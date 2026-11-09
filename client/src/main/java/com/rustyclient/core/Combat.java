@@ -24,8 +24,6 @@ public final class Combat {
 	private static long lastHit;
 	private static double reach = -1;
 	private static long reachTime;
-	private static LivingEntity target;
-	private static long targetTime;
 	private static int lastHurtTime;
 
 	private Combat() {
@@ -42,8 +40,6 @@ public final class Combat {
 			reachTime = System.currentTimeMillis();
 		}
 		if (entity instanceof LivingEntity living) {
-			target = living;
-			targetTime = System.currentTimeMillis();
 			PENDING.add(new Pending(living, ticks));
 		}
 	}
@@ -74,11 +70,6 @@ public final class Combat {
 		lastHurtTime = hurt;
 		if (combo > 0 && System.currentTimeMillis() - lastHit > 3000) {
 			combo = 0;
-		}
-		if (target != null && (!target.isAlive() || target.isRemoved())) {
-			if (System.currentTimeMillis() - targetTime > 1500) {
-				target = null;
-			}
 		}
 	}
 
@@ -112,12 +103,5 @@ public final class Combat {
 
 	public static double reach() {
 		return System.currentTimeMillis() - reachTime > 5000 ? -1 : reach;
-	}
-
-	public static LivingEntity target(long keepMs) {
-		if (target != null && System.currentTimeMillis() - targetTime < keepMs && !target.isRemoved()) {
-			return target;
-		}
-		return null;
 	}
 }

@@ -95,6 +95,10 @@ public abstract class Module {
 	public void alwaysTick() {
 	}
 
+	public final void holdKey() {
+		keyWasDown = true;
+	}
+
 	public final void pollKey(boolean down) {
 		if (down && !keyWasDown) {
 			onKeyPressed();

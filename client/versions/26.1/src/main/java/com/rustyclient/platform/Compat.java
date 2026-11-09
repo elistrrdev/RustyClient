@@ -72,4 +72,7 @@ public final class Compat {
 	public static net.minecraft.world.scores.DisplaySlot teamSlot(net.minecraft.world.scores.PlayerTeam team) {
 		return net.minecraft.world.scores.DisplaySlot.teamColorToSlot(team.getColor());
 	}
+
+	public static void textInput(Object owner, boolean on) {
+	}
 }

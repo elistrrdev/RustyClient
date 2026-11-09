@@ -11,6 +11,7 @@ import com.rustyclient.core.setting.ChoiceSetting;
 import com.rustyclient.core.setting.KeySetting;
 import com.rustyclient.core.setting.NumberSetting;
 import com.rustyclient.core.setting.TextSetting;
+import com.rustyclient.module.ClientSettings;
 import com.rustyclient.platform.Compat;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
@@ -315,9 +316,32 @@ public final class Utilities {
 		public final BoolSetting containers = bool("Blur inventories", GENERAL, true);
 		public final BoolSetting chat = bool("Blur chat screen", GENERAL, false);
 		public final NumberSetting dim = number("Dim background", APPEARANCE, 0.25, 0, 0.8, 0.05, NumberSetting.percent());
+		public final NumberSetting strength = number("Blur strength", APPEARANCE, 5, 1, 10, 1, NumberSetting.integer(""));
 
 		public MenuBlur() {
 			super("Menu Blur", "aperture", Category.UTILITY, false);
+		}
+
+		public boolean blurs(Object screen) {
+			if (!enabled()) {
+				return false;
+			}
+			boolean container = screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> && containers.on();
+			boolean chatScreen = screen instanceof net.minecraft.client.gui.screens.ChatScreen && chat.on();
+			return container || chatScreen;
+		}
+
+		public static int blurriness(int vanilla) {
+			Object screen = Compat.screen();
+			if (screen == null) {
+				return vanilla;
+			}
+			if (screen instanceof com.rustyclient.gui.RustyScreen) {
+				ClientSettings settings = ClientSettings.get();
+				return settings != null && settings.blurBehind.on() && vanilla < 1 ? 5 : vanilla;
+			}
+			MenuBlur blur = Modules.get(MenuBlur.class);
+			return blur != null && blur.blurs(screen) ? blur.strength.i() : vanilla;
 		}
 	}
 }

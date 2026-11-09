@@ -50,6 +50,7 @@ public final class RustyScreen extends Screen {
 	final ProfileView profileView = new ProfileView(this);
 	float scroll;
 	float scrollTarget;
+	private static float modulesScroll;
 	float contentHeight;
 	float viewHeight;
 	private long lastFrame = System.nanoTime();
@@ -80,16 +81,30 @@ public final class RustyScreen extends Screen {
 	}
 
 	void switchPage(Page next) {
+		if (next == page && next != Page.CONFIG) {
+			return;
+		}
+		if (page == Page.MODULES) {
+			modulesScroll = scrollTarget;
+		}
+		boolean back = page == Page.CONFIG && next == Page.MODULES;
 		if (next != Page.CONFIG) {
 			lastPage = next;
 		}
 		page = next;
-		scroll = 0;
-		scrollTarget = 0;
+		scroll = back ? modulesScroll : 0;
+		scrollTarget = scroll;
+		ui.setAnim("scroll", scroll);
 		focused = null;
 		listening = null;
 		configView.closePopups();
 		ui.setAnim("page", 0f);
+	}
+
+	@Override
+	protected void init() {
+		super.init();
+		Compat.textInput(this, true);
 	}
 
 	@Override
@@ -170,18 +185,11 @@ public final class RustyScreen extends Screen {
 		railButton("layout-grid", 68, page == Page.MODULES || page == Page.CONFIG && configModule != ClientSettings.get(), () -> switchPage(Page.MODULES));
 		railButton("circle-user", 112, page == Page.PROFILE, () -> switchPage(Page.PROFILE));
 		railButton("settings", 156, page == Page.SETTINGS, () -> switchPage(Page.SETTINGS));
-		float ex = 12.5f, ey = PANEL_H - 95;
+		float ex = 12.5f, ey = PANEL_H - 52;
 		boolean hoverEdit = ui.hover(ex, ey, 38, 38);
 		d.round(ex, ey, 38, 38, 8, hoverEdit ? Theme.SURFACE_3 : Theme.SURFACE);
 		d.icon("grid-2x2-plus", ex + 19, ey + 19, 18, hoverEdit ? Theme.TEXT : Theme.TEXT_3);
 		ui.click(ex, ey, 38, 38, () -> Compat.setScreen(new HudEditorScreen(this)));
-		float cy = PANEL_H - 33;
-		boolean hoverClose = ui.hover(ex, cy - 19, 38, 38);
-		if (hoverClose) {
-			d.round(ex, cy - 19, 38, 38, 8, Theme.SURFACE);
-		}
-		d.icon("x", ex + 19, cy, 17, hoverClose ? Theme.TEXT : Theme.MUTED);
-		ui.click(ex, cy - 19, 38, 38, this::onClose);
 	}
 
 	private void railButton(String icon, float y, boolean active, Runnable action) {
@@ -489,6 +497,7 @@ public final class RustyScreen extends Screen {
 
 	@Override
 	public void removed() {
+		Compat.textInput(this, false);
 		Config.save();
 	}
 
