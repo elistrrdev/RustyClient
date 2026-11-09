@@ -59,7 +59,7 @@ public final class InfoHuds {
 		private final ChoiceSetting decimals = choice("Precision", APPEARANCE, "Whole", "Whole", "One decimal");
 
 		public Coordinates() {
-			super("Coordinates", "locate-fixed", true, 0.01, 0.13);
+			super("Coordinates", "locate-fixed", false, 0.01, 0.13);
 		}
 
 		private String fmt(double v) {
@@ -173,7 +173,7 @@ public final class InfoHuds {
 		private final ChoiceSetting layout = choice("Layout", APPEARANCE, "Vertical", "Vertical", "Horizontal");
 
 		public ArmorStatus() {
-			super("Armor Status", "shield", true, 0.99, 0.5);
+			super("Armor Status", "shield", false, 0.99, 0.5);
 			background.set(false);
 		}
 
@@ -250,7 +250,7 @@ public final class InfoHuds {
 		private final BoolSetting blink = bool("Blink when ending", GENERAL, true);
 
 		public PotionHud() {
-			super("Potion HUD", "flask-conical", true, 0.01, 0.42);
+			super("Potion HUD", "flask-conical", false, 0.01, 0.42);
 			background.set(false);
 		}
 
