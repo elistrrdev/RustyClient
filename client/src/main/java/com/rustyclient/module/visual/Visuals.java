@@ -107,6 +107,11 @@ public final class Visuals {
 			super("Block Overlay", "box", Category.VISUAL, false);
 		}
 
+		@Override
+		protected boolean hasToggleKey() {
+			return true;
+		}
+
 		public int outline() {
 			int c = outlineColor.argb();
 			return (c & 0xFFFFFF) == (Theme.DEFAULT_ACCENT & 0xFFFFFF) ? Theme.withAlpha(Theme.accent(), c >>> 24) : c;
@@ -133,6 +138,11 @@ public final class Visuals {
 			super("Motion Blur", "wind", Category.VISUAL, false);
 		}
 
+		@Override
+		protected boolean hasToggleKey() {
+			return true;
+		}
+
 		public static Identifier effect() {
 			MotionBlur m = Modules.get(MotionBlur.class);
 			if (m == null || !m.enabled() || Minecraft.getInstance().player == null) {
@@ -147,6 +157,11 @@ public final class Visuals {
 
 		public Fullbright() {
 			super("Fullbright", "sun", Category.VISUAL, false);
+		}
+
+		@Override
+		protected boolean hasToggleKey() {
+			return true;
 		}
 
 		public static float strength() {
@@ -287,12 +302,23 @@ public final class Visuals {
 	}
 
 	public static final class Nametags extends Module {
+		private static boolean inside;
+		private static boolean pushed;
+
 		public final BoolSetting own = bool("Show own nametag", GENERAL, true);
 		public final BoolSetting background = bool("Draw background", GENERAL, true);
+		public final BoolSetting health = bool("Show health", GENERAL, false);
+		public final ChoiceSetting healthFormat = choice("Health format", APPEARANCE, "Hearts", "Hearts", "Points", "Percent");
 		public final NumberSetting opacity = number("Background opacity", APPEARANCE, 0.25, 0, 1, 0.05, NumberSetting.percent());
+		public final NumberSetting size = number("Nametag scale", APPEARANCE, 1, 0.5, 2, 0.05, NumberSetting.times());
 
 		public Nametags() {
 			super("Nametags", "tag", Category.VISUAL, false);
+		}
+
+		@Override
+		protected boolean hasToggleKey() {
+			return true;
 		}
 
 		public float backgroundOpacity(float vanilla) {
@@ -300,6 +326,59 @@ public final class Visuals {
 				return vanilla;
 			}
 			return background.on() ? opacity.f() : 0f;
+		}
+
+		private static Nametags active() {
+			Nametags tags = Modules.get(Nametags.class);
+			return tags != null && tags.enabled() ? tags : null;
+		}
+
+		public static void begin(com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.world.phys.Vec3 attachment) {
+			inside = true;
+			pushed = false;
+			Nametags tags = active();
+			if (tags == null || attachment == null || Math.abs(tags.size.v() - 1) < 0.001) {
+				return;
+			}
+			float k = tags.size.f();
+			pose.pushPose();
+			pose.translate(attachment.x, attachment.y, attachment.z);
+			pose.scale(k, k, k);
+			pose.translate(-attachment.x, -attachment.y, -attachment.z);
+			pushed = true;
+		}
+
+		public static void end(com.mojang.blaze3d.vertex.PoseStack pose) {
+			if (pushed) {
+				pose.popPose();
+			}
+			pushed = false;
+			inside = false;
+		}
+
+		public static float opacity(float vanilla) {
+			Nametags tags = active();
+			return inside && tags != null ? tags.backgroundOpacity(vanilla) : vanilla;
+		}
+
+		public static net.minecraft.network.chat.Component withHealth(net.minecraft.network.chat.Component name, net.minecraft.world.entity.LivingEntity entity) {
+			Nametags tags = active();
+			if (tags == null || !tags.health.on() || name == null || entity == null) {
+				return name;
+			}
+			float hp = entity.getHealth() + entity.getAbsorptionAmount();
+			float max = Math.max(1f, entity.getMaxHealth());
+			String text;
+			if (tags.healthFormat.is("Points")) {
+				text = String.format(java.util.Locale.ROOT, "%.1f", hp);
+			} else if (tags.healthFormat.is("Percent")) {
+				text = Math.round(hp / max * 100) + "%";
+			} else {
+				text = String.format(java.util.Locale.ROOT, "%.1f \u2764", hp / 2f);
+			}
+			float t = Math.max(0f, Math.min(1f, entity.getHealth() / max));
+			int color = Theme.mix(0xFFEF5B52, 0xFF6CCB8C, t) & 0xFFFFFF;
+			return name.copy().append(net.minecraft.network.chat.Component.literal(" " + text).withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
 		}
 	}
 

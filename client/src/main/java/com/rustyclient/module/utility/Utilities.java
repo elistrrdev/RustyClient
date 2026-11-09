@@ -51,7 +51,26 @@ public final class Utilities {
 
 		@Override
 		public boolean visibleNow() {
-			return showHud.on() && (sprinting || sneaking);
+			return showHud.on() && status() != null;
+		}
+
+		private String status() {
+			if (mc.player == null) {
+				return null;
+			}
+			if (sneaking) {
+				return "Sneaking (Toggled)";
+			}
+			if (mc.options.keyShift.isDown() && mc.player.isShiftKeyDown()) {
+				return "Sneaking (Key Held)";
+			}
+			if (sprinting) {
+				return "Sprinting (Toggled)";
+			}
+			if (mc.player.isSprinting()) {
+				return mc.options.keySprint.isDown() ? "Sprinting (Key Held)" : "Sprinting (Vanilla)";
+			}
+			return null;
 		}
 
 		@Override
@@ -101,13 +120,8 @@ public final class Utilities {
 
 		@Override
 		protected String value() {
-			if (sneaking) {
-				return "Sneaking (Toggled)";
-			}
-			if (sprinting) {
-				return mc.player != null && mc.player.isSprinting() ? "Sprinting (Toggled)" : "Sprint (Toggled)";
-			}
-			return "Sprinting (Toggled)";
+			String status = status();
+			return status == null ? "Sprinting (Toggled)" : status;
 		}
 	}
 
@@ -290,6 +304,11 @@ public final class Utilities {
 
 		public HotbarLock() {
 			super("Hotbar Lock", "lock", Category.UTILITY, false);
+		}
+
+		@Override
+		protected boolean hasToggleKey() {
+			return true;
 		}
 
 		public void beforeInput() {

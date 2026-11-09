@@ -47,7 +47,7 @@ public abstract class Module {
 	}
 
 	protected boolean hasToggleKey() {
-		return true;
+		return false;
 	}
 
 	public boolean hidden() {

@@ -39,6 +39,14 @@ public final class HudEditorScreen extends Screen {
 		this.parent = parent;
 	}
 
+	public void grab(HudModule hud, double guiX, double guiY) {
+		mouseX = guiX;
+		mouseY = guiY;
+		dragging = hud;
+		grabX = px(guiX) - hud.pixelX();
+		grabY = px(guiY) - hud.pixelY();
+	}
+
 	public static boolean editing() {
 		return active != null;
 	}

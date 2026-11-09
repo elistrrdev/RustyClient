@@ -26,7 +26,7 @@ import java.util.Locale;
 
 public final class RustyScreen extends Screen {
 	public enum Page {
-		MODULES, PROFILE, SETTINGS, CONFIG
+		MODULES, PROFILE, SETTINGS, WAYPOINTS, CONFIG
 	}
 
 	public static final float PANEL_W = 1118;
@@ -48,6 +48,7 @@ public final class RustyScreen extends Screen {
 	KeySetting listening;
 	final ConfigView configView = new ConfigView(this);
 	final ProfileView profileView = new ProfileView(this);
+	final WaypointsView waypointsView = new WaypointsView(this);
 	float scroll;
 	float scrollTarget;
 	private static float modulesScroll;
@@ -73,6 +74,14 @@ public final class RustyScreen extends Screen {
 	public static void open() {
 		Theme.refresh(true);
 		Compat.setScreen(new RustyScreen());
+	}
+
+	public static void open(Page start) {
+		Theme.refresh(true);
+		RustyScreen screen = new RustyScreen();
+		screen.page = start;
+		lastPage = start;
+		Compat.setScreen(screen);
 	}
 
 	public void openConfig(Module module) {
@@ -144,6 +153,9 @@ public final class RustyScreen extends Screen {
 			return;
 		}
 		g.fill(0, 0, width, height, Theme.withAlpha(0xFF000000, Math.round(110 * appear)));
+		if (minecraft != null && minecraft.player != null) {
+			RustyClient.drawHudModules(g, false);
+		}
 		Draw d = new Draw(g, scale);
 		float offset = (1f - appear) * 14f * scale;
 		panelX = Math.round((ww - PANEL_W * scale) / 2f);
@@ -163,6 +175,7 @@ public final class RustyScreen extends Screen {
 			case CONFIG -> configView.draw(configModule);
 			case PROFILE -> profileView.draw();
 			case SETTINGS -> configView.draw(ClientSettings.get());
+			case WAYPOINTS -> waypointsView.draw();
 		}
 		d.alpha(baseAlpha);
 		configView.drawPopups();
@@ -177,7 +190,6 @@ public final class RustyScreen extends Screen {
 
 	private void drawFrame() {
 		Draw d = ui.d;
-		d.shadow(0, 0, PANEL_W, PANEL_H, 16, 28, 0x8C000000);
 		d.round(0, 0, PANEL_W, PANEL_H, 16, Theme.MAIN);
 		d.ring(0, 0, PANEL_W, PANEL_H, 16, 1, Theme.BORDER);
 		d.rect(RAIL_W, 1, 1, PANEL_H - 2, Theme.BORDER);
@@ -185,6 +197,7 @@ public final class RustyScreen extends Screen {
 		railButton("layout-grid", 68, page == Page.MODULES || page == Page.CONFIG && configModule != ClientSettings.get(), () -> switchPage(Page.MODULES));
 		railButton("circle-user", 112, page == Page.PROFILE, () -> switchPage(Page.PROFILE));
 		railButton("settings", 156, page == Page.SETTINGS, () -> switchPage(Page.SETTINGS));
+		railButton("map-pin", 200, page == Page.WAYPOINTS, () -> switchPage(Page.WAYPOINTS));
 		float ex = 12.5f, ey = PANEL_H - 52;
 		boolean hoverEdit = ui.hover(ex, ey, 38, 38);
 		d.round(ex, ey, 38, 38, 8, hoverEdit ? Theme.SURFACE_3 : Theme.SURFACE);
@@ -379,11 +392,17 @@ public final class RustyScreen extends Screen {
 			return true;
 		}
 		boolean hit = ui.press(x, y, Ui.button(event));
-		if (focused == null && before != null && before != search) {
+		if (before != null && before != focused && before != search) {
 			before.commit();
 		}
 		if (!hit && Ui.button(event) == 0 && (x < 0 || y < 0 || x > PANEL_W || y > PANEL_H)) {
-			onClose();
+			float gs = Draw.guiScale();
+			HudModule hud = RustyClient.hudAt((float) event.x() * gs, (float) event.y() * gs);
+			if (hud != null) {
+				HudEditorScreen editor = new HudEditorScreen(this);
+				Compat.setScreen(editor);
+				editor.grab(hud, event.x(), event.y());
+			}
 		}
 		return true;
 	}

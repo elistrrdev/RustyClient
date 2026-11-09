@@ -6,7 +6,8 @@ import com.rustyclient.core.Modules;
 import com.rustyclient.module.visual.Visuals;
 import com.rustyclient.platform.Compat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.state.OptionsRenderState;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.ItemEntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -37,16 +38,20 @@ public final class RenderMixins {
 		}
 	}
 
-	@Mixin(Options.class)
+	@Mixin(OptionsRenderState.class)
 	public abstract static class NameBackground {
 		@Inject(method = "getBackgroundOpacity", at = @At("RETURN"), cancellable = true)
 		private void rusty$opacity(float fallback, CallbackInfoReturnable<Float> cir) {
-			if (fallback != 0.25f) {
-				return;
-			}
-			Visuals.Nametags tags = Modules.get(Visuals.Nametags.class);
-			if (tags != null && tags.enabled()) {
-				cir.setReturnValue(tags.backgroundOpacity(cir.getReturnValue()));
+			cir.setReturnValue(Visuals.Nametags.opacity(cir.getReturnValue()));
+		}
+	}
+
+	@Mixin(LivingEntityRenderer.class)
+	public abstract static class NameHealth {
+		@Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V", at = @At("RETURN"))
+		private void rusty$health(LivingEntity entity, LivingEntityRenderState state, float partial, CallbackInfo ci) {
+			if (state.nameTag != null) {
+				state.nameTag = Visuals.Nametags.withHealth(state.nameTag, entity);
 			}
 		}
 	}

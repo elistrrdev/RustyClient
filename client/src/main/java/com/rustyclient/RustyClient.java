@@ -95,20 +95,14 @@ public final class RustyClient implements ClientModInitializer {
 		}
 	}
 
-	private static void renderHud(GuiGraphicsExtractor g) {
-		Minecraft mc = Minecraft.getInstance();
-		pollKeys();
-		ClientSettings settings = ClientSettings.get();
-		if (settings != null && settings.hideInF3.on() && Compat.debugOpen()) {
-			return;
-		}
-		boolean editing = HudEditorScreen.editing();
+	public static void drawHudModules(GuiGraphicsExtractor g, boolean editing) {
 		for (HudModule hud : Modules.hud()) {
 			if (!hud.enabled() || (!editing && !hud.visibleNow())) {
 				continue;
 			}
 			Draw d = new Draw(g, hud.unitPx());
 			try {
+				d.hudText(hud.vanillaFont());
 				d.origin(Math.round(hud.pixelX()), Math.round(hud.pixelY()));
 				hud.render(d, editing);
 			} catch (Throwable t) {
@@ -116,6 +110,32 @@ public final class RustyClient implements ClientModInitializer {
 			} finally {
 				d.end();
 			}
+		}
+	}
+
+	public static HudModule hudAt(float pixelX, float pixelY) {
+		for (int i = Modules.hud().size() - 1; i >= 0; i--) {
+			HudModule hud = Modules.hud().get(i);
+			if (!hud.enabled() || !hud.visibleNow()) {
+				continue;
+			}
+			float x = hud.pixelX(), y = hud.pixelY();
+			if (pixelX >= x && pixelY >= y && pixelX < x + hud.pixelWidth() && pixelY < y + hud.pixelHeight()) {
+				return hud;
+			}
+		}
+		return null;
+	}
+
+	private static void renderHud(GuiGraphicsExtractor g) {
+		Minecraft mc = Minecraft.getInstance();
+		pollKeys();
+		ClientSettings settings = ClientSettings.get();
+		if (settings != null && settings.hideInF3.on() && Compat.debugOpen()) {
+			return;
+		}
+		if (!(Compat.screen() instanceof RustyScreen)) {
+			drawHudModules(g, HudEditorScreen.editing());
 		}
 		if (mc.player != null) {
 			ModuleList.renderOverlays(g);

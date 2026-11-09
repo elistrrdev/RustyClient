@@ -186,28 +186,4 @@ public final class SimpleHuds {
 			return Math.round(used * 100.0 / rt.maxMemory()) + "%";
 		}
 	}
-
-	public static final class Saturation extends TextHud {
-		private final BoolSetting hunger = bool("Show hunger", GENERAL, false);
-
-		public Saturation() {
-			super("Saturation", "drumstick", Category.HUD, false, 0.6, 0.93);
-		}
-
-		@Override
-		protected String label() {
-			return "Saturation";
-		}
-
-		@Override
-		protected String value() {
-			Minecraft mc = Minecraft.getInstance();
-			if (mc.player == null) {
-				return "0.0";
-			}
-			float sat = mc.player.getFoodData().getSaturationLevel();
-			String s = String.format(Locale.ROOT, "%.1f", sat);
-			return hunger.on() ? s + "  Food " + mc.player.getFoodData().getFoodLevel() : s;
-		}
-	}
 }

@@ -11,6 +11,8 @@ public final class Draw {
 	private float ox;
 	private float oy;
 	private float alpha = 1f;
+	private boolean vanilla;
+	private boolean hud;
 
 	public Draw(GuiGraphicsExtractor g, float unitPx) {
 		this.g = g;
@@ -47,6 +49,36 @@ public final class Draw {
 
 	public float originY() {
 		return oy;
+	}
+
+	public Draw hudText(boolean vanillaFont) {
+		this.hud = true;
+		this.vanilla = vanillaFont;
+		return this;
+	}
+
+	public boolean vanillaFont() {
+		return vanilla;
+	}
+
+	private int vanillaScale(float size) {
+		return Math.max(1, Math.round(size * s / 9f));
+	}
+
+	private float vanillaWidthPx(String text, float size) {
+		return Minecraft.getInstance().font.width(text) * vanillaScale(size);
+	}
+
+	private void vanillaRun(String text, float px, float topPx, float size, int argb, boolean shadow) {
+		if ((argb >>> 24) == 0 || alpha <= 0f) {
+			return;
+		}
+		int k = vanillaScale(size);
+		g.pose().pushMatrix();
+		g.pose().translate(Math.round(px), Math.round(topPx));
+		g.pose().scale(k, k);
+		g.text(Minecraft.getInstance().font, text, 0, 0, col(argb), shadow);
+		g.pose().popMatrix();
 	}
 
 	public void alpha(float a) {
@@ -192,6 +224,13 @@ public final class Draw {
 		g.blit(RenderPipelines.GUI_TEXTURED, tex.id, x, y, (float) u, (float) v, w, h, uw, vh, tex.width, tex.height, color);
 	}
 
+	public void texture(Tex tex, int x, int y, int w, int h, int argb) {
+		if ((argb >>> 24) == 0 || alpha <= 0f) {
+			return;
+		}
+		blit(tex, x, y, w, h, 0, 0, w, h, col(argb));
+	}
+
 	public void icon(String name, float cx, float cy, float size, int argb) {
 		if ((argb >>> 24) == 0 || alpha <= 0f) {
 			return;
@@ -208,22 +247,42 @@ public final class Draw {
 	}
 
 	public float width(String text, Fonts.Style style, float size) {
+		if (vanilla) {
+			return vanillaWidthPx(text, size) / s;
+		}
 		return font(style, size).width(text) / s;
 	}
 
 	public float text(String text, float x, float y, Fonts.Style style, float size, int argb) {
+		if (vanilla) {
+			vanillaRun(text, ox + x * s, oy + y * s, size, argb, false);
+			return vanillaWidthPx(text, size) / s;
+		}
 		FontAtlas atlas = font(style, size);
 		float baseline = oy + y * s + atlas.ascent;
 		return drawRun(atlas, text, ox + x * s, baseline, argb) / s;
 	}
 
 	public float textMid(String text, float x, float cy, Fonts.Style style, float size, int argb) {
+		return textMid(text, x, cy, style, size, argb, false);
+	}
+
+	private float textMid(String text, float x, float cy, Fonts.Style style, float size, int argb, boolean shadow) {
+		if (vanilla) {
+			vanillaRun(text, ox + x * s, oy + cy * s - vanillaScale(size) * 3.5f, size, argb, shadow);
+			return vanillaWidthPx(text, size) / s;
+		}
 		FontAtlas atlas = font(style, size);
 		float baseline = oy + cy * s + atlas.capHeight / 2f;
 		return drawRun(atlas, text, ox + x * s, baseline, argb) / s;
 	}
 
 	public void textCenter(String text, float cx, float cy, Fonts.Style style, float size, int argb) {
+		if (vanilla) {
+			float w = vanillaWidthPx(text, size);
+			vanillaRun(text, ox + cx * s - w / 2f, oy + cy * s - vanillaScale(size) * 3.5f, size, argb, hudShadow(false));
+			return;
+		}
 		FontAtlas atlas = font(style, size);
 		float w = atlas.width(text);
 		float baseline = oy + cy * s + atlas.capHeight / 2f;
@@ -231,13 +290,34 @@ public final class Draw {
 	}
 
 	public void textRight(String text, float rx, float cy, Fonts.Style style, float size, int argb) {
+		if (vanilla) {
+			float w = vanillaWidthPx(text, size);
+			vanillaRun(text, ox + rx * s - w, oy + cy * s - vanillaScale(size) * 3.5f, size, argb, hudShadow(false));
+			return;
+		}
 		FontAtlas atlas = font(style, size);
 		float w = atlas.width(text);
 		float baseline = oy + cy * s + atlas.capHeight / 2f;
 		drawRun(atlas, text, ox + rx * s - w, baseline, argb);
 	}
 
+	private boolean hudShadow(boolean shadow) {
+		if (!hud) {
+			return shadow;
+		}
+		com.rustyclient.module.ClientSettings settings = com.rustyclient.module.ClientSettings.get();
+		if (settings == null || settings.textShadow.is("Per module")) {
+			return shadow;
+		}
+		return settings.textShadow.is("Always");
+	}
+
 	public void textShadowed(String text, float x, float cy, Fonts.Style style, float size, int argb, boolean shadow) {
+		shadow = hudShadow(shadow);
+		if (vanilla) {
+			textMid(text, x, cy, style, size, argb, shadow);
+			return;
+		}
 		if (shadow) {
 			int a = (argb >>> 24) * 3 / 5;
 			float off = Math.max(1f, s * 0.6f) / s;

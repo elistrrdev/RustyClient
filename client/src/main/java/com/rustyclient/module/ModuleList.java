@@ -1,5 +1,8 @@
 package com.rustyclient.module;
 
+import net.minecraft.resources.Identifier;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import com.rustyclient.module.hud.Saturation;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.rustyclient.RustyClient;
@@ -62,7 +65,7 @@ public final class ModuleList {
 		Modules.register(new InfoHuds.PackDisplay());
 		Modules.register(new VanillaHuds.ScoreboardHud());
 		Modules.register(new VanillaHuds.BossBar());
-		Modules.register(new SimpleHuds.Saturation());
+		Modules.register(new Saturation());
 		Modules.register(new Visuals.Freelook());
 		Modules.register(new Visuals.HitColor());
 		Modules.register(new Visuals.DamageTint());
@@ -99,6 +102,18 @@ public final class ModuleList {
 				crosshair.draw(d, cx, cy);
 			} finally {
 				d.end();
+			}
+		});
+		HudElementRegistry.attachElementAfter(VanillaHudElements.FOOD_BAR, Identifier.fromNamespaceAndPath("rustyclient", "saturation"), (g, delta) -> {
+			Saturation saturation = Modules.get(Saturation.class);
+			if (saturation != null) {
+				saturation.draw(g);
+			}
+		});
+		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {
+			Saturation saturation = Modules.get(Saturation.class);
+			if (saturation != null) {
+				saturation.tooltip(stack, lines);
 			}
 		});
 		HudElementRegistry.replaceElement(VanillaHudElements.SCOREBOARD, old -> (g, delta) -> {
@@ -164,6 +179,18 @@ public final class ModuleList {
 				if (gg != null) {
 					gg.onMessage(message);
 				}
+			}
+		});
+
+		LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
+			Waypoints waypoints = Modules.get(Waypoints.class);
+			if (waypoints == null || !waypoints.enabled()) {
+				return;
+			}
+			try {
+				waypoints.submitBeams(context.poseStack(), context.submitNodeCollector());
+			} catch (Throwable t) {
+				RustyClient.LOG.error("waypoint beams failed", t);
 			}
 		});
 

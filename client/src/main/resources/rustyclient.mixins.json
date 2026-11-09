@@ -17,6 +17,7 @@
 		"OptionsMixin",
 		"OverlayTextureAccessor",
 		"RenderMixins$NameBackground",
+		"RenderMixins$NameHealth",
 		"RenderMixins$OwnName",
 		"RenderMixins$Physics",
 		"ScreenMixin",

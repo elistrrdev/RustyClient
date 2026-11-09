@@ -1,10 +1,13 @@
 package com.rustyclient.core;
 
+import com.rustyclient.core.setting.ChoiceSetting;
 import com.rustyclient.core.setting.NumberSetting;
+import com.rustyclient.module.ClientSettings;
 import com.rustyclient.render.Draw;
 
 public abstract class HudModule extends Module {
 	public final NumberSetting scale;
+	public final ChoiceSetting font;
 	public float width = 40;
 	public float height = 12;
 	public double fx;
@@ -19,6 +22,18 @@ public abstract class HudModule extends Module {
 		this.defaultFx = fx;
 		this.defaultFy = fy;
 		this.scale = number("Scale", APPEARANCE, 1.0, 0.5, 2.5, 0.05, NumberSetting.times());
+		this.font = choice("Font", APPEARANCE, "Global", "Global", "Vanilla", "Rusty Client");
+	}
+
+	public boolean vanillaFont() {
+		if (font.is("Vanilla")) {
+			return true;
+		}
+		if (font.is("Rusty Client")) {
+			return false;
+		}
+		ClientSettings settings = ClientSettings.get();
+		return settings == null || settings.hudFont.is("Vanilla");
 	}
 
 	public abstract void render(Draw d, boolean editing);

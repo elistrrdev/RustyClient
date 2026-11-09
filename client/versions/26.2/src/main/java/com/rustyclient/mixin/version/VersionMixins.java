@@ -88,4 +88,17 @@ public final class VersionMixins {
 			}
 		}
 	}
+
+	@Mixin(net.minecraft.client.renderer.SubmitNodeCollection.class)
+	public abstract static class Names {
+		@Inject(method = "submitNameTag", at = @At("HEAD"))
+		private void rusty$nameStart(PoseStack pose, net.minecraft.world.phys.Vec3 attachment, int offset, net.minecraft.network.chat.Component name, boolean seeThrough, int light, net.minecraft.client.renderer.state.level.CameraRenderState camera, CallbackInfo ci) {
+			Visuals.Nametags.begin(pose, attachment);
+		}
+
+		@Inject(method = "submitNameTag", at = @At("RETURN"))
+		private void rusty$nameEnd(PoseStack pose, net.minecraft.world.phys.Vec3 attachment, int offset, net.minecraft.network.chat.Component name, boolean seeThrough, int light, net.minecraft.client.renderer.state.level.CameraRenderState camera, CallbackInfo ci) {
+			Visuals.Nametags.end(pose);
+		}
+	}
 }

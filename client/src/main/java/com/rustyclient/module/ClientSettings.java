@@ -4,6 +4,7 @@ import com.rustyclient.core.Category;
 import com.rustyclient.core.Module;
 import com.rustyclient.core.Modules;
 import com.rustyclient.core.setting.BoolSetting;
+import com.rustyclient.core.setting.ChoiceSetting;
 import com.rustyclient.core.setting.ColorSetting;
 import com.rustyclient.core.setting.KeySetting;
 import com.rustyclient.core.setting.NumberSetting;
@@ -17,6 +18,8 @@ public final class ClientSettings extends Module {
 	public final ColorSetting accent;
 	public final BoolSetting snapping;
 	public final BoolSetting hideInF3;
+	public final ChoiceSetting hudFont;
+	public final ChoiceSetting textShadow;
 
 	public ClientSettings() {
 		super("Client", "settings", Category.UTILITY, true);
@@ -29,6 +32,8 @@ public final class ClientSettings extends Module {
 		followLauncher = bool("Use launcher accent", "Accent", true);
 		accent = color("Accent color", "Accent", 0xFF1AB0DD);
 		accent.visibleWhen(() -> !followLauncher.on());
+		hudFont = choice("HUD font", "Text", "Vanilla", "Vanilla", "Rusty Client");
+		textShadow = choice("Text shadow", "Text", "Per module", "Per module", "Always", "Never");
 	}
 
 	public static ClientSettings get() {

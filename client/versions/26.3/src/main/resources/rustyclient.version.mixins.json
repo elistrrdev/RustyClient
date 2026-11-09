@@ -6,7 +6,8 @@
 		"VersionMixins$Clock",
 		"VersionMixins$Fire",
 		"VersionMixins$Hand",
-		"VersionMixins$Motion"
+		"VersionMixins$Motion",
+		"VersionMixins$Names"
 	],
 	"injectors": {
 		"defaultRequire": 1
