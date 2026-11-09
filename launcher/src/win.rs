@@ -216,6 +216,10 @@ pub fn apply_dark_frame(hwnd: HWND) {
     }
 }
 
+unsafe fn app_icon(instance: HINSTANCE, cx: SYSTEM_METRICS_INDEX, cy: SYSTEM_METRICS_INDEX) -> HICON {
+    unsafe { LoadImageW(instance, 1 as _, IMAGE_ICON, GetSystemMetrics(cx), GetSystemMetrics(cy), LR_DEFAULTCOLOR) as HICON }
+}
+
 pub fn create_main_window(spec: &WindowSpec) -> HWND {
     unsafe {
         let instance = GetModuleHandleW(null());
@@ -227,12 +231,12 @@ pub fn create_main_window(spec: &WindowSpec) -> HWND {
             cbClsExtra: 0,
             cbWndExtra: 0,
             hInstance: instance,
-            hIcon: null_mut(),
+            hIcon: app_icon(instance, SM_CXICON, SM_CYICON),
             hCursor: LoadCursorW(null_mut(), IDC_ARROW),
             hbrBackground: CreateSolidBrush(rgb(0x13, 0x12, 0x11)),
             lpszMenuName: null(),
             lpszClassName: class.as_ptr(),
-            hIconSm: null_mut(),
+            hIconSm: app_icon(instance, SM_CXSMICON, SM_CYSMICON),
         };
         RegisterClassExW(&wc);
 

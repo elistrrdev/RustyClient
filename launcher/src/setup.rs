@@ -80,6 +80,14 @@ fn program_files() -> String {
         .unwrap_or_else(|_| "C:\\Program Files".into())
 }
 
+fn saved_accent() -> Option<String> {
+    let file = PathBuf::from(std::env::var_os("APPDATA")?).join(".rustyclient").join("settings.json");
+    let settings: serde_json::Value = serde_json::from_slice(&std::fs::read(file).ok()?).ok()?;
+    let accent = settings["accent"].as_str()?;
+    let valid = accent.len() == 7 && accent.starts_with('#') && accent[1..].chars().all(|c| c.is_ascii_hexdigit());
+    valid.then(|| accent.to_string())
+}
+
 fn default_location() -> (String, String, bool) {
     if let Some(existing) = registry::read("InstallLocation") {
         let path = PathBuf::from(&existing);
@@ -143,6 +151,7 @@ pub async fn route(route: &str, request: &Incoming) -> Reply {
                 "existing": existing,
                 "required": required_bytes(),
                 "free": free_bytes(&target),
+                "accent": saved_accent(),
             }))
         }
         "/check" => check(request),

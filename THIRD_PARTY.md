@@ -5,10 +5,10 @@
 Copyright 2021 The Outfit Project Authors. Licensed under the SIL Open Font License 1.1.
 Bundled as `launcher/ui/fonts/outfit.woff2`.
 
-## JetBrains Mono
+## DM Mono
 
-Copyright 2020 The JetBrains Mono Project Authors. Licensed under the SIL Open Font License 1.1.
-Bundled as `launcher/ui/fonts/jetbrains-mono.woff2`.
+Copyright 2020 The DM Mono Project Authors. Licensed under the SIL Open Font License 1.1.
+Bundled as `launcher/ui/fonts/dm-mono-400.woff2` and `launcher/ui/fonts/dm-mono-500.woff2` (latin subset from Fontsource).
 
 ## Lucide icons
 

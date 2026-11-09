@@ -106,7 +106,6 @@ fn open(request: &Incoming) -> Reply {
     let major = open.major.unwrap_or_default();
     let known = content::SUPPORTED_MAJORS.contains(&major.as_str());
     let target = match open.folder.as_deref() {
-        Some("game") if known => paths::instance(&major),
         Some("mods") if known => paths::mods(&major),
         Some("logs") if known => paths::instance(&major).join("logs"),
         Some("crash") => {
@@ -117,7 +116,6 @@ fn open(request: &Incoming) -> Reply {
             win::shell_open(&path.to_string_lossy());
             return Reply::json(json!({}));
         }
-        Some("launcher") => paths::root().to_path_buf(),
         _ => return Reply::error("Unknown folder."),
     };
     let _ = std::fs::create_dir_all(&target);

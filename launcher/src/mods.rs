@@ -132,7 +132,7 @@ pub fn set_enabled(major: &str, file: &str, enabled: bool) -> Result<(), String>
     } else {
         paths::mods(major).join(format!("{base}.disabled"))
     };
-    if path == target {
+    if path == target || !path.exists() {
         return Ok(());
     }
     std::fs::rename(&path, &target).map_err(|e| format!("Could not change the mod: {e}"))
@@ -140,7 +140,10 @@ pub fn set_enabled(major: &str, file: &str, enabled: bool) -> Result<(), String>
 
 pub fn delete(major: &str, file: &str) -> Result<(), String> {
     let path = mod_path(major, file).ok_or("Invalid mod file.")?;
-    std::fs::remove_file(path).map_err(|e| format!("Could not remove the mod: {e}"))
+    match std::fs::remove_file(path) {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(format!("Could not remove the mod: {e}")),
+        _ => Ok(()),
+    }
 }
 
 pub fn add(major: &str, name: &str, bytes: &[u8]) -> Result<(), String> {

@@ -12,14 +12,11 @@ pub struct Settings {
     pub width: u32,
     pub height: u32,
     pub fullscreen: bool,
-    pub custom_java: bool,
-    pub java_path: String,
     pub jvm_args: String,
     pub on_launch: String,
     pub accent: String,
     pub selected_major: String,
     pub selected_versions: HashMap<String, String>,
-    pub auto_fabric_api: bool,
     pub client_id: String,
 }
 
@@ -31,14 +28,11 @@ impl Default for Settings {
             width: 1280,
             height: 720,
             fullscreen: false,
-            custom_java: false,
-            java_path: String::new(),
             jvm_args: String::new(),
             on_launch: "hide".into(),
             accent: DEFAULT_ACCENT.into(),
             selected_major: String::new(),
             selected_versions: HashMap::new(),
-            auto_fabric_api: true,
             client_id: uuid::Uuid::new_v4().simple().to_string(),
         }
     }

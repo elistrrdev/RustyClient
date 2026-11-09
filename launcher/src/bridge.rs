@@ -11,7 +11,9 @@ static TOKEN: OnceLock<String> = OnceLock::new();
 
 const ICONS: &str = include_str!("../ui/icons.js");
 const OUTFIT: &[u8] = include_bytes!("../ui/fonts/outfit.woff2");
-const MONO: &[u8] = include_bytes!("../ui/fonts/jetbrains-mono.woff2");
+const MONO: &[u8] = include_bytes!("../ui/fonts/dm-mono-400.woff2");
+const MONO_MEDIUM: &[u8] = include_bytes!("../ui/fonts/dm-mono-500.woff2");
+const LOGO: &[u8] = include_bytes!("../ui/logo.png");
 
 #[cfg(not(feature = "setup"))]
 const PAGE: &str = include_str!("../ui/index.html");
@@ -120,7 +122,9 @@ fn static_asset(path: &str) -> Option<Reply> {
         "/app.js" => Reply::bytes("text/javascript", SCRIPT.as_bytes().to_vec(), "no-store"),
         "/icons.js" => Reply::bytes("text/javascript", ICONS.as_bytes().to_vec(), "no-store"),
         "/fonts/outfit.woff2" => Reply::bytes("font/woff2", OUTFIT.to_vec(), "max-age=31536000"),
-        "/fonts/jetbrains-mono.woff2" => Reply::bytes("font/woff2", MONO.to_vec(), "max-age=31536000"),
+        "/fonts/dm-mono-400.woff2" => Reply::bytes("font/woff2", MONO.to_vec(), "max-age=31536000"),
+        "/fonts/dm-mono-500.woff2" => Reply::bytes("font/woff2", MONO_MEDIUM.to_vec(), "max-age=31536000"),
+        "/logo.png" => Reply::bytes("image/png", LOGO.to_vec(), "max-age=31536000"),
         _ => return None,
     })
 }

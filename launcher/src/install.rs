@@ -350,17 +350,10 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
         }
     }
 
-    let custom_java = settings.custom_java && Path::new(settings.java_path.trim()).is_file();
-    let mut java = PathBuf::from(settings.java_path.trim());
-    let mut java_marker = None;
-    if !custom_java {
-        core.set_task("Preparing", "Checking Java runtime", 0.06);
-        let component = version["javaVersion"]["component"].as_str().unwrap_or("java-runtime-epsilon").to_string();
-        let (files, path, marker_info) = java_runtime(core, &component).await?;
-        downloads.extend(files);
-        java = path;
-        java_marker = marker_info;
-    }
+    core.set_task("Preparing", "Checking Java runtime", 0.06);
+    let component = version["javaVersion"]["component"].as_str().unwrap_or("java-runtime-epsilon").to_string();
+    let (files, java, java_marker) = java_runtime(core, &component).await?;
+    downloads.extend(files);
 
     let deep = !verified;
     core.set_task("Checking files", "Verifying game files", 0.08);
@@ -394,7 +387,7 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
     let _ = write_atomic(&marker, b"ok");
 
     if !java.is_file() {
-        return Err("Java could not be found. Check the Java settings.".into());
+        return Err("Java could not be found. Try launching again.".into());
     }
 
     let natives_dir = version_dir.join("natives");
@@ -407,9 +400,7 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
 
     core.set_task("Preparing", "Updating mods", 0.98);
     if fabric.is_some() {
-        if settings.auto_fabric_api {
-            let _ = sync_fabric_api(core, &entry.id, major).await;
-        }
+        let _ = sync_fabric_api(core, &entry.id, major).await;
         sync_bundled_mods(major).await;
     }
 
@@ -643,6 +634,21 @@ fn managed_file(major: &str) -> PathBuf {
     paths::instance(major).join(".rustyclient").join("managed.json")
 }
 
+async fn remove_other_fabric_api(mods: &Path, keep: &str) {
+    let Ok(mut entries) = tokio::fs::read_dir(mods).await else {
+        return;
+    };
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let name = entry.file_name().to_string_lossy().to_string();
+        let lower = name.to_ascii_lowercase();
+        let jar = lower.ends_with(".jar") || lower.ends_with(".jar.disabled");
+        let fabric_api = lower.strip_prefix("fabric-api-").is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()));
+        if jar && fabric_api && name != keep {
+            let _ = tokio::fs::remove_file(entry.path()).await;
+        }
+    }
+}
+
 async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
     let mods = paths::mods(major);
     let record_path = managed_file(major);
@@ -651,15 +657,9 @@ async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
     let current_game = record["fabricApi"]["game"].as_str().map(str::to_string);
 
     if let Some(file) = &current_file {
-        if mods.join(format!("{file}.disabled")).exists() {
-            return Some(());
-        }
-    } else if let Ok(mut entries) = tokio::fs::read_dir(&mods).await {
-        while let Ok(Some(entry)) = entries.next_entry().await {
-            let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
-            if name.starts_with("fabric-api") {
-                return Some(());
-            }
+        let disabled = mods.join(format!("{file}.disabled"));
+        if disabled.exists() {
+            let _ = tokio::fs::rename(&disabled, mods.join(file)).await;
         }
     }
 
@@ -687,6 +687,7 @@ async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
         && current_game.as_deref() == Some(game)
         && target.exists();
     if up_to_date {
+        remove_other_fabric_api(&mods, &filename).await;
         return Some(());
     }
     let download = Download {
@@ -702,6 +703,7 @@ async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
             let _ = tokio::fs::remove_file(mods.join(old)).await;
         }
     }
+    remove_other_fabric_api(&mods, &filename).await;
     record["fabricApi"] = json!({ "file": filename, "game": game });
     let _ = write_atomic(&record_path, &serde_json::to_vec_pretty(&record).ok()?);
     Some(())

@@ -11,6 +11,7 @@ fn main() {
     let setup = std::env::var_os("CARGO_FEATURE_SETUP").is_some();
 
     println!("cargo::rerun-if-changed=RustyClient.rc");
+    println!("cargo::rerun-if-changed=RustyClient.ico");
     println!("cargo::rerun-if-changed=RustyClient.manifest");
     println!("cargo::rerun-if-changed=RustyClientSetup.rc");
     println!("cargo::rerun-if-changed=RustyClientSetup.manifest");

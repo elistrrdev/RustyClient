@@ -380,7 +380,6 @@ function renderAccount() {
      ${account ? `<button class="menu-item danger" data-action="sign-out">${icon("log-out", 16)}<span class="grow">Sign out</span></button>` : ""}`;
   paintAvatars(button);
   paintAvatars(menu);
-  renderSettingsAccounts();
 }
 
 function settingRow(title, hint, control, extra = "") {
@@ -417,17 +416,10 @@ function renderSettings() {
       <div class="row ${s.customResolution && !s.fullscreen ? "" : "disabled"}" id="resolution-row">
         <div class="row-text"><span class="row-title">Window size</span></div>
         <div class="resolution">
-          <input class="field" id="res-width" type="number" min="320" max="15360" value="${s.width}">
+          <input class="field" id="res-width" type="text" inputmode="numeric" maxlength="5" value="${s.width}">
           <span class="times">x</span>
-          <input class="field" id="res-height" type="number" min="240" max="8640" value="${s.height}">
+          <input class="field" id="res-height" type="text" inputmode="numeric" maxlength="4" value="${s.height}">
         </div>
-      </div>
-
-      <div class="group-label">Java</div>
-      ${settingRow("Use custom Java", "Rusty Client downloads the right Java for you by default", toggleMarkup("customJava", s.customJava))}
-      <div class="row stack ${s.customJava ? "" : "disabled"}" id="java-row">
-        <span class="row-title">Java executable</span>
-        <input class="field mono" id="java-path" placeholder="C:\\Program Files\\Java\\jdk-25\\bin\\javaw.exe" value="${esc(s.javaPath)}" spellcheck="false">
       </div>
       <div class="row stack">
         <span class="row-title">JVM arguments</span>
@@ -452,37 +444,10 @@ function renderSettings() {
           <button class="swatch picker" id="accent-picker" title="Custom color" aria-label="Custom color">${icon("palette", 15)}</button>
         </div>
       </div>
-      ${settingRow("Install Fabric API", "Keeps Fabric API installed and up to date", toggleMarkup("autoFabricApi", s.autoFabricApi))}
-
-      <div class="group-label">Accounts</div>
-      <div id="settings-accounts"></div>
-
-      <div class="group-label">Folders</div>
-      ${settingRow("Game folder", "Worlds, resource packs and screenshots", `<button class="chip-button" data-open="game">${icon("folder-open", 14)}Open</button>`)}
-      ${settingRow("Mods folder", "Mods for the selected version", `<button class="chip-button" data-open="mods">${icon("folder-open", 14)}Open</button>`)}
-      ${settingRow("Launcher folder", "Downloads, Java and launcher data", `<button class="chip-button" data-open="launcher">${icon("folder-open", 14)}Open</button>`)}
     </div>
   </div>`;
   updateSlider();
   updateSwatches();
-  renderSettingsAccounts();
-}
-
-function renderSettingsAccounts() {
-  const host = $("#settings-accounts");
-  if (!host) return;
-  const list = state.accounts.list || [];
-  const active = activeAccount();
-  host.innerHTML =
-    list
-      .map(
-        (a) => `<div class="row account-row">${avatarMarkup(a)}<div class="row-text"><span class="row-title">${esc(a.name)}</span><span class="row-hint">${a.uuid === active?.uuid ? "Active account" : "Microsoft account"}</span></div>
-        ${a.uuid === active?.uuid ? '<span class="badge">Active</span>' : `<button class="chip-button" data-select="${esc(a.uuid)}">Use</button>`}
-        <button class="icon-button danger" data-remove="${esc(a.uuid)}" title="Remove account">${icon("trash-2", 15)}</button></div>`
-      )
-      .join("") +
-    settingRow(list.length ? "Add another account" : "No account yet", list.length ? "" : "Sign in with Microsoft to play", `<button class="chip-button accent" data-action="add-account">${icon("user-plus", 14)}Sign in</button>`);
-  paintAvatars(host);
 }
 
 function updateSlider() {
@@ -915,9 +880,11 @@ async function openMods() {
   }
 }
 
+let modsKey = "";
 function renderMods(mods) {
   const body = $("#mods-body");
   if (!body) return;
+  modsKey = JSON.stringify(mods);
   if (!mods.length) {
     body.innerHTML = `<div class="empty"><div class="modal-icon">${icon("package", 24)}</div><strong>No mods installed yet</strong><span>Drop .jar files here or use Add mods. Fabric API is installed for you on launch.</span></div>`;
     return;
@@ -930,8 +897,8 @@ function renderMods(mods) {
           <div class="mod-title"><span class="mod-name">${esc(m.name)}</span>${m.version ? `<span class="mod-version">${esc(m.version)}</span>` : ""}${m.managed ? '<span class="badge">Auto</span>' : ""}</div>
           <div class="mod-desc">${esc(m.description || m.file)} <span style="color:var(--faint)">- ${formatSize(m.size)}</span></div>
         </div>
-        <button class="toggle ${m.enabled ? "on" : ""}" data-mod-toggle role="switch" aria-checked="${m.enabled}"></button>
-        <button class="icon-button danger" data-mod-delete title="Remove">${icon("trash-2", 15)}</button>
+        ${m.managed ? "" : `<button class="toggle ${m.enabled ? "on" : ""}" data-mod-toggle role="switch" aria-checked="${m.enabled}"></button>
+        <button class="icon-button danger" data-mod-delete title="Remove">${icon("trash-2", 15)}</button>`}
       </div>`
     )
     .join("");
@@ -944,6 +911,18 @@ function renderMods(mods) {
     });
   });
 }
+
+async function refreshMods() {
+  if (state.modal !== "mods" || !modsMajor || document.hidden) return;
+  const major = modsMajor;
+  try {
+    const data = await api(`/mods?major=${encodeURIComponent(major)}`);
+    if (state.modal === "mods" && modsMajor === major && JSON.stringify(data.mods) !== modsKey) renderMods(data.mods);
+  } catch (_) {}
+}
+
+setInterval(refreshMods, 1500);
+window.addEventListener("focus", refreshMods);
 
 async function uploadMods(files) {
   const jars = [...files].filter((f) => f.name.toLowerCase().endsWith(".jar"));
@@ -1090,27 +1069,6 @@ function bindEvents() {
       return;
     }
 
-    const remove = target.closest("[data-remove]");
-    if (remove) {
-      if (!remove.classList.contains("confirm")) {
-        remove.classList.add("confirm");
-        remove.textContent = "Remove";
-        setTimeout(() => {
-          if (remove.isConnected) {
-            remove.classList.remove("confirm");
-            remove.innerHTML = icon("trash-2", 15);
-          }
-        }, 3000);
-        return;
-      }
-      try {
-        applyState(await api("/auth/remove", { method: "POST", body: { uuid: remove.dataset.remove } }));
-      } catch (error) {
-        toast(error.message, "error");
-      }
-      return;
-    }
-
     const action = target.closest("[data-action]");
     if (action) {
       const name = action.dataset.action;
@@ -1161,7 +1119,6 @@ function bindEvents() {
       toggle.classList.toggle("on", value);
       toggle.setAttribute("aria-checked", value);
       setSetting(key, value);
-      if (key === "customJava") $("#java-row").classList.toggle("disabled", !value);
       if (key === "customResolution" || key === "fullscreen") {
         $("#resolution-row").classList.toggle("disabled", !(state.settings.customResolution && !state.settings.fullscreen));
         const resToggle = $('[data-toggle="customResolution"]').closest(".row");
@@ -1250,7 +1207,10 @@ function bindEvents() {
   });
 
   document.addEventListener("input", (event) => {
-    if (event.target.id === "java-path") setSetting("javaPath", event.target.value);
+    if (event.target.id === "res-width" || event.target.id === "res-height") {
+      const clean = event.target.value.replace(/\D/g, "");
+      if (clean !== event.target.value) event.target.value = clean;
+    }
     if (event.target.id === "jvm-args") setSetting("jvmArgs", event.target.value);
   });
 

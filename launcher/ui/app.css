@@ -6,9 +6,16 @@
 }
 
 @font-face {
-  font-family: "JetBrains Mono";
-  src: url("/fonts/jetbrains-mono.woff2") format("woff2");
-  font-weight: 100 800;
+  font-family: "DM Mono";
+  src: url("/fonts/dm-mono-400.woff2") format("woff2");
+  font-weight: 100 450;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "DM Mono";
+  src: url("/fonts/dm-mono-500.woff2") format("woff2");
+  font-weight: 451 900;
   font-display: block;
 }
 
@@ -41,7 +48,7 @@
   --radius-lg: 12px;
   --ease: cubic-bezier(.2, .7, .2, 1);
   --sans: "Outfit", "Segoe UI Variable Text", "Segoe UI", sans-serif;
-  --mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  --mono: "DM Mono", "Cascadia Mono", Consolas, monospace;
 }
 
 * {
@@ -52,6 +59,7 @@
 
 html,
 body {
+  font-synthesis: none;
   height: 100%;
   background: var(--frame);
   color: var(--text);
@@ -76,10 +84,25 @@ button {
   outline: none;
 }
 
-button:focus-visible,
-input:focus-visible {
+button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+input:focus,
+input:focus-visible {
+  outline: none;
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 input {
@@ -147,11 +170,24 @@ svg {
 }
 
 .titlebar-title {
-  padding-left: 20px;
+  padding-left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: .01em;
   color: var(--text-3);
+}
+
+.titlebar-logo {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background: var(--accent);
+  -webkit-mask: url("/logo.png") center / contain no-repeat;
+  mask: url("/logo.png") center / contain no-repeat;
+  transition: background .2s var(--ease);
 }
 
 .window-controls {
@@ -1509,11 +1545,6 @@ svg {
   color: #ffd9d6;
   font-size: 12px;
   font-weight: 600;
-}
-
-.account-row .avatar {
-  width: 30px;
-  height: 30px;
 }
 
 .badge {

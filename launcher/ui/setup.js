@@ -306,6 +306,7 @@ async function boot() {
   }
   if (!data) return;
   document.body.classList.add(data.frame);
+  if (data.accent) document.documentElement.style.setProperty("--accent", data.accent);
   state.parent = data.parent;
   state.folder = data.folder;
   state.required = data.required;
