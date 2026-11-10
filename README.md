@@ -51,6 +51,6 @@ Rusty Client is meant for normal play on any server. It does not include, and wi
 
 ## License
 
-Rusty Client is free software under the [GNU General Public License v3.0](LICENSE). Bundled fonts, icons and the Chromium Embedded Framework are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+Rusty Client is free software under the [GNU General Public License v3.0](LICENSE). Bundled fonts and icons, and the Chromium Embedded Framework that Rusty Client downloads on first start, are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 Rusty Client is not affiliated with Mojang Studios or Microsoft.

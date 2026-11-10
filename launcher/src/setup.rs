@@ -12,7 +12,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, SW_SHOWNORMAL};
 
 use crate::bridge::{Incoming, Reply};
 use crate::registry::{self, Value};
-use crate::runtime::embedded;
+use crate::runtime::downloaded;
 use crate::{app, win};
 
 static PAYLOAD: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/payload.zst"));
@@ -72,7 +72,7 @@ pub fn update() {
 }
 
 fn remove_temp_runtime() {
-    let script = format!("ping 127.0.0.1 -n 4 >nul & rmdir /s /q \"{}\"", embedded::base().to_string_lossy());
+    let script = format!("ping 127.0.0.1 -n 4 >nul & rmdir /s /q \"{}\"", downloaded::base().to_string_lossy());
     let _ = std::process::Command::new("cmd")
         .arg("/c")
         .raw_arg(script)
@@ -101,7 +101,7 @@ pub fn run(main_args: &MainArgs) {
             min_height: 500,
             resizable: false,
         },
-        embedded::base().join("cache"),
+        downloaded::base().join("cache"),
     );
     remove_temp_runtime();
 }
@@ -131,7 +131,7 @@ fn default_location() -> (String, String, bool) {
 }
 
 fn required_bytes() -> u64 {
-    embedded::files().iter().map(|(_, size)| size).sum::<u64>() + launcher().len() as u64
+    downloaded::files().iter().map(|(_, size)| size).sum::<u64>() + launcher().len() as u64
 }
 
 fn free_bytes(path: &Path) -> Option<u64> {
@@ -309,14 +309,14 @@ fn install(target: &Path, desktop: bool, start_menu: bool) -> Result<(), String>
     std::fs::create_dir_all(target)
         .map_err(|_| "Setup could not create the install folder. Choose another location.".to_string())?;
 
-    let files = embedded::files();
+    let files = downloaded::files();
     let payload = launcher();
     if payload.is_empty() {
         return Err("The installer is damaged. Download it again.".into());
     }
     let total = files.iter().map(|(_, size)| *size).sum::<u64>() + payload.len() as u64;
     let mut done = 0u64;
-    let source_root = embedded::dir();
+    let source_root = downloaded::dir();
     let mut installed = Vec::with_capacity(files.len() + 1);
 
     let exe = target.join("RustyClient.exe");
@@ -325,8 +325,14 @@ fn install(target: &Path, desktop: bool, start_menu: bool) -> Result<(), String>
     done += payload.len() as u64;
     installed.push("RustyClient.exe".to_string());
 
+    let in_place = same_folder(&source_root, target);
     let mut buffer = vec![0u8; 1 << 20];
-    for (relative, _) in &files {
+    for (relative, size) in &files {
+        if in_place {
+            done += size;
+            installed.push(relative.clone());
+            continue;
+        }
         let source = source_root.join(relative);
         let destination = target.join(relative);
         if let Some(parent) = destination.parent() {
@@ -391,6 +397,13 @@ fn install(target: &Path, desktop: bool, start_menu: bool) -> Result<(), String>
         entries.push((key.as_str(), Value::Text(value)));
     }
     registry::write(&entries)
+}
+
+fn same_folder(a: &Path, b: &Path) -> bool {
+    match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+        (Ok(a), Ok(b)) => a.to_string_lossy().eq_ignore_ascii_case(&b.to_string_lossy()),
+        _ => false,
+    }
 }
 
 fn locked_message(name: &str) -> String {

@@ -17,7 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 ## Chromium Embedded Framework
 
-Copyright (c) 2008-2026 Marshall A. Greenblatt. Licensed under the BSD 3-Clause License. The CEF runtime files that ship next to `RustyClient.exe` come from the official CEF binary distribution.
+Copyright (c) 2008-2026 Marshall A. Greenblatt. Licensed under the BSD 3-Clause License. The CEF runtime files are not part of `RustyClient.exe` or `RustyClient-Setup.exe`. They are downloaded once from the official CEF binary distribution (`cef-builds.spotifycdn.com`, the minimal Windows 64 bit archive) and checked against its sha1.
 
 ## AppleSkin
 

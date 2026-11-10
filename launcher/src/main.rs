@@ -13,6 +13,8 @@ mod install;
 mod launch;
 mod mods;
 mod paths;
+#[cfg(any(feature = "portable", feature = "setup"))]
+mod progress;
 #[cfg(not(feature = "portable"))]
 mod registry;
 mod runtime;

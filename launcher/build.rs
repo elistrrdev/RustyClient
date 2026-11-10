@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use sha1::{Digest, Sha1};
@@ -42,28 +42,28 @@ fn main() {
 
     if portable || setup {
         let cef_dir = PathBuf::from(std::env::var("DEP_CEF_DLL_WRAPPER_CEF_DIR").expect("cef directory from cef-dll-sys"));
+        let archive_json = cef_dir.join("archive.json");
+        println!("cargo::rerun-if-changed={}", archive_json.display());
         let files = runtime_files(&cef_dir);
         let mut key = Sha1::new();
+        key.update(std::fs::read(&archive_json).expect("archive.json in the cef directory"));
         for (path, name) in &files {
             println!("cargo::rerun-if-changed={}", path.display());
             let meta = std::fs::metadata(path).expect("cef runtime file");
             key.update(name.as_bytes());
             key.update(meta.len().to_le_bytes());
-            if let Ok(since) = meta.modified().map(|m| m.duration_since(std::time::UNIX_EPOCH)) {
-                if let Ok(since) = since {
-                    key.update(since.as_secs().to_le_bytes());
-                }
+            if let Ok(Ok(since)) = meta.modified().map(|m| m.duration_since(std::time::UNIX_EPOCH)) {
+                key.update(since.as_secs().to_le_bytes());
             }
         }
-        let id = hex::encode(key.finalize())[..16].to_string();
-        println!("cargo::rustc-env=RUSTY_CEF_ID={id}");
+        let key = hex::encode(key.finalize());
 
-        let pack = out_dir.join("cef-runtime.zst");
-        let stamp = out_dir.join("cef-runtime.id");
+        let table = out_dir.join("cef_runtime.rs");
+        let stamp = out_dir.join("cef_runtime.key");
         let current = std::fs::read_to_string(&stamp).unwrap_or_default();
-        if current.trim() != id || !pack.exists() {
-            write_pack(&files, &pack);
-            std::fs::write(&stamp, &id).unwrap();
+        if current.trim() != key || !table.exists() {
+            write_runtime_table(&archive_json, &files, &table);
+            std::fs::write(&stamp, &key).unwrap();
         }
     }
 
@@ -102,29 +102,33 @@ fn runtime_files(cef_dir: &Path) -> Vec<(PathBuf, String)> {
     files
 }
 
-fn write_pack(files: &[(PathBuf, String)], target: &Path) {
-    let partial = target.with_extension("partial");
-    let output = BufWriter::new(File::create(&partial).unwrap());
-    let mut encoder = zstd::stream::Encoder::new(output, 19).unwrap();
-    let workers = std::thread::available_parallelism().map(|n| n.get() as u32).unwrap_or(4);
-    encoder.multithread(workers).unwrap();
-    encoder.long_distance_matching(true).unwrap();
-    encoder.window_log(27).unwrap();
+fn write_runtime_table(archive_json: &Path, files: &[(PathBuf, String)], target: &Path) {
+    let archive: serde_json::Value = serde_json::from_slice(&std::fs::read(archive_json).unwrap()).expect("valid archive.json");
+    let name = archive["name"].as_str().expect("archive name in archive.json");
+    let sha1 = archive["sha1"].as_str().expect("archive sha1 in archive.json");
+    assert!(name.ends_with(".tar.bz2") && sha1.len() == 40, "unexpected archive.json");
 
-    encoder.write_all(b"RCEF").unwrap();
-    encoder.write_all(&(files.len() as u32).to_le_bytes()).unwrap();
-    for (path, name) in files {
-        let size = std::fs::metadata(path).unwrap().len();
-        encoder.write_all(&(name.len() as u16).to_le_bytes()).unwrap();
-        encoder.write_all(name.as_bytes()).unwrap();
-        encoder.write_all(&size.to_le_bytes()).unwrap();
-    }
-    for (path, _) in files {
+    let mut rows = String::new();
+    let mut buffer = vec![0u8; 1 << 20];
+    for (path, file) in files {
         let mut input = File::open(path).unwrap();
-        std::io::copy(&mut input, &mut encoder).unwrap();
+        let mut hash = Sha1::new();
+        let mut size = 0u64;
+        loop {
+            let read = input.read(&mut buffer).unwrap();
+            if read == 0 {
+                break;
+            }
+            hash.update(&buffer[..read]);
+            size += read as u64;
+        }
+        rows.push_str(&format!("    (\"{file}\", {size}, \"{}\"),\n", hex::encode(hash.finalize())));
     }
-    encoder.finish().unwrap().flush().unwrap();
-    std::fs::rename(&partial, target).unwrap();
+    let source = format!(
+        "pub const ID: &str = \"{}\";\npub const ARCHIVE: &str = \"{name}\";\npub const ARCHIVE_SHA1: &str = \"{sha1}\";\npub const FILES: &[(&str, u64, &str)] = &[\n{rows}];\n",
+        &sha1[..16]
+    );
+    std::fs::write(target, source).unwrap();
 }
 
 fn write_client_mods(out_dir: &Path, setup: bool) {
