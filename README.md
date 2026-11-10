@@ -5,12 +5,12 @@
 <h1 align="center">Rusty Client</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Rust-2024-b7410e?style=for-the-badge&logo=rust&logoColor=white" alt="Rust">
-  <img src="https://img.shields.io/badge/CEF-Chromium-1ab0dd?style=for-the-badge" alt="CEF">
-  <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge" alt="Windows 10 and 11">
-  <img src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Felistrrdev%2FRustyClient%2Fmain%2Flauncher%2FCargo.toml&query=%24.package.version&label=version&style=for-the-badge&color=1ab0dd" alt="Version">
-  <img src="https://img.shields.io/badge/Fabric-Loader%20%2B%20API-c6bca5?style=for-the-badge" alt="Fabric">
-  <img src="https://img.shields.io/badge/License-GPL--3.0-555555?style=for-the-badge" alt="GPL-3.0">
+  <a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/Rust-Edition%202024-b7410e?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"></a>
+  <a href="https://github.com/chromiumembedded/cef"><img src="https://img.shields.io/badge/CEF-Chromium-1ab0dd?style=for-the-badge" alt="CEF"></a>
+  <a href="#requirements"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge" alt="Windows 10 and 11"></a>
+  <a href="https://github.com/elistrrdev/RustyClient/releases/latest"><img src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Felistrrdev%2FRustyClient%2Fmain%2Flauncher%2FCargo.toml&query=%24.package.version&label=version&style=for-the-badge&color=1ab0dd" alt="Version"></a>
+  <a href="https://fabricmc.net"><img src="https://img.shields.io/badge/Fabric-Loader%20%2B%20API-c6bca5?style=for-the-badge" alt="Fabric"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-555555?style=for-the-badge" alt="GPL-3.0"></a>
 </p>
 
 A fast, lightweight Minecraft launcher written in Rust. Sign in with your Microsoft account, pick a version and play. Java, Fabric and Fabric API are all set up for you.
