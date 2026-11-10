@@ -30,6 +30,10 @@ public abstract class TextHud extends HudModule {
 
 	protected abstract String value();
 
+	protected int valueColor(int fallback) {
+		return fallback;
+	}
+
 	protected String sample() {
 		return value();
 	}
@@ -66,6 +70,6 @@ public abstract class TextHud extends HudModule {
 		if (!label.isEmpty()) {
 			d.textShadowed(label, x, cy, style, size, Theme.hudAccent(labelColor.argb()), shadow.on());
 		}
-		d.textShadowed(value, x + lw, cy, style, size, textColor.argb(), shadow.on());
+		d.textShadowed(value, x + lw, cy, style, size, valueColor(textColor.argb()), shadow.on());
 	}
 }

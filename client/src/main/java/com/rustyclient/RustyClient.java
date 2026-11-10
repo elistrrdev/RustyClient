@@ -96,8 +96,15 @@ public final class RustyClient implements ClientModInitializer {
 	}
 
 	public static void drawHudModules(GuiGraphicsExtractor g, boolean editing) {
+		drawHudModules(g, editing, false);
+	}
+
+	public static void drawHudModules(GuiGraphicsExtractor g, boolean editing, boolean menu) {
 		for (HudModule hud : Modules.hud()) {
 			if (!hud.enabled() || (!editing && !hud.visibleNow())) {
+				continue;
+			}
+			if (menu && hud.dimsWithMenu()) {
 				continue;
 			}
 			Draw d = new Draw(g, hud.unitPx());
@@ -116,7 +123,7 @@ public final class RustyClient implements ClientModInitializer {
 	public static HudModule hudAt(float pixelX, float pixelY) {
 		for (int i = Modules.hud().size() - 1; i >= 0; i--) {
 			HudModule hud = Modules.hud().get(i);
-			if (!hud.enabled() || !hud.visibleNow()) {
+			if (!hud.enabled()) {
 				continue;
 			}
 			float x = hud.pixelX(), y = hud.pixelY();
@@ -127,6 +134,24 @@ public final class RustyClient implements ClientModInitializer {
 		return null;
 	}
 
+	private static void drawMenuDimmed(GuiGraphicsExtractor g) {
+		for (HudModule hud : Modules.hud()) {
+			if (!hud.enabled() || !hud.dimsWithMenu()) {
+				continue;
+			}
+			Draw d = new Draw(g, hud.unitPx());
+			try {
+				d.hudText(hud.vanillaFont());
+				d.origin(Math.round(hud.pixelX()), Math.round(hud.pixelY()));
+				hud.render(d, true);
+			} catch (Throwable t) {
+				LOG.error("hud module {} failed to render", hud.id, t);
+			} finally {
+				d.end();
+			}
+		}
+	}
+
 	private static void renderHud(GuiGraphicsExtractor g) {
 		Minecraft mc = Minecraft.getInstance();
 		pollKeys();
@@ -134,11 +159,16 @@ public final class RustyClient implements ClientModInitializer {
 		if (settings != null && settings.hideInF3.on() && Compat.debugOpen()) {
 			return;
 		}
-		if (!(Compat.screen() instanceof RustyScreen)) {
+		if (Compat.screen() instanceof RustyScreen) {
+			drawMenuDimmed(g);
+		} else {
 			drawHudModules(g, HudEditorScreen.editing());
 		}
 		if (mc.player != null) {
 			ModuleList.renderOverlays(g);
+		}
+		if (Compat.screen() != null) {
+			g.nextStratum();
 		}
 	}
 }

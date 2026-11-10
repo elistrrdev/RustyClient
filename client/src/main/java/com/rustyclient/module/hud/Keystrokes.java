@@ -44,6 +44,7 @@ public final class Keystrokes extends HudModule {
 	private final NumberSetting lineWidth = number("Space line width", LAYOUT, 0.35, 0.1, 0.9, 0.05, NumberSetting.percent());
 
 	private final ChoiceSetting weight = choice("Font weight", TEXT, "Bold", "Bold", "Semibold", "Medium");
+	private final ChoiceSetting vanillaWeight = choice("Vanilla font weight", TEXT, "Normal", "Normal", "Bold");
 	private final NumberSetting keyText = number("Key text size", TEXT, 9, 5, 18, 0.5, NumberSetting.decimal(""));
 	private final NumberSetting mouseLabelText = number("Mouse label size", TEXT, 8.5, 5, 18, 0.5, NumberSetting.decimal(""));
 	private final NumberSetting cpsText = number("CPS text size", TEXT, 8, 5, 18, 0.5, NumberSetting.decimal(""));
@@ -85,6 +86,8 @@ public final class Keystrokes extends HudModule {
 		borderWidth.visibleWhen(border::on);
 		borderColor.visibleWhen(border::on);
 		borderPressed.visibleWhen(border::on);
+		weight.visibleWhen(() -> !vanillaFont());
+		vanillaWeight.visibleWhen(this::vanillaFont);
 	}
 
 	private Fonts.Style style() {
@@ -96,6 +99,7 @@ public final class Keystrokes extends HudModule {
 
 	@Override
 	public void render(Draw d, boolean editing) {
+		d.vanillaBold(d.vanillaFont() && vanillaWeight.is("Bold"));
 		long now = System.nanoTime();
 		float dt = Math.min(0.1f, (now - last) / 1e9f);
 		last = now;

@@ -13,6 +13,7 @@ public final class Draw {
 	private float alpha = 1f;
 	private boolean vanilla;
 	private boolean hud;
+	private boolean bold;
 
 	public Draw(GuiGraphicsExtractor g, float unitPx) {
 		this.g = g;
@@ -61,23 +62,43 @@ public final class Draw {
 		return vanilla;
 	}
 
-	private int vanillaScale(float size) {
-		return Math.max(1, Math.round(size * s / 9f));
+	public Draw vanillaBold(boolean on) {
+		this.bold = on;
+		return this;
+	}
+
+	private float vanillaScale(float size) {
+		float k = Math.max(0.25f, size * s / 9f);
+		float whole = Math.round(k);
+		return whole >= 1 && Math.abs(k - whole) < 0.12f ? whole : k;
+	}
+
+	private static net.minecraft.network.chat.Component boldText(String text) {
+		return net.minecraft.network.chat.Component.literal(text).withStyle(net.minecraft.ChatFormatting.BOLD);
 	}
 
 	private float vanillaWidthPx(String text, float size) {
-		return Minecraft.getInstance().font.width(text) * vanillaScale(size);
+		net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
+		return (bold ? font.width(boldText(text)) : font.width(text)) * vanillaScale(size);
+	}
+
+	private float vanillaVisualPx(String text, float size) {
+		return Math.max(0, vanillaWidthPx(text, size) - vanillaScale(size));
 	}
 
 	private void vanillaRun(String text, float px, float topPx, float size, int argb, boolean shadow) {
 		if ((argb >>> 24) == 0 || alpha <= 0f) {
 			return;
 		}
-		int k = vanillaScale(size);
+		float k = vanillaScale(size);
 		g.pose().pushMatrix();
 		g.pose().translate(Math.round(px), Math.round(topPx));
 		g.pose().scale(k, k);
-		g.text(Minecraft.getInstance().font, text, 0, 0, col(argb), shadow);
+		if (bold) {
+			g.text(Minecraft.getInstance().font, boldText(text), 0, 0, col(argb), shadow);
+		} else {
+			g.text(Minecraft.getInstance().font, text, 0, 0, col(argb), shadow);
+		}
 		g.pose().popMatrix();
 	}
 
@@ -262,6 +283,13 @@ public final class Draw {
 		return Fonts.atlas(style, Math.round(size * s));
 	}
 
+	public float visualWidth(String text, Fonts.Style style, float size) {
+		if (vanilla) {
+			return vanillaVisualPx(text, size) / s;
+		}
+		return font(style, size).width(text) / s;
+	}
+
 	public float width(String text, Fonts.Style style, float size) {
 		if (vanilla) {
 			return vanillaWidthPx(text, size) / s;
@@ -295,7 +323,7 @@ public final class Draw {
 
 	public void textCenter(String text, float cx, float cy, Fonts.Style style, float size, int argb) {
 		if (vanilla) {
-			float w = vanillaWidthPx(text, size);
+			float w = vanillaVisualPx(text, size);
 			vanillaRun(text, ox + cx * s - w / 2f, oy + cy * s - vanillaScale(size) * 3.5f, size, argb, hudShadow(false));
 			return;
 		}
@@ -307,7 +335,7 @@ public final class Draw {
 
 	public void textRight(String text, float rx, float cy, Fonts.Style style, float size, int argb) {
 		if (vanilla) {
-			float w = vanillaWidthPx(text, size);
+			float w = vanillaVisualPx(text, size);
 			vanillaRun(text, ox + rx * s - w, oy + cy * s - vanillaScale(size) * 3.5f, size, argb, hudShadow(false));
 			return;
 		}
@@ -387,6 +415,191 @@ public final class Draw {
 		g.pose().scale(k, k);
 		g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 0, 0, 18, 18, col(0xFFFFFFFF));
 		g.pose().popMatrix();
+	}
+
+	public void roundSides(float x, float y, float w, float h, float r, boolean top, boolean bottom, int argb) {
+		if ((argb >>> 24) == 0 || alpha <= 0f) {
+			return;
+		}
+		int x0 = sx(x), y0 = sy(y), x1 = sx(x + w), y1 = sy(y + h);
+		int pw = x1 - x0, ph = y1 - y0;
+		if (pw <= 0 || ph <= 0) {
+			return;
+		}
+		int sides = (top ? 1 : 0) + (bottom ? 1 : 0);
+		int radius = sides == 0 ? 0 : Math.max(0, Math.min(Math.round(r * s), Math.min(pw / 2, ph / sides)));
+		int c = col(argb);
+		if (radius == 0) {
+			g.fill(x0, y0, x1, y1, c);
+			return;
+		}
+		Tex tex = Shapes.get(radius, 0, 0);
+		int size = tex.width;
+		int midTop = y0, midBottom = y1;
+		if (top) {
+			blit(tex, x0, y0, radius, radius, 0, 0, radius, radius, c);
+			blit(tex, x1 - radius, y0, radius, radius, size - radius, 0, radius, radius, c);
+			if (pw > radius * 2) {
+				g.fill(x0 + radius, y0, x1 - radius, y0 + radius, c);
+			}
+			midTop = y0 + radius;
+		}
+		if (bottom) {
+			blit(tex, x0, y1 - radius, radius, radius, 0, size - radius, radius, radius, c);
+			blit(tex, x1 - radius, y1 - radius, radius, radius, size - radius, size - radius, radius, radius, c);
+			if (pw > radius * 2) {
+				g.fill(x0 + radius, y1 - radius, x1 - radius, y1, c);
+			}
+			midBottom = y1 - radius;
+		}
+		if (midBottom > midTop) {
+			g.fill(x0, midTop, x1, midBottom, c);
+		}
+	}
+
+	public void knob(float cx, float cy, float r, boolean active, int color) {
+		if (active) {
+			circle(cx, cy, r * 1.75f, (Math.round((color >>> 24) * 0.22f) << 24) | (color & 0xFFFFFF));
+		}
+		circle(cx, cy, r + Math.max(0.75f, 1f / s), 0x66000000);
+		circle(cx, cy, r, color);
+	}
+
+	public void spriteRegion(net.minecraft.resources.Identifier sprite, int texW, int texH, int u, int v, float x, float y, int w, int h, int argb) {
+		if (alpha <= 0f || w <= 0 || h <= 0) {
+			return;
+		}
+		g.pose().pushMatrix();
+		g.pose().translate(ox + x * s, oy + y * s);
+		g.pose().scale(s, s);
+		g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, texW, texH, u, v, 0, 0, w, h, col(argb));
+		g.pose().popMatrix();
+	}
+
+	public void spriteAt(net.minecraft.resources.Identifier sprite, float x, float y, int w, int h, int argb) {
+		if (alpha <= 0f) {
+			return;
+		}
+		g.pose().pushMatrix();
+		g.pose().translate(ox + x * s, oy + y * s);
+		g.pose().scale(s, s);
+		g.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, 0, 0, w, h, col(argb));
+		g.pose().popMatrix();
+	}
+
+	private static net.minecraft.network.chat.Component defaultFont(net.minecraft.network.chat.Component text) {
+		net.minecraft.network.chat.MutableComponent out = net.minecraft.network.chat.Component.empty();
+		text.visit((style, part) -> {
+			out.append(net.minecraft.network.chat.Component.literal(part).withStyle(style.withFont(net.minecraft.network.chat.FontDescription.DEFAULT)));
+			return java.util.Optional.empty();
+		}, net.minecraft.network.chat.Style.EMPTY);
+		return out;
+	}
+
+	private record Run(String text, int color, boolean bold, net.minecraft.network.chat.Style style) {
+	}
+
+	private static java.util.List<Run> runs(net.minecraft.network.chat.Component text, int argb) {
+		java.util.List<Run> out = new java.util.ArrayList<>();
+		text.visit((st, part) -> {
+			int base = st.getColor() != null ? (argb & 0xFF000000) | (st.getColor().getValue() & 0xFFFFFF) : argb;
+			int color = base;
+			boolean bold = st.isBold();
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < part.length(); i++) {
+				char ch = part.charAt(i);
+				if (ch == '§' && i + 1 < part.length()) {
+					if (!sb.isEmpty()) {
+						out.add(new Run(sb.toString(), color, bold, st));
+						sb.setLength(0);
+					}
+					net.minecraft.ChatFormatting f = net.minecraft.ChatFormatting.getByCode(part.charAt(i + 1));
+					if (f == net.minecraft.ChatFormatting.RESET) {
+						color = base;
+						bold = st.isBold();
+					} else if (f != null && net.minecraft.network.chat.TextColor.fromLegacyFormat(f) != null) {
+						color = (argb & 0xFF000000) | (net.minecraft.network.chat.TextColor.fromLegacyFormat(f).getValue() & 0xFFFFFF);
+						bold = false;
+					} else if (f == net.minecraft.ChatFormatting.BOLD) {
+						bold = true;
+					}
+					i++;
+					continue;
+				}
+				sb.append(ch);
+			}
+			if (!sb.isEmpty()) {
+				out.add(new Run(sb.toString(), color, bold, st));
+			}
+			return java.util.Optional.empty();
+		}, net.minecraft.network.chat.Style.EMPTY);
+		return out;
+	}
+
+	private boolean ownFont(String text, Fonts.Style style, float size) {
+		FontAtlas atlas = font(style, size);
+		for (int i = 0; i < text.length(); ) {
+			int cp = text.codePointAt(i);
+			i += Character.charCount(cp);
+			if (!Character.isWhitespace(cp) && !atlas.canDisplay(cp)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static net.minecraft.network.chat.Component runComponent(Run run) {
+		return net.minecraft.network.chat.Component.literal(run.text()).withStyle(run.style().withColor(net.minecraft.network.chat.TextColor.fromRgb(run.color() & 0xFFFFFF)).withBold(run.bold()));
+	}
+
+	private float runWidth(Run run, Fonts.Style style, float size) {
+		Fonts.Style fs = run.bold() ? Fonts.Style.BOLD : style;
+		if (ownFont(run.text(), fs, size)) {
+			return width(run.text(), fs, size);
+		}
+		return Minecraft.getInstance().font.width(runComponent(run)) * vanillaScale(size) / s;
+	}
+
+	public float styledWidth(net.minecraft.network.chat.Component text, Fonts.Style style, float size) {
+		if (vanilla) {
+			return Minecraft.getInstance().font.width(defaultFont(text)) * vanillaScale(size) / s;
+		}
+		float w = 0;
+		for (Run run : runs(text, 0xFFFFFFFF)) {
+			w += runWidth(run, style, size);
+		}
+		return w;
+	}
+
+	public void styledText(net.minecraft.network.chat.Component text, float x, float cy, Fonts.Style style, float size, int argb, boolean shadow) {
+		boolean drop = hudShadow(shadow);
+		if (vanilla) {
+			if ((argb >>> 24) == 0 || alpha <= 0f) {
+				return;
+			}
+			float k = vanillaScale(size);
+			g.pose().pushMatrix();
+			g.pose().translate(Math.round(ox + x * s), Math.round(oy + cy * s - k * 3.5f));
+			g.pose().scale(k, k);
+			g.text(Minecraft.getInstance().font, defaultFont(text), 0, 0, col(argb), drop);
+			g.pose().popMatrix();
+			return;
+		}
+		float pen = x;
+		for (Run run : runs(text, argb)) {
+			Fonts.Style fs = run.bold() ? Fonts.Style.BOLD : style;
+			if (ownFont(run.text(), fs, size)) {
+				textShadowed(run.text(), pen, cy, fs, size, run.color(), drop);
+			} else if ((argb >>> 24) != 0 && alpha > 0f) {
+				float k = vanillaScale(size);
+				g.pose().pushMatrix();
+				g.pose().translate(Math.round(ox + pen * s), Math.round(oy + cy * s - k * 3.5f));
+				g.pose().scale(k, k);
+				g.text(Minecraft.getInstance().font, runComponent(run), 0, 0, col(run.color()), drop);
+				g.pose().popMatrix();
+			}
+			pen += runWidth(run, style, size);
+		}
 	}
 
 	public void vanillaText(net.minecraft.network.chat.Component text, float x, float y, float size, int argb, boolean shadow) {

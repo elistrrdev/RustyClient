@@ -66,65 +66,183 @@ public final class InfoHuds {
 	}
 
 	public static final class Coordinates extends Panel {
-		private final BoolSetting biome = bool("Show biome", GENERAL, true);
-		private final BoolSetting facing = bool("Show facing", GENERAL, true);
-		private final ChoiceSetting layout = choice("Layout", APPEARANCE, "Vertical", "Vertical", "Horizontal");
-		private final ChoiceSetting decimals = choice("Precision", APPEARANCE, "Whole", "Whole", "One decimal");
+		private static final String SHOWN = "Shown";
+		private final BoolSetting showX = bool("Show X", SHOWN, true);
+		private final BoolSetting showY = bool("Show Y", SHOWN, true);
+		private final BoolSetting showZ = bool("Show Z", SHOWN, true);
+		private final BoolSetting facing = bool("Show facing", SHOWN, true);
+		private final BoolSetting axis = bool("Show facing axis", SHOWN, false);
+		private final BoolSetting yaw = bool("Show yaw and pitch", SHOWN, false);
+		private final BoolSetting biome = bool("Show biome", SHOWN, true);
+		private final BoolSetting dimension = bool("Show dimension", SHOWN, false);
+		private final BoolSetting other = bool("Show other dimension", SHOWN, false);
+		private final BoolSetting chunk = bool("Show chunk", SHOWN, false);
+		private final BoolSetting labels = bool("Show labels", GENERAL, true);
+		private final BoolSetting colon = bool("Colon after labels", GENERAL, false);
+		private final BoolSetting axisHints = bool("Axis direction hints", GENERAL, false);
+		private final ChoiceSetting layout = choice("Layout", APPEARANCE, "Vertical", "Vertical", "Horizontal", "Compact");
+		private final ChoiceSetting decimals = choice("Precision", APPEARANCE, "Whole", "Whole", "One decimal", "Two decimals");
+		private final ChoiceSetting labelStyle = choice("Label style", APPEARANCE, "Letters", "Letters", "Words");
+		private final NumberSetting textSize = number("Text size", APPEARANCE, 9, 5, 16, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting lineSpacing = number("Line spacing", APPEARANCE, 2, 0, 8, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting minWidth = number("Minimum width", APPEARANCE, 70, 0, 200, 1, NumberSetting.integer(""));
 
 		public Coordinates() {
 			super("Coordinates", "locate-fixed", false, 0.01, 0.13);
+			colon.visibleWhen(labels::on);
+			labelStyle.visibleWhen(labels::on);
+			lineSpacing.visibleWhen(() -> !layout.is("Horizontal"));
+			minWidth.visibleWhen(() -> !layout.is("Horizontal"));
+			axis.visibleWhen(facing::on);
 		}
 
 		private String fmt(double v) {
-			return decimals.is("Whole") ? String.valueOf((long) Math.floor(v)) : String.format(Locale.ROOT, "%.1f", v);
+			return switch (decimals.get()) {
+				case "One decimal" -> String.format(Locale.ROOT, "%.1f", v);
+				case "Two decimals" -> String.format(Locale.ROOT, "%.2f", v);
+				default -> String.valueOf((long) Math.floor(v));
+			};
+		}
+
+		private String label(String letter, String word) {
+			if (!labels.on()) {
+				return "";
+			}
+			String l = labelStyle.is("Words") ? word : letter;
+			return colon.on() ? l + ":" : l;
+		}
+
+		private String hint(Player p, char which) {
+			if (!axisHints.on() || p == null) {
+				return "";
+			}
+			net.minecraft.core.Direction d = p.getDirection();
+			if (which == 'x' && d.getAxis() == net.minecraft.core.Direction.Axis.X) {
+				return d.getStepX() > 0 ? " +" : " -";
+			}
+			if (which == 'z' && d.getAxis() == net.minecraft.core.Direction.Axis.Z) {
+				return d.getStepZ() > 0 ? " +" : " -";
+			}
+			return "";
+		}
+
+		private static String capital(String s) {
+			return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
+		}
+
+		private List<String[]> rows(Player p) {
+			double x = p == null ? 0 : p.getX(), y = p == null ? 64 : p.getY(), z = p == null ? 0 : p.getZ();
+			List<String[]> rows = new ArrayList<>();
+			if (layout.is("Compact")) {
+				List<String> parts = new ArrayList<>();
+				if (showX.on()) {
+					parts.add(fmt(x));
+				}
+				if (showY.on()) {
+					parts.add(fmt(y));
+				}
+				if (showZ.on()) {
+					parts.add(fmt(z));
+				}
+				if (!parts.isEmpty()) {
+					rows.add(new String[]{label("XYZ", "Position"), String.join(", ", parts)});
+				}
+			} else {
+				if (showX.on()) {
+					rows.add(new String[]{label("X", "X"), fmt(x) + hint(p, 'x')});
+				}
+				if (showY.on()) {
+					rows.add(new String[]{label("Y", "Y"), fmt(y)});
+				}
+				if (showZ.on()) {
+					rows.add(new String[]{label("Z", "Z"), fmt(z) + hint(p, 'z')});
+				}
+			}
+			if (facing.on() && p != null) {
+				net.minecraft.core.Direction d = p.getDirection();
+				String text = capital(d.getName());
+				if (axis.on()) {
+					text += d.getAxis() == net.minecraft.core.Direction.Axis.X ? (d.getStepX() > 0 ? " (+X)" : " (-X)") : (d.getStepZ() > 0 ? " (+Z)" : " (-Z)");
+				}
+				rows.add(new String[]{label("F", "Facing"), text});
+			}
+			if (yaw.on() && p != null) {
+				float heading = ((p.getYRot() % 360f) + 360f) % 360f;
+				rows.add(new String[]{label("R", "Rotation"), String.format(Locale.ROOT, "%.1f / %.1f", heading, p.getXRot())});
+			}
+			if (biome.on() && p != null && mc.level != null) {
+				Holder<Biome> holder = mc.level.getBiome(p.blockPosition());
+				String id = holder.unwrapKey().map(k -> k.identifier().getPath()).orElse("unknown");
+				rows.add(new String[]{label("B", "Biome"), pretty(id)});
+			}
+			if ((dimension.on() || other.on()) && p != null && mc.level != null) {
+				String dim = mc.level.dimension().identifier().getPath();
+				if (dimension.on()) {
+					rows.add(new String[]{label("D", "World"), pretty(dim)});
+				}
+				if (other.on()) {
+					if (dim.equals("the_nether")) {
+						rows.add(new String[]{label("O", "Overworld"), fmt(x * 8) + ", " + fmt(z * 8)});
+					} else if (dim.equals("overworld")) {
+						rows.add(new String[]{label("N", "Nether"), fmt(x / 8) + ", " + fmt(z / 8)});
+					}
+				}
+			}
+			if (chunk.on() && p != null) {
+				int bx = p.blockPosition().getX(), bz = p.blockPosition().getZ();
+				rows.add(new String[]{label("C", "Chunk"), (bx >> 4) + ", " + (bz >> 4) + "  (" + (bx & 15) + ", " + (bz & 15) + ")"});
+			}
+			return rows;
 		}
 
 		@Override
 		public void render(Draw d, boolean editing) {
 			Player p = mc.player;
-			double x = p == null ? 0 : p.getX(), y = p == null ? 64 : p.getY(), z = p == null ? 0 : p.getZ();
-			List<String[]> rows = new ArrayList<>();
-			rows.add(new String[]{"X", fmt(x)});
-			rows.add(new String[]{"Y", fmt(y)});
-			rows.add(new String[]{"Z", fmt(z)});
-			if (facing.on() && p != null) {
-				rows.add(new String[]{"F", p.getDirection().getName().substring(0, 1).toUpperCase(Locale.ROOT) + p.getDirection().getName().substring(1)});
-			}
-			if (biome.on() && p != null && mc.level != null) {
-				Holder<Biome> holder = mc.level.getBiome(p.blockPosition());
-				String id = holder.unwrapKey().map(k -> k.identifier().getPath()).orElse("unknown");
-				rows.add(new String[]{"B", pretty(id)});
-			}
+			List<String[]> rows = rows(p);
 			Fonts.Style st = Fonts.Style.SEMIBOLD;
-			float size = 9;
+			float size = textSize.f();
+			float pad = 6;
+			if (rows.isEmpty()) {
+				panel(d, 40, editing ? 14 : 0.1f);
+				return;
+			}
 			if (layout.is("Horizontal")) {
-				float w = 6;
+				float w = pad;
 				for (String[] r : rows) {
-					w += d.width(r[0], st, size) + 4 + d.width(r[1], st, size) + 8;
+					w += (r[0].isEmpty() ? 0 : d.width(r[0], st, size) + 4) + d.width(r[1], st, size) + 8;
 				}
-				w -= 2;
-				panel(d, w, 17);
-				float cx = 6;
+				w = w - 8 + pad;
+				float h = size + 8;
+				panel(d, w, h);
+				float cx = pad;
 				for (String[] r : rows) {
-					d.textShadowed(r[0], cx, 8.5f, st, size, accent(), shadow.on());
-					cx += d.width(r[0], st, size) + 4;
-					d.textShadowed(r[1], cx, 8.5f, st, size, textColor.argb(), shadow.on());
+					if (!r[0].isEmpty()) {
+						d.textShadowed(r[0], cx, h / 2f, st, size, accent(), shadow.on());
+						cx += d.width(r[0], st, size) + 4;
+					}
+					d.textShadowed(r[1], cx, h / 2f, st, size, textColor.argb(), shadow.on());
 					cx += d.width(r[1], st, size) + 8;
 				}
 				return;
 			}
-			float lineH = 11;
-			float w = 0;
+			float labelW = 0;
 			for (String[] r : rows) {
-				w = Math.max(w, 10 + d.width(r[1], st, size));
+				labelW = Math.max(labelW, r[0].isEmpty() ? 0 : d.width(r[0], st, size) + 4);
 			}
-			w = Math.max(70, w + 14);
-			float h = rows.size() * lineH + 8;
-			panel(d, w, h);
-			float cy = 4 + lineH / 2f;
+			float lineH = size + lineSpacing.f();
+			float valueW = 0;
 			for (String[] r : rows) {
-				d.textShadowed(r[0], 6, cy, st, size, accent(), shadow.on());
-				d.textShadowed(r[1], 17, cy, st, size, textColor.argb(), shadow.on());
+				valueW = Math.max(valueW, d.width(r[1], st, size));
+			}
+			float w = Math.max(minWidth.f(), pad + labelW + valueW + pad);
+			float h = rows.size() * lineH - lineSpacing.f() + 8;
+			panel(d, w, h);
+			float cy = 4 + size / 2f;
+			for (String[] r : rows) {
+				if (!r[0].isEmpty()) {
+					d.textShadowed(r[0], pad, cy, st, size, accent(), shadow.on());
+				}
+				d.textShadowed(r[1], pad + labelW, cy, st, size, textColor.argb(), shadow.on());
 				cy += lineH;
 			}
 		}
@@ -174,86 +292,416 @@ public final class InfoHuds {
 			d.endScissor();
 			d.rect(w / 2f - 0.5f, 0, 1, 3, accent());
 			if (degrees.on()) {
-				String deg = Math.round(heading) % 360 + "°";
-				d.textCenter(deg, w / 2f, 19.5f, Fonts.Style.SEMIBOLD, 7, textColor.argb());
+				String num = String.valueOf(Math.round(heading) % 360);
+				d.textCenter(num, w / 2f, 19.5f, Fonts.Style.SEMIBOLD, 7, textColor.argb());
+				float right = w / 2f + d.visualWidth(num, Fonts.Style.SEMIBOLD, 7) / 2f;
+				d.textMid("°", right + 0.5f, 19.5f, Fonts.Style.SEMIBOLD, 7, textColor.argb());
 			}
 		}
 	}
 
-	public static final class ArmorStatus extends Panel {
-		private final BoolSetting mainHand = bool("Show held item", GENERAL, true);
-		private final ChoiceSetting durability = choice("Durability", APPEARANCE, "Value", "Value", "Percent", "Hidden");
-		private final ChoiceSetting layout = choice("Layout", APPEARANCE, "Vertical", "Vertical", "Horizontal");
+	public static final class ArmorStatus extends HudModule {
+		private static final String POSITION = "Position";
+		private static final String WARNING = "Low durability";
+		private static final int SIZE = 22;
+		private static final int STEP = 20;
+		private static final Identifier HOTBAR = Identifier.withDefaultNamespace("hud/hotbar");
+		private static final Identifier HOTBAR_OFFHAND = Identifier.withDefaultNamespace("hud/hotbar_offhand_left");
+		private static final EquipmentSlot[] SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+		private static final Identifier[] EMPTY = {
+			Identifier.withDefaultNamespace("container/slot/helmet"),
+			Identifier.withDefaultNamespace("container/slot/chestplate"),
+			Identifier.withDefaultNamespace("container/slot/leggings"),
+			Identifier.withDefaultNamespace("container/slot/boots")
+		};
+
+		private final BoolSetting icons = bool("Empty slot icons", GENERAL, true);
+		private final BoolSetting reversed = bool("Reversed order", GENERAL, false);
+		private final BoolSetting mainHand = bool("Main hand durability", GENERAL, false);
+		private final BoolSetting offHand = bool("Offhand durability", GENERAL, true);
+		private final BoolSetting shadow = bool("Text shadow", GENERAL, true);
+		private final ChoiceSetting anchor = choice("Anchor", POSITION, "Hotbar", "Free", "Hotbar", "Top center", "Top", "Center", "Bottom");
+		private final ChoiceSetting side = choice("Side", POSITION, "Left", "Left", "Right");
+		private final NumberSetting offsetX = number("Offset X", POSITION, 0, -200, 200, 1, NumberSetting.integer(""));
+		private final NumberSetting offsetY = number("Offset Y", POSITION, 0, -200, 200, 1, NumberSetting.integer(""));
+		private final ChoiceSetting offhandSlot = choice("Offhand slot", POSITION, "Adhere", "Ignore", "Adhere", "Always leave space");
+		private final ChoiceSetting shown = choice("Slots shown", APPEARANCE, "Not empty", "Not empty", "If any present", "Always", "Damaged pieces");
+		private final ChoiceSetting style = choice("Slot style", APPEARANCE, "Hotbar", "Hotbar", "Rounded corners", "Rounded", "None");
+		private final ChoiceSetting orientation = choice("Orientation", APPEARANCE, "Horizontal", "Horizontal", "Vertical");
+		private final ChoiceSetting durability = choice("Durability", APPEARANCE, "Bar", "Bar", "Value", "Percentage");
+		private final NumberSetting opacity = number("Slot opacity", APPEARANCE, 1, 0.1, 1, 0.05, NumberSetting.percent());
+		private final BoolSetting warning = bool("Warning icon", WARNING, true);
+		private final BoolSetting sound = bool("Warning sound", WARNING, true);
+		private final NumberSetting minValue = number("Warn at durability", WARNING, 20, 1, 200, 1, NumberSetting.integer(""));
+		private final NumberSetting minPercent = number("Warn at percent", WARNING, 0.1, 0.01, 0.5, 0.01, NumberSetting.percent());
+		private final NumberSetting bob = number("Warning bobbing", WARNING, 3, 0, 8, 1, NumberSetting.integer(""));
+		private final ColorSetting warningColor = color("Warning color", WARNING, 0xFFFF4D4D);
+		private final ItemStack[] last = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
 
 		public ArmorStatus() {
-			super("Armor Status", "shield", false, 0.99, 0.5);
-			background.set(false);
+			super("Armor Status", "shield", Category.HUD, false, 0.985, 0.975);
+			side.visibleWhen(() -> !anchor.is("Free") && !anchor.is("Top center"));
+			offsetX.visibleWhen(() -> !anchor.is("Free"));
+			offsetY.visibleWhen(() -> !anchor.is("Free"));
+			offhandSlot.visibleWhen(() -> anchor.is("Hotbar"));
+			sound.visibleWhen(warning::on);
+			minValue.visibleWhen(warning::on);
+			minPercent.visibleWhen(warning::on);
+			bob.visibleWhen(warning::on);
+			warningColor.visibleWhen(warning::on);
+			anchor.onChange(() -> {
+				if (anchor.is("Free")) {
+					fx = 0.985;
+					fy = 0.975;
+				}
+			});
+		}
+
+		@Override
+		protected boolean usesRadius() {
+			return false;
+		}
+
+		@Override
+		public boolean dimsWithMenu() {
+			return true;
+		}
+
+		private boolean vertical() {
+			return orientation.is("Vertical");
+		}
+
+		private boolean low(ItemStack stack) {
+			if (stack.isEmpty() || !stack.isDamageableItem()) {
+				return false;
+			}
+			int damage = stack.getDamageValue(), max = stack.getMaxDamage();
+			double left = 1.0 - (double) damage / max;
+			return left <= minPercent.v() || max - damage <= minValue.i();
+		}
+
+		private List<ItemStack> items(Player p, boolean editing) {
+			List<ItemStack> all = new ArrayList<>();
+			boolean any = false;
+			for (EquipmentSlot slot : SLOTS) {
+				ItemStack s = p == null ? ItemStack.EMPTY : p.getItemBySlot(slot);
+				all.add(s);
+				any |= !s.isEmpty();
+			}
+			if (editing) {
+				ItemStack[] samples = {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS), new ItemStack(Items.DIAMOND_BOOTS)};
+				for (int i = 0; i < all.size(); i++) {
+					if (all.get(i).isEmpty()) {
+						all.set(i, samples[i]);
+					}
+				}
+				return all;
+			}
+			List<ItemStack> out = new ArrayList<>();
+			for (int i = 0; i < all.size(); i++) {
+				ItemStack s = all.get(i);
+				boolean keep = switch (shown.get()) {
+					case "Always" -> true;
+					case "If any present" -> any;
+					case "Damaged pieces" -> low(s);
+					default -> !s.isEmpty();
+				};
+				out.add(keep ? s : null);
+			}
+			return out;
+		}
+
+		private List<int[]> order(List<ItemStack> items) {
+			List<int[]> slots = new ArrayList<>();
+			for (int i = 0; i < items.size(); i++) {
+				if (items.get(i) != null) {
+					slots.add(new int[]{i});
+				}
+			}
+			if (reversed.on()) {
+				java.util.Collections.reverse(slots);
+			}
+			return slots;
+		}
+
+		private float extra() {
+			float e = 0;
+			if (warning.on()) {
+				e += 10 + bob.f() / 2f;
+			}
+			if (!durability.is("Bar")) {
+				e += 9;
+			}
+			return e;
+		}
+
+		private boolean extrasBefore() {
+			return !anchor.is("Top") && !anchor.is("Top center");
+		}
+
+		@Override
+		public boolean visibleNow() {
+			return !order(items(mc.player, false)).isEmpty();
+		}
+
+		@Override
+		public void tick() {
+			if (!warning.on() || !sound.on() || mc.player == null) {
+				return;
+			}
+			EquipmentSlot[] all = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND};
+			boolean play = false;
+			for (int i = 0; i < all.length; i++) {
+				ItemStack now = mc.player.getItemBySlot(all[i]);
+				ItemStack before = last[i];
+				last[i] = now.copy();
+				boolean changed = before.getDamageValue() != now.getDamageValue() && low(now);
+				boolean hand = all[i] == EquipmentSlot.MAINHAND || all[i] == EquipmentSlot.OFFHAND;
+				boolean switched = all[i] == EquipmentSlot.MAINHAND && !before.is(now.getItem());
+				boolean wanted = !hand || (all[i] == EquipmentSlot.MAINHAND ? mainHand.on() : offHand.on());
+				if (changed && !switched && wanted) {
+					play = true;
+				}
+			}
+			if (play) {
+				mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_BASS.value(), 0.6f, 0.8f));
+			}
+		}
+
+		@Override
+		public float pixelX() {
+			if (anchor.is("Free")) {
+				return super.pixelX();
+			}
+			float gs = Draw.guiScale();
+			float guiW = Draw.windowWidth() / gs;
+			float w = pixelWidth() / gs;
+			boolean left = side.is("Left");
+			float ox = offsetX.f();
+			float x = switch (anchor.get()) {
+				case "Top center" -> (guiW - w) / 2f + ox;
+				case "Hotbar" -> {
+					float added = hotbarGap(left);
+					yield left ? guiW / 2f - 98 - added - w - ox : guiW / 2f + 98 + added + ox;
+				}
+				default -> left ? ox : guiW - w - ox;
+			};
+			return Math.round(x) * gs;
+		}
+
+		private float hotbarGap(boolean left) {
+			Player p = mc.player;
+			if (p == null || offhandSlot.is("Ignore")) {
+				return 0;
+			}
+			boolean mainArmSide = (p.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT) == left;
+			if (offhandSlot.is("Always leave space")) {
+				return mainArmSide ? 23 : 29;
+			}
+			if (mainArmSide) {
+				return mc.options.attackIndicator().get() == net.minecraft.client.AttackIndicatorStatus.HOTBAR && p.getAttackStrengthScale(0f) < 1f ? 23 : 0;
+			}
+			return p.getOffhandItem().isEmpty() ? 0 : 29;
+		}
+
+		@Override
+		public float pixelY() {
+			if (anchor.is("Free")) {
+				return super.pixelY();
+			}
+			float gs = Draw.guiScale();
+			float guiH = Draw.windowHeight() / gs;
+			float h = pixelHeight() / gs;
+			float oy = offsetY.f();
+			float y = switch (anchor.get()) {
+				case "Top", "Top center" -> oy;
+				case "Center" -> (guiH - h) / 2f + oy;
+				default -> guiH - h - oy;
+			};
+			return Math.round(y) * gs;
+		}
+
+		@Override
+		public void setPixelPosition(float x, float y) {
+			if (!anchor.is("Free")) {
+				float px = pixelX(), py = pixelY();
+				anchor.set("Free");
+				super.setPixelPosition(px, py);
+			}
+			super.setPixelPosition(x, y);
+		}
+
+		private String duraText(ItemStack stack) {
+			int left = stack.getMaxDamage() - stack.getDamageValue();
+			if (durability.is("Percentage")) {
+				if (stack.getDamageValue() == 0) {
+					return "";
+				}
+				return (int) Math.floor(left * 100.0 / stack.getMaxDamage()) + "%";
+			}
+			return String.valueOf(left);
 		}
 
 		@Override
 		public void render(Draw d, boolean editing) {
-			List<ItemStack> items = new ArrayList<>();
-			Player p = mc.player;
-			EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-			for (EquipmentSlot slot : slots) {
-				ItemStack s = p == null ? ItemStack.EMPTY : p.getItemBySlot(slot);
-				if (!s.isEmpty()) {
-					items.add(s);
-				}
-			}
-			if (mainHand.on() && p != null && !p.getMainHandItem().isEmpty()) {
-				items.add(p.getMainHandItem());
-			}
-			if (items.isEmpty() && editing) {
-				items.add(new ItemStack(Items.DIAMOND_HELMET));
-				items.add(new ItemStack(Items.DIAMOND_CHESTPLATE));
-				items.add(new ItemStack(Items.DIAMOND_LEGGINGS));
-				items.add(new ItemStack(Items.DIAMOND_BOOTS));
-			}
-			boolean vertical = layout.is("Vertical");
-			float row = 18;
+			List<ItemStack> items = items(mc.player, editing);
+			List<int[]> slots = order(items);
+			int n = Math.max(1, slots.size());
+			int length = SIZE + (n - 1) * STEP;
+			float ex = extra();
+			boolean vertical = vertical();
 			float textW = 0;
-			for (ItemStack s : items) {
-				textW = Math.max(textW, d.width(dura(s), Fonts.Style.SEMIBOLD, 8));
+			if (vertical && !durability.is("Bar")) {
+				textW = d.width("100%", Fonts.Style.SEMIBOLD, 9) + 2;
 			}
-			float w = vertical ? 22 + textW + 6 : Math.max(1, items.size()) * (durability.is("Hidden") ? 20 : 20 + textW + 4);
-			float h = vertical ? Math.max(1, items.size()) * row + 2 : 20;
-			panel(d, w, h);
-			float x = 2, y = 1;
-			for (ItemStack s : items) {
-				d.item(s, x, y + 0.5f, 16, false);
-				String t = dura(s);
-				if (!t.isEmpty()) {
-					d.textShadowed(t, x + 19, y + 9, Fonts.Style.SEMIBOLD, 8, duraColor(s), shadow.on());
+			float sideExtra = vertical ? Math.max(warning.on() ? 10 : 0, textW) + (warning.on() && textW > 0 ? 10 : 0) : 0;
+			width = vertical ? SIZE + sideExtra : length;
+			height = vertical ? length : SIZE + ex;
+			if (slots.isEmpty()) {
+				return;
+			}
+			boolean extrasLeft = vertical && fx > 0.5 && anchor.is("Free") || vertical && !anchor.is("Free") && side.is("Right");
+			float bx = vertical && extrasLeft ? sideExtra : 0;
+			float by = !vertical && extrasBefore() ? ex : 0;
+			drawSlots(d, bx, by, slots.size(), vertical);
+			for (int i = 0; i < slots.size(); i++) {
+				int index = slots.get(i)[0];
+				ItemStack stack = items.get(index);
+				float x = bx + (vertical ? 0 : STEP * i);
+				float y = by + (vertical ? STEP * i : 0);
+				if (stack.isEmpty()) {
+					if (icons.on()) {
+						d.spriteAt(EMPTY[index], x + 3, y + 3, 16, 16, 0xFFFFFFFF);
+					}
+					continue;
 				}
-				if (vertical) {
-					y += row;
+				d.item(stack, x + 3, y + 3, 16, durability.is("Bar"));
+				float bobOffset = bob.f() <= 0 ? 0 : (float) Math.sin(System.currentTimeMillis() / 160.0 + i) * bob.f() / 2f;
+				if (!vertical) {
+					float cy = extrasBefore() ? y : y + SIZE;
+					if (!durability.is("Bar") && stack.isDamageableItem()) {
+						String t = duraText(stack);
+						float ty = extrasBefore() ? cy - 4.5f : cy + 4.5f;
+						centeredText(d, t, x + SIZE / 2f, ty, 0xFF000000 | stack.getBarColor());
+						cy = extrasBefore() ? cy - 9 : cy + 9;
+					}
+					if (warning.on() && low(stack)) {
+						float wy = extrasBefore() ? cy - 5 + bobOffset : cy + 5 + bobOffset;
+						d.icon("triangle-alert", x + SIZE / 2f, wy, 8, warningColor.argb());
+					}
 				} else {
-					x += durability.is("Hidden") ? 20 : 20 + textW + 4;
+					float cx = extrasLeft ? x : x + SIZE;
+					float mid = y + SIZE / 2f;
+					if (!durability.is("Bar") && stack.isDamageableItem()) {
+						String t = duraText(stack);
+						float tw = d.width(t, Fonts.Style.SEMIBOLD, 9);
+						float tx = extrasLeft ? cx - tw - 1 : cx + 1;
+						d.textShadowed(t, tx, mid, Fonts.Style.SEMIBOLD, 9, 0xFF000000 | stack.getBarColor(), shadow.on());
+						cx = extrasLeft ? cx - textW : cx + textW;
+					}
+					if (warning.on() && low(stack)) {
+						float wx = extrasLeft ? cx - 5 : cx + 5;
+						d.icon("triangle-alert", wx, mid + bobOffset, 8, warningColor.argb());
+					}
 				}
 			}
 		}
 
-		private String dura(ItemStack s) {
-			if (durability.is("Hidden")) {
-				return "";
+		private void centeredText(Draw d, String text, float cx, float cy, int color) {
+			if (text.isEmpty()) {
+				return;
 			}
-			if (!s.isDamageableItem()) {
-				return s.getCount() > 1 ? String.valueOf(s.getCount()) : "";
-			}
-			int left = s.getMaxDamage() - s.getDamageValue();
-			return durability.is("Percent") ? Math.round(left * 100f / s.getMaxDamage()) + "%" : String.valueOf(left);
+			float w = d.visualWidth(text, Fonts.Style.SEMIBOLD, 9);
+			d.textShadowed(text, cx - w / 2f, cy, Fonts.Style.SEMIBOLD, 9, color, shadow.on());
 		}
 
-		private int duraColor(ItemStack s) {
-			if (!s.isDamageableItem()) {
-				return textColor.argb();
+		private void drawSlots(Draw d, float x, float y, int count, boolean vertical) {
+			if (style.is("None")) {
+				return;
 			}
-			float f = 1f - (float) s.getDamageValue() / s.getMaxDamage();
-			if (f > 0.5f) {
-				return textColor.argb();
+			int textureWidth = SIZE + (count - 1) * STEP;
+			int color = Theme.withAlpha(0xFFFFFFFF, Math.round(opacity.f() * 255));
+			var pose = d.g.pose();
+			pose.pushMatrix();
+			pose.translate(d.originX() + x * d.s, d.originY() + y * d.s);
+			pose.scale(d.s, d.s);
+			if (vertical) {
+				pose.rotate((float) (Math.PI / 2));
+				pose.translate(0, -SIZE);
 			}
-			return f > 0.2f ? 0xFFF2C14E : Theme.DANGER;
+			var g = d.g;
+			var pipe = net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED;
+			switch (style.get()) {
+				case "Rounded corners" -> {
+					if (count > 1) {
+						g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, 0, 1, 0, 0, 3, SIZE, color);
+						g.blitSprite(pipe, HOTBAR, 182, 22, 3, 0, 3, 0, textureWidth - 6, SIZE, color);
+						g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, SIZE - 3, 1, textureWidth - 3, 0, 3, SIZE, color);
+					} else {
+						g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, 0, 1, 0, 0, SIZE, SIZE, color);
+					}
+				}
+				case "Rounded" -> {
+					if (count > 1) {
+						int border = (SIZE - STEP) / 2;
+						g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, 0, 1, 0, 0, SIZE - border, SIZE, color);
+						for (int i = 1; i < count - 1; i++) {
+							g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, border, 1, border + i * STEP, 0, STEP, SIZE, color);
+						}
+						g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, 1, 1, textureWidth - STEP - border, 0, SIZE - border, SIZE, color);
+					} else {
+						g.blitSprite(pipe, HOTBAR_OFFHAND, 29, 24, 0, 1, 0, 0, SIZE, SIZE, color);
+					}
+				}
+				default -> {
+					g.blitSprite(pipe, HOTBAR, 182, 22, 0, 0, 0, 0, textureWidth - 3, SIZE, color);
+					g.blitSprite(pipe, HOTBAR, 182, 22, 182 - 3, 0, textureWidth - 3, 0, 3, SIZE, color);
+				}
+			}
+			pose.popMatrix();
+		}
+
+		public void drawHands(net.minecraft.client.gui.GuiGraphicsExtractor g) {
+			if (!enabled() || mc.player == null || Compat.hudHidden() || durability.is("Bar") && !warning.on()) {
+				return;
+			}
+			Player player = mc.player;
+			net.minecraft.client.gui.Font font = mc.font;
+			ItemStack off = player.getOffhandItem();
+			if (offHand.on() && off.isDamageableItem()) {
+				int x = player.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT ? g.guiWidth() / 2 - 91 - 29 : g.guiWidth() / 2 + 91 + 7;
+				int y = g.guiHeight() - SIZE;
+				if (!durability.is("Bar")) {
+					String t = duraText(off);
+					y -= font.lineHeight;
+					g.centeredText(font, t, x + SIZE / 2, y, 0xFF000000 | off.getBarColor());
+				}
+				if (warning.on() && low(off)) {
+					hudWarning(g, x + SIZE / 2, y - 6);
+				}
+			}
+			ItemStack main = player.getMainHandItem();
+			if (mainHand.on() && main.isDamageableItem() && !durability.is("Bar")) {
+				int x = g.guiWidth() / 2 - 91 + player.getInventory().getSelectedSlot() * 20 + SIZE / 2;
+				int y = g.guiHeight() - SIZE - 1;
+				String t = duraText(main);
+				int tx = x - font.width(t) / 2;
+				g.text(font, t, tx + 1, y, 0xFF000000, false);
+				g.text(font, t, tx - 1, y, 0xFF000000, false);
+				g.text(font, t, tx, y + 1, 0xFF000000, false);
+				g.text(font, t, tx, y - 1, 0xFF000000, false);
+				g.text(font, t, tx, y, 0xFF000000 | main.getBarColor(), false);
+			}
+		}
+
+		private void hudWarning(net.minecraft.client.gui.GuiGraphicsExtractor g, int cx, int cy) {
+			Draw d = new Draw(g, Draw.guiScale());
+			try {
+				float bobOffset = bob.f() <= 0 ? 0 : (float) Math.sin(System.currentTimeMillis() / 160.0) * bob.f() / 2f;
+				d.icon("triangle-alert", cx, cy + bobOffset, 8, warningColor.argb());
+			} finally {
+				d.end();
+			}
 		}
 	}
 
@@ -277,6 +725,11 @@ public final class InfoHuds {
 			if (mc.player != null) {
 				list.addAll(mc.player.getActiveEffects());
 			}
+			if (list.isEmpty() && editing) {
+				list.add(new MobEffectInstance(net.minecraft.world.effect.MobEffects.SPEED, 1800, 1));
+				list.add(new MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 900, 0));
+				list.add(new MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 3600, 0));
+			}
 			list.sort((a, b) -> Integer.compare(b.getDuration(), a.getDuration()));
 			float row = 22;
 			float w = 110;
@@ -284,11 +737,7 @@ public final class InfoHuds {
 				w = Math.max(w, 26 + d.width(name(e), Fonts.Style.SEMIBOLD, 9) + 8);
 			}
 			if (list.isEmpty()) {
-				panel(d, w, editing ? row : 0.1f);
-				if (editing) {
-					d.textShadowed("Speed II", 26, 7, Fonts.Style.SEMIBOLD, 9, textColor.argb(), shadow.on());
-					d.textShadowed("1:30", 26, 16, Fonts.Style.MEDIUM, 7, Theme.fade(textColor.argb(), 0.7f), shadow.on());
-				}
+				panel(d, w, 0.1f);
 				return;
 			}
 			panel(d, w, list.size() * row);

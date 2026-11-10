@@ -16,6 +16,7 @@ import com.rustyclient.module.hud.SimpleHuds;
 import com.rustyclient.module.hud.VanillaHuds;
 import com.rustyclient.module.utility.Utilities;
 import com.rustyclient.module.utility.Waypoints;
+import com.rustyclient.module.visual.HealthIndicator;
 import com.rustyclient.module.visual.Visuals;
 import com.rustyclient.platform.Compat;
 import com.rustyclient.render.Draw;
@@ -53,9 +54,11 @@ public final class ModuleList {
 		Modules.register(new Visuals.Zoom());
 		Modules.register(new Visuals.MotionBlur());
 		Modules.register(new Visuals.Nametags());
+		Modules.register(new HealthIndicator());
 		Modules.register(new Visuals.Fullbright());
 		Modules.register(new Utilities.ToggleSprint());
 		Modules.register(new SimpleHuds.ServerInfo());
+		Modules.register(new SimpleHuds.PingDisplay());
 		Modules.register(new InfoHuds.Direction());
 		Modules.register(new InfoHuds.ItemCounter());
 		Modules.register(new SimpleHuds.Clock());
@@ -106,6 +109,7 @@ public final class ModuleList {
 			} finally {
 				d.end();
 			}
+			crosshair.drawAttackIndicator(g);
 		});
 		HudElementRegistry.attachElementBefore(VanillaHudElements.FOOD_BAR, Identifier.fromNamespaceAndPath("rustyclient", "exhaustion"), (g, delta) -> {
 			Saturation saturation = Saturation.active();
@@ -137,6 +141,12 @@ public final class ModuleList {
 				saturation.tooltip(stack, lines);
 			}
 		});
+		HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR, Identifier.fromNamespaceAndPath("rustyclient", "hand_durability"), (g, delta) -> {
+			InfoHuds.ArmorStatus armor = Modules.get(InfoHuds.ArmorStatus.class);
+			if (armor != null) {
+				armor.drawHands(g);
+			}
+		});
 		HudElementRegistry.replaceElement(VanillaHudElements.SCOREBOARD, old -> (g, delta) -> {
 			if (!Modules.on(VanillaHuds.ScoreboardHud.class)) {
 				old.extractRenderState(g, delta);
@@ -149,25 +159,8 @@ public final class ModuleList {
 			}
 		});
 		HudElementRegistry.replaceElement(VanillaHudElements.BOSS_BAR, old -> (g, delta) -> {
-			VanillaHuds.BossBar bar = Modules.get(VanillaHuds.BossBar.class);
-			if (bar == null || !bar.enabled()) {
+			if (!Modules.on(VanillaHuds.BossBar.class)) {
 				old.extractRenderState(g, delta);
-				return;
-			}
-			if (bar.hideBars() && !HudEditorScreen.editing()) {
-				return;
-			}
-			float gs = Draw.guiScale();
-			float k = bar.scale.f();
-			int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-			g.pose().pushMatrix();
-			g.pose().translate(bar.pixelX() / gs, bar.pixelY() / gs);
-			g.pose().scale(k, k);
-			g.pose().translate(-(sw / 2f - 91f), -3f);
-			try {
-				old.extractRenderState(g, delta);
-			} finally {
-				g.pose().popMatrix();
 			}
 		});
 

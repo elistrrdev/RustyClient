@@ -75,6 +75,10 @@ public final class FontAtlas {
 		return SIZE;
 	}
 
+	public boolean canDisplay(int codepoint) {
+		return font.canDisplay(codepoint);
+	}
+
 	public Glyph glyph(int codepoint) {
 		Glyph glyph = glyphs.get(codepoint);
 		if (glyph != null) {

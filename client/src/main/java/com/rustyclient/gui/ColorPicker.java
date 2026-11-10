@@ -9,7 +9,8 @@ import java.awt.Color;
 
 final class ColorPicker {
 	private static final float W = 228;
-	private static final float H = 236;
+	private static final float H = 226;
+	private static final float ALPHA_ROW = 38;
 
 	ColorSetting target;
 	private float ax;
@@ -70,8 +71,9 @@ final class ColorPicker {
 		if (x + W > RustyScreen.PANEL_W - 10) {
 			x = RustyScreen.PANEL_W - 10 - W;
 		}
-		if (y + H > RustyScreen.PANEL_H - 10) {
-			y = ay - 36 - H - 6;
+		float h = target != null && target.alpha ? H + ALPHA_ROW : H;
+		if (y + h > RustyScreen.PANEL_H - 10) {
+			y = ay - 36 - h - 6;
 		}
 		return new float[]{x, Math.max(10, y)};
 	}
@@ -80,7 +82,7 @@ final class ColorPicker {
 		Draw d = ui.d;
 		float[] p = position(screen);
 		float x = p[0], y = p[1];
-		float h = target.alpha ? H + 22 : H;
+		float h = target.alpha ? H + ALPHA_ROW : H;
 		ui.catchAll(x, y, W, h);
 		d.shadow(x, y, W, h, 12, 18, 0x99000000);
 		d.round(x, y, W, h, 12, Theme.SURFACE);
@@ -125,13 +127,15 @@ final class ColorPicker {
 			d.textRight(Math.round(alpha * 100) + "%", px + pw, ry + 6, Fonts.Style.MEDIUM, 11, Theme.accentText());
 			float ty = ry + 18;
 			d.round(px, ty - 2.5f, pw, 5, 2.5f, Theme.SURFACE_3);
-			d.round(px, ty - 2.5f, Math.max(5, pw * alpha), 5, 2.5f, Theme.accent());
-			d.circle(px + pw * alpha, ty, 7, 0xFFF4F1EE);
+			float kr = 6f;
+			float ak = px + kr + (pw - kr * 2) * alpha;
+			d.round(px, ty - 2.5f, Math.max(5, ak - px), 5, 2.5f, Theme.accent());
+			d.knob(ak, ty, kr, false, Theme.accent());
 			ui.drag(px - 6, ty - 10, pw + 12, 20, (mx, my) -> {
-				alpha = clamp((mx - px) / pw);
+				alpha = clamp((mx - px - kr) / (pw - kr * 2));
 				apply();
 			});
-			ry += 22;
+			ry += ALPHA_ROW;
 		}
 		d.round(px, ry, 32, 32, 8, target.argb() | 0xFF000000);
 		float fx = px + 40, fw = pw - 40;
@@ -146,7 +150,7 @@ final class ColorPicker {
 
 	boolean press(Ui ui, RustyScreen screen, float mx, float my, int button) {
 		float[] p = position(screen);
-		float h = target.alpha ? H + 22 : H;
+		float h = target.alpha ? H + ALPHA_ROW : H;
 		if (mx >= p[0] && my >= p[1] && mx < p[0] + W && my < p[1] + h) {
 			ui.press(mx, my, button);
 			return true;

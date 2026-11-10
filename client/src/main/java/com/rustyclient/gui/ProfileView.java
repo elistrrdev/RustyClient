@@ -13,9 +13,41 @@ import net.minecraft.client.multiplayer.ServerData;
 
 final class ProfileView {
 	private final RustyScreen screen;
+	private boolean revealed;
 
 	ProfileView(RustyScreen screen) {
 		this.screen = screen;
+	}
+
+	void hide() {
+		revealed = false;
+	}
+
+	private void uuid(String uuid, float x, float cy) {
+		Ui ui = screen.ui;
+		Draw d = ui.d;
+		float size = 12;
+		float w = d.width(uuid, Fonts.Style.MEDIUM, size);
+		float padX = 8, h = 22;
+		float bx = x - padX, by = cy - h / 2f, bw = w + padX * 2;
+		boolean hover = ui.hover(bx, by, bw, h);
+		float t = ui.anim("uuid_reveal", revealed ? 1f : 0f, 16f);
+		if (t < 0.999f) {
+			float hide = 1f - t;
+			d.round(bx, by, bw, h, h / 2f, Theme.withAlpha(hover ? Theme.SURFACE_3 : Theme.SURFACE_2, Math.round(255 * hide)));
+			float px = x;
+			String[] parts = uuid.split("-");
+			float dash = d.width("-", Fonts.Style.MEDIUM, size);
+			for (String part : parts) {
+				float pw = d.width(part, Fonts.Style.MEDIUM, size);
+				d.shadow(px + 1, cy - 2.5f, Math.max(2, pw - 2), 5, 2.5f, 4.5f, Theme.withAlpha(Theme.MUTED, Math.round(150 * hide)));
+				px += pw + dash;
+			}
+		}
+		if (t > 0.001f) {
+			d.textMid(uuid, x, cy, Fonts.Style.MEDIUM, size, Theme.withAlpha(Theme.MUTED, Math.round(255 * t)));
+		}
+		ui.click(bx, by, bw, h, () -> revealed = !revealed);
 	}
 
 	void draw() {
@@ -44,11 +76,15 @@ final class ProfileView {
 		float tx = hx + head + 24;
 		d.textMid(name, tx, cardY + 46, Fonts.Style.BOLD, 22, Theme.TEXT);
 		String uuid = mc.getUser().getProfileId() == null ? "Offline" : mc.getUser().getProfileId().toString();
-		d.textMid(uuid, tx, cardY + 76, Fonts.Style.MEDIUM, 12, Theme.MUTED);
-		String badge = "Rusty Client " + RustyClient.version();
-		float bw = d.width(badge, Fonts.Style.SEMIBOLD, 11) + 20;
+		uuid(uuid, tx, cardY + 76);
+		String brand = "Rusty Client";
+		String version = RustyClient.version();
+		float brandW = d.width(brand, Fonts.Style.SEMIBOLD, 11);
+		float versionW = d.width(version, Fonts.Style.SEMIBOLD, 11);
+		float bw = brandW + 5 + versionW + 20;
 		d.round(tx, cardY + 92, bw, 22, 11, Theme.accentSoft());
-		d.textCenter(badge, tx + bw / 2f, cardY + 103, Fonts.Style.SEMIBOLD, 11, Theme.accentText());
+		d.textMid(brand, tx + 10, cardY + 103, Fonts.Style.SEMIBOLD, 11, Theme.accentText());
+		d.textMid(version, tx + 10 + brandW + 5, cardY + 103, Fonts.Style.SEMIBOLD, 11, Theme.accentText());
 
 		float gy = cardY + cardH + 14;
 		float gap = 12;

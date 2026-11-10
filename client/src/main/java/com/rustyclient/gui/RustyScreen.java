@@ -37,6 +37,7 @@ public final class RustyScreen extends Screen {
 	public static final float DEFAULT_FIT = 0.66f;
 
 	private static Page lastPage = Page.MODULES;
+	private static Module reopenConfig;
 	private static Category lastCategory = null;
 
 	final Ui ui = new Ui();
@@ -69,6 +70,10 @@ public final class RustyScreen extends Screen {
 		if (page == Page.CONFIG) {
 			page = Page.MODULES;
 		}
+		if (reopenConfig != null) {
+			page = Page.CONFIG;
+			configModule = reopenConfig;
+		}
 	}
 
 	public static void open() {
@@ -78,8 +83,10 @@ public final class RustyScreen extends Screen {
 
 	public static void open(Page start) {
 		Theme.refresh(true);
+		reopenConfig = null;
 		RustyScreen screen = new RustyScreen();
 		screen.page = start;
+		screen.configModule = null;
 		lastPage = start;
 		Compat.setScreen(screen);
 	}
@@ -96,9 +103,13 @@ public final class RustyScreen extends Screen {
 		if (page == Page.MODULES) {
 			modulesScroll = scrollTarget;
 		}
+		profileView.hide();
 		boolean back = page == Page.CONFIG && next == Page.MODULES;
 		if (next != Page.CONFIG) {
 			lastPage = next;
+			reopenConfig = null;
+		} else {
+			reopenConfig = configModule;
 		}
 		page = next;
 		scroll = back ? modulesScroll : 0;
@@ -154,7 +165,7 @@ public final class RustyScreen extends Screen {
 		}
 		g.fill(0, 0, width, height, Theme.withAlpha(0xFF000000, Math.round(110 * appear)));
 		if (minecraft != null && minecraft.player != null) {
-			RustyClient.drawHudModules(g, false);
+			RustyClient.drawHudModules(g, true, true);
 		}
 		Draw d = new Draw(g, scale);
 		float offset = (1f - appear) * 14f * scale;
@@ -518,6 +529,21 @@ public final class RustyScreen extends Screen {
 	public void removed() {
 		Compat.textInput(this, false);
 		Config.save();
+	}
+
+	private static long resetArmedUntil;
+
+	public static boolean resetPending() {
+		return System.currentTimeMillis() < resetArmedUntil;
+	}
+
+	public static void pressReset() {
+		if (resetPending()) {
+			resetArmedUntil = 0;
+			resetHud();
+		} else {
+			resetArmedUntil = System.currentTimeMillis() + 3000;
+		}
 	}
 
 	public static void resetHud() {

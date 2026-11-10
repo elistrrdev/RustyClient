@@ -32,6 +32,7 @@ public final class Visuals {
 		public final BoolSetting dot = bool("Center dot", GENERAL, false);
 		public final BoolSetting targetColor = bool("Highlight on entity", GENERAL, true);
 		public final BoolSetting thirdPerson = bool("Show in third person", GENERAL, false);
+		public final ChoiceSetting attackIndicator = choice("Attack indicator", APPEARANCE, "Game setting", "Game setting", "Hidden");
 
 		public Crosshair() {
 			super("Crosshair", "focus", Category.VISUAL, false);
@@ -85,6 +86,30 @@ public final class Visuals {
 			}
 			if (dot.on() && !shape.is("Dot")) {
 				d.circle(cx, cy, Math.max(0.6f, t * 0.6f), c);
+			}
+		}
+
+		public void drawAttackIndicator(net.minecraft.client.gui.GuiGraphicsExtractor g) {
+			if (!attackIndicator.is("Game setting") || mc.player == null || !mc.options.getCameraType().isFirstPerson()) {
+				return;
+			}
+			if (mc.options.attackIndicator().get() != net.minecraft.client.AttackIndicatorStatus.CROSSHAIR) {
+				return;
+			}
+			float strength = mc.player.getAttackStrengthScale(0f);
+			boolean full = false;
+			if (mc.crosshairPickEntity instanceof net.minecraft.world.entity.LivingEntity target && strength >= 1f) {
+				full = mc.player.getCurrentItemAttackStrengthDelay() > 5f && target.isAlive();
+			}
+			int y = g.guiHeight() / 2 - 7 + 16;
+			int x = g.guiWidth() / 2 - 8;
+			var pipe = net.minecraft.client.renderer.RenderPipelines.CROSSHAIR;
+			if (full) {
+				g.blitSprite(pipe, Identifier.withDefaultNamespace("hud/crosshair_attack_indicator_full"), x, y, 16, 16);
+			} else if (strength < 1f) {
+				int w = (int) (strength * 17f);
+				g.blitSprite(pipe, Identifier.withDefaultNamespace("hud/crosshair_attack_indicator_background"), x, y, 16, 4);
+				g.blitSprite(pipe, Identifier.withDefaultNamespace("hud/crosshair_attack_indicator_progress"), 16, 4, 0, 0, x, y, w, 4);
 			}
 		}
 
@@ -174,6 +199,7 @@ public final class Visuals {
 		public final KeySetting key = key("Zoom key", GENERAL, "key.keyboard.c");
 		public final NumberSetting factor = number("Zoom factor", APPEARANCE, 4, 1.5, 20, 0.5, NumberSetting.decimal("x"));
 		public final BoolSetting smooth = bool("Smooth zoom", GENERAL, true);
+		public final NumberSetting speed = number("Zoom speed", APPEARANCE, 12, 2, 40, 1, NumberSetting.integer(""));
 		public final BoolSetting scroll = bool("Scroll to adjust", GENERAL, true);
 		public final BoolSetting cinematic = bool("Smooth camera while zoomed", GENERAL, false);
 		public final BoolSetting reduceSensitivity = bool("Lower sensitivity", GENERAL, true);
@@ -185,6 +211,7 @@ public final class Visuals {
 
 		public Zoom() {
 			super("Zoom", "zoom-in", Category.VISUAL, false);
+			speed.visibleWhen(smooth::on);
 		}
 
 		@Override
@@ -219,8 +246,11 @@ public final class Visuals {
 			last = now;
 			float target = active() ? (float) Math.max(1, factor.v() * extra) : 1f;
 			if (smooth.on()) {
-				current += (target - current) * (1f - (float) Math.exp(-dt * 14f));
-				if (Math.abs(current - target) < 0.001f) {
+				double from = Math.log(Math.max(1e-3, current));
+				double to = Math.log(target);
+				double next = from + (to - from) * (1.0 - Math.exp(-dt * speed.f()));
+				current = (float) Math.exp(next);
+				if (Math.abs(next - to) < 0.002) {
 					current = target;
 				}
 			} else {
@@ -378,7 +408,7 @@ public final class Visuals {
 		private final ColorSetting background = color("Background color", APPEARANCE, 0xFF000000);
 
 		public LoadingScreen() {
-			super("Black Loading Screen", "monitor", Category.VISUAL, false);
+			super("Black Loading Screen", "loader-circle", Category.VISUAL, false);
 		}
 
 		public static Integer color() {
@@ -393,8 +423,7 @@ public final class Visuals {
 
 		public final BoolSetting own = bool("Show own nametag", GENERAL, true);
 		public final BoolSetting background = bool("Draw background", GENERAL, true);
-		public final BoolSetting health = bool("Show health", GENERAL, false);
-		public final ChoiceSetting healthFormat = choice("Health format", APPEARANCE, "Hearts", "Hearts", "Points", "Percent");
+		public final BoolSetting shadow = bool("Text shadow", GENERAL, false);
 		public final NumberSetting opacity = number("Background opacity", APPEARANCE, 0.25, 0, 1, 0.05, NumberSetting.percent());
 		public final NumberSetting size = number("Nametag scale", APPEARANCE, 1, 0.5, 2, 0.05, NumberSetting.times());
 
@@ -447,24 +476,9 @@ public final class Visuals {
 			return inside && tags != null ? tags.backgroundOpacity(vanilla) : vanilla;
 		}
 
-		public static net.minecraft.network.chat.Component withHealth(net.minecraft.network.chat.Component name, net.minecraft.world.entity.LivingEntity entity) {
+		public static boolean shadow(boolean vanilla) {
 			Nametags tags = active();
-			if (tags == null || !tags.health.on() || name == null || entity == null) {
-				return name;
-			}
-			float hp = entity.getHealth() + entity.getAbsorptionAmount();
-			float max = Math.max(1f, entity.getMaxHealth());
-			String text;
-			if (tags.healthFormat.is("Points")) {
-				text = String.format(java.util.Locale.ROOT, "%.1f", hp);
-			} else if (tags.healthFormat.is("Percent")) {
-				text = Math.round(hp / max * 100) + "%";
-			} else {
-				text = String.format(java.util.Locale.ROOT, "%.1f \u2764", hp / 2f);
-			}
-			float t = Math.max(0f, Math.min(1f, entity.getHealth() / max));
-			int color = Theme.mix(0xFFEF5B52, 0xFF6CCB8C, t) & 0xFFFFFF;
-			return name.copy().append(net.minecraft.network.chat.Component.literal(" " + text).withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+			return tags != null && tags.shadow.on() || vanilla;
 		}
 	}
 
@@ -479,7 +493,7 @@ public final class Visuals {
 
 		@Override
 		public void alwaysTick() {
-			int target = enabled() ? Theme.withAlpha(color.argb(), Math.round(intensity.f() * 255)) : 0xB2FF0000;
+			int target = enabled() ? Theme.withAlpha(color.argb(), Math.round((1f - intensity.f()) * 255)) : 0xB2FF0000;
 			if (target == applied) {
 				return;
 			}

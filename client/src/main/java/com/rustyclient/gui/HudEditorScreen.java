@@ -84,8 +84,11 @@ public final class HudEditorScreen extends Screen {
 		float m = px(mouseX), n = px(mouseY);
 		d.rect(0, 0, ww, wh, 0x30000000);
 		int line = Theme.withAlpha(0xFFFFFFFF, 0x14);
-		d.rect(ww / 2f - 0.5f, 0, 1, wh, line);
-		d.rect(0, wh / 2f - 0.5f, ww, 1, line);
+		boolean free = freeMove();
+		if (!free) {
+			d.rect(ww / 2f - 0.5f, 0, 1, wh, line);
+			d.rect(0, wh / 2f - 0.5f, ww, 1, line);
+		}
 		hovered = null;
 		for (int i = Modules.hud().size() - 1; i >= 0 && hovered == null; i--) {
 			HudModule hud = Modules.hud().get(i);
@@ -105,9 +108,8 @@ public final class HudEditorScreen extends Screen {
 			d.ring(x - pad, y - pad, w + pad * 2, h + pad * 2, 3 * gs, Math.max(1, gs / 2f), border);
 			float[] handle = handle(hud);
 			boolean onHandle = hud == scaling || (hud == hovered && overHandle(hud, m, n));
-			float hs = (onHandle ? 6 : 5) * gs;
-			d.circle(handle[0], handle[1], hs / 2f + Math.max(1, gs / 2f), focus ? 0xC0000000 : 0x80000000);
-			d.circle(handle[0], handle[1], hs / 2f, focus ? Theme.accent() : Theme.withAlpha(0xFFFFFFFF, 0xB0));
+			float hr = (onHandle ? 4f : 3.25f) * gs;
+			d.knob(handle[0], handle[1], hr, onHandle, focus ? Theme.accent() : Theme.withAlpha(0xFFFFFFFF, 0xD8));
 			if (focus) {
 				String label = hud.name + "  " + Math.round(hud.scale.v() * 100) + "%";
 				float size = 6 * gs;
@@ -120,7 +122,7 @@ public final class HudEditorScreen extends Screen {
 				d.textMid(label, x - pad + 4 * gs, ly + 5 * gs, Fonts.Style.SEMIBOLD, size, Theme.TEXT);
 			}
 		}
-		for (float[] guide : guides) {
+		for (float[] guide : free ? List.<float[]>of() : guides) {
 			if (guide[0] == 0) {
 				d.rect(guide[1] - 0.5f, 0, 1, wh, Theme.accent());
 			} else {
@@ -132,20 +134,23 @@ public final class HudEditorScreen extends Screen {
 		float gap = 6 * gs;
 		float total = bw * 3 + gap * 2;
 		float bx = (ww - total) / 2f, by = wh - bh - 14 * gs;
-		button(d, "Done", bx, by, bw, bh, true, m, n);
-		button(d, "Modules", bx + bw + gap, by, bw, bh, false, m, n);
-		button(d, "Reset", bx + (bw + gap) * 2, by, bw, bh, false, m, n);
-		String hint = "Drag to move, drag the corner to scale, right click for settings";
+		button(d, "Done", bx, by, bw, bh, true, false, m, n);
+		button(d, "Modules", bx + bw + gap, by, bw, bh, false, false, m, n);
+		button(d, RustyScreen.resetPending() ? "Confirm" : "Reset", bx + (bw + gap) * 2, by, bw, bh, false, RustyScreen.resetPending(), m, n);
+		String hint = "Drag to move, hold Shift to move freely, drag the corner to scale, right click for settings";
 		d.textCenter(hint, ww / 2f, by - 9 * gs, Fonts.Style.MEDIUM, 6.5f * gs, Theme.withAlpha(0xFFFFFFFF, 0xB0));
 		d.end();
 	}
 
-	private void button(Draw d, String label, float x, float y, float w, float h, boolean primary, float m, float n) {
+	private void button(Draw d, String label, float x, float y, float w, float h, boolean primary, boolean danger, float m, float n) {
 		boolean hover = m >= x && n >= y && m < x + w && n < y + h;
 		float gs = Draw.guiScale();
 		int bg = primary ? (hover ? Theme.accentHover() : Theme.accent()) : (hover ? Theme.SURFACE_3 : Theme.SURFACE);
+		if (danger) {
+			bg = hover ? Theme.mix(Theme.DANGER, 0xFFFFFFFF, 0.14f) : Theme.DANGER;
+		}
 		d.round(x, y, w, h, 5 * gs, bg);
-		d.textCenter(label, x + w / 2f, y + h / 2f, Fonts.Style.SEMIBOLD, 7 * gs, primary ? Theme.INK : Theme.TEXT);
+		d.textCenter(label, x + w / 2f, y + h / 2f, Fonts.Style.SEMIBOLD, 7 * gs, danger ? 0xFFFFFFFF : primary ? Theme.INK : Theme.TEXT);
 	}
 
 	private int buttonAt(float m, float n) {
@@ -161,6 +166,10 @@ public final class HudEditorScreen extends Screen {
 			}
 		}
 		return -1;
+	}
+
+	private static boolean freeMove() {
+		return Compat.isKeyDown("key.keyboard.left.shift") || Compat.isKeyDown("key.keyboard.right.shift");
 	}
 
 	private static float[] handle(HudModule hud) {
@@ -204,7 +213,7 @@ public final class HudEditorScreen extends Screen {
 			} else if (button == 1) {
 				backToMenu();
 			} else {
-				RustyScreen.resetHud();
+				RustyScreen.pressReset();
 			}
 			return true;
 		}
@@ -251,7 +260,7 @@ public final class HudEditorScreen extends Screen {
 			float w = dragging.pixelWidth(), h = dragging.pixelHeight();
 			float x = m - grabX, y = n - grabY;
 			ClientSettings settings = ClientSettings.get();
-			if (settings == null || settings.snapping.on()) {
+			if ((settings == null || settings.snapping.on()) && !freeMove()) {
 				float[] sx = snap(x, w, true, dragging);
 				float[] sy = snap(y, h, false, dragging);
 				x = sx[0];

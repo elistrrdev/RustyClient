@@ -58,7 +58,7 @@ public final class Config {
 				return;
 			}
 			for (Module module : Modules.all()) {
-				JsonObject obj = modules.getAsJsonObject(module.id);
+				JsonObject obj = modules.getAsJsonObject(module.savedId(modules));
 				if (obj == null) {
 					continue;
 				}

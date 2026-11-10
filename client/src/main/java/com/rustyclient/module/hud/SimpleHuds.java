@@ -5,6 +5,7 @@ import com.rustyclient.core.Clicks;
 import com.rustyclient.core.TextHud;
 import com.rustyclient.core.setting.BoolSetting;
 import com.rustyclient.core.setting.ChoiceSetting;
+import com.rustyclient.core.setting.TextSetting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.multiplayer.ServerData;
@@ -19,20 +20,64 @@ public final class SimpleHuds {
 	}
 
 	public static final class Cps extends TextHud {
-		private final BoolSetting rightClicks = bool("Show right clicks", GENERAL, false);
+		private final ChoiceSetting buttons = choice("Buttons", GENERAL, "Left", "Left", "Right", "Both");
+		private final BoolSetting brackets = bool("Brackets", GENERAL, false);
+		private final BoolSetting suffix = bool("CPS after value", GENERAL, false);
+		private final BoolSetting hideZero = bool("Hide when zero", GENERAL, false);
+		private final BoolSetting rightFirst = bool("Right button first", GENERAL, false);
+		private final ChoiceSetting separator = choice("Separator", APPEARANCE, "Bar", "Bar", "Slash", "Dash", "Colon", "Space");
+		private final TextSetting labelText = text("Label text", APPEARANCE, "CPS", 16);
+		private final BoolSetting colored = bool("Color by speed", GENERAL, false);
 
 		public Cps() {
 			super("CPS", "mouse", Category.HUD, false, 0.01, 0.52);
+			separator.visibleWhen(() -> buttons.is("Both"));
+			rightFirst.visibleWhen(() -> buttons.is("Both"));
+		}
+
+		@Override
+		public boolean visibleNow() {
+			return !hideZero.on() || Clicks.left() + Clicks.right() > 0;
 		}
 
 		@Override
 		protected String label() {
-			return "CPS";
+			return labelText.get().isBlank() ? "CPS" : labelText.get();
+		}
+
+		@Override
+		protected int valueColor(int fallback) {
+			if (!colored.on()) {
+				return fallback;
+			}
+			int c = Math.max(Clicks.left(), Clicks.right());
+			if (c >= 12) {
+				return 0xFFEF5B52;
+			}
+			return c >= 7 ? 0xFFF2C14E : 0xFF6CCB8C;
+		}
+
+		private String sep() {
+			return switch (separator.get()) {
+				case "Slash" -> " / ";
+				case "Dash" -> " - ";
+				case "Colon" -> " : ";
+				case "Space" -> "  ";
+				default -> " | ";
+			};
 		}
 
 		@Override
 		protected String value() {
-			return rightClicks.on() ? Clicks.left() + " | " + Clicks.right() : String.valueOf(Clicks.left());
+			String text = switch (buttons.get()) {
+				case "Right" -> String.valueOf(Clicks.right());
+				case "Both" -> rightFirst.on() ? Clicks.right() + sep() + Clicks.left() : Clicks.left() + sep() + Clicks.right();
+				default -> String.valueOf(Clicks.left());
+			};
+			if (brackets.on()) {
+				text = "[" + text + "]";
+			}
+			return suffix.on() ? text + " CPS" : text;
 		}
 	}
 
@@ -53,7 +98,9 @@ public final class SimpleHuds {
 	}
 
 	public static final class ServerInfo extends TextHud {
-		private final ChoiceSetting show = choice("Show", APPEARANCE, "Ping", "Ping", "Address", "Both");
+		private final ChoiceSetting show = choice("Show", APPEARANCE, "Address", "Address", "Server name", "Both");
+		private final BoolSetting hidePort = bool("Hide port", GENERAL, true);
+		private final BoolSetting lowercase = bool("Lowercase address", GENERAL, false);
 
 		public ServerInfo() {
 			super("Server Info", "server", Category.HUD, false, 0.01, 0.07);
@@ -61,7 +108,51 @@ public final class SimpleHuds {
 
 		@Override
 		protected String label() {
-			return show.is("Address") ? "IP" : "Ping";
+			return show.is("Server name") ? "Server" : "IP";
+		}
+
+		private String address() {
+			ServerData server = Minecraft.getInstance().getCurrentServer();
+			if (server == null) {
+				return Minecraft.getInstance().hasSingleplayerServer() ? "Singleplayer" : "Offline";
+			}
+			String ip = server.ip;
+			if (hidePort.on() && ip.matches(".*:\\d+$") && !ip.startsWith("[")) {
+				ip = ip.substring(0, ip.lastIndexOf(':'));
+			}
+			return lowercase.on() ? ip.toLowerCase(Locale.ROOT) : ip;
+		}
+
+		private String name() {
+			ServerData server = Minecraft.getInstance().getCurrentServer();
+			if (server == null) {
+				return Minecraft.getInstance().hasSingleplayerServer() ? "Singleplayer" : "Offline";
+			}
+			return server.name;
+		}
+
+		@Override
+		protected String value() {
+			return switch (show.get()) {
+				case "Server name" -> name();
+				case "Both" -> name() + "  " + address();
+				default -> address();
+			};
+		}
+	}
+
+	public static final class PingDisplay extends TextHud {
+		private final BoolSetting colored = bool("Color by ping", GENERAL, true);
+		private final BoolSetting suffix = bool("Show ms", GENERAL, true);
+		private final BoolSetting hideLocal = bool("Hide in singleplayer", GENERAL, false);
+
+		public PingDisplay() {
+			super("Ping Display", "activity", Category.HUD, false, 0.01, 0.13);
+		}
+
+		@Override
+		public boolean visibleNow() {
+			return !hideLocal.on() || Minecraft.getInstance().getCurrentServer() != null;
 		}
 
 		private int ping() {
@@ -73,25 +164,30 @@ public final class SimpleHuds {
 			return info == null ? -1 : info.getLatency();
 		}
 
-		private String address() {
-			ServerData server = Minecraft.getInstance().getCurrentServer();
-			if (server != null) {
-				return server.ip;
+		@Override
+		protected String label() {
+			return "Ping";
+		}
+
+		@Override
+		protected int valueColor(int fallback) {
+			if (!colored.on()) {
+				return fallback;
 			}
-			return Minecraft.getInstance().hasSingleplayerServer() ? "Singleplayer" : "Offline";
+			int p = Math.max(0, ping());
+			if (p < 80) {
+				return 0xFF6CCB8C;
+			}
+			if (p < 150) {
+				return 0xFFF2C14E;
+			}
+			return p < 250 ? 0xFFF09A4E : 0xFFEF5B52;
 		}
 
 		@Override
 		protected String value() {
-			int ping = ping();
-			String p = ping < 0 ? "0 ms" : ping + " ms";
-			if (show.is("Address")) {
-				return address();
-			}
-			if (show.is("Both")) {
-				return p + "  " + address();
-			}
-			return p;
+			int p = Math.max(0, ping());
+			return suffix.on() ? p + " ms" : String.valueOf(p);
 		}
 	}
 

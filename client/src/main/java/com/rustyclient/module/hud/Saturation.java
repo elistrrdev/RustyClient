@@ -57,7 +57,7 @@ public final class Saturation extends Module {
 	private static final Identifier HEART_HARDCORE_HALF = Identifier.withDefaultNamespace("hud/heart/hardcore_half");
 
 	private final BoolSetting saturationOverlay = bool("Saturation overlay", GENERAL, true);
-	private final BoolSetting exhaustionOverlay = bool("Exhaustion underlay", GENERAL, true);
+	private final BoolSetting exhaustionOverlay = bool("Exhaustion bar", GENERAL, false);
 	private final BoolSetting hungerPreview = bool("Hunger restore preview", GENERAL, true);
 	private final BoolSetting saturationPreview = bool("Saturation restore preview", GENERAL, true);
 	private final BoolSetting healthPreview = bool("Health restore preview", GENERAL, true);
@@ -76,7 +76,8 @@ public final class Saturation extends Module {
 
 	private final ChoiceSetting style = choice("Saturation style", APPEARANCE, "Inner outline", "Inner outline", "Outer outline", "Tint");
 	private final ColorSetting color = colorAlpha("Saturation color", APPEARANCE, 0xFFFFD43B);
-	private final ColorSetting exhaustionColor = colorAlpha("Exhaustion color", APPEARANCE, 0x70FFFFFF);
+	private final ChoiceSetting exhaustionStyle = choice("Exhaustion bar style", APPEARANCE, "Thin line", "Thin line", "Behind icons");
+	private final ColorSetting exhaustionColor = colorAlpha("Exhaustion bar color", APPEARANCE, 0xB0FFFFFF);
 	private final ColorSetting tooltipHunger = color("Tooltip hunger color", APPEARANCE, 0xFFE8A33D);
 	private final ColorSetting tooltipSat = color("Tooltip saturation color", APPEARANCE, 0xFFFFD43B);
 
@@ -107,6 +108,7 @@ public final class Saturation extends Module {
 		tooltipHunger.visibleWhen(tooltip::on);
 		tooltipSat.visibleWhen(tooltip::on);
 		exhaustionColor.visibleWhen(exhaustionOverlay::on);
+		exhaustionStyle.visibleWhen(exhaustionOverlay::on);
 		offhand.visibleWhen(this::previews);
 		flash.visibleWhen(this::previews);
 		previewAlpha.visibleWhen(this::previews);
@@ -288,6 +290,12 @@ public final class Saturation extends Module {
 	}
 
 	public void drawUnderlay(GuiGraphicsExtractor g) {
+		if (exhaustionStyle.is("Behind icons")) {
+			exhaustionBar(g);
+		}
+	}
+
+	private void exhaustionBar(GuiGraphicsExtractor g) {
 		if (!enabled() || !exhaustionOverlay.on()) {
 			return;
 		}
@@ -305,7 +313,12 @@ public final class Saturation extends Module {
 		float w = Math.min(1f, exhaustion / 4f) * 81f * gs;
 		Draw d = new Draw(g, 1f);
 		try {
-			d.rect(right * gs - w, top * gs, w, 9 * gs, exhaustionColor.argb());
+			if (exhaustionStyle.is("Behind icons")) {
+				d.rect(right * gs - w, top * gs, w, 9 * gs, exhaustionColor.argb());
+			} else {
+				float line = Math.max(1f, Math.round(gs / 2f));
+				d.rect(right * gs - w, (top + 9) * gs - line, w, line, exhaustionColor.argb());
+			}
 		} finally {
 			d.end();
 		}
@@ -314,6 +327,9 @@ public final class Saturation extends Module {
 	public void drawFood(GuiGraphicsExtractor g) {
 		if (!enabled()) {
 			return;
+		}
+		if (exhaustionStyle.is("Thin line")) {
+			exhaustionBar(g);
 		}
 		Player player = mc.player;
 		if (!showsFoodBar(player)) {

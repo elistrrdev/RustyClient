@@ -72,6 +72,9 @@ public final class Waypoints extends Module {
 	private final NumberSetting beamWidth = number("Beam width", APPEARANCE, 0.35, 0.1, 1, 0.05, NumberSetting.decimal(""));
 	private final NumberSetting beamOpacity = number("Beam opacity", APPEARANCE, 0.45, 0.1, 1, 0.05, NumberSetting.percent());
 	private final NumberSetting maxDistance = number("Max distance", APPEARANCE, 5000, 100, 20000, 100, NumberSetting.integer(" blocks"));
+	private final BoolSetting fade = bool("Fade beam and label when close", GENERAL, true);
+	private final NumberSetting fadeFull = number("Fully visible from", APPEARANCE, 32, 4, 128, 1, NumberSetting.integer(" blocks"));
+	private final NumberSetting fadeHidden = number("Hidden closer than", APPEARANCE, 4, 0, 64, 1, NumberSetting.integer(" blocks"));
 	private final List<Point> points = new ArrayList<>();
 	private boolean loaded;
 	private boolean addWas;
@@ -266,11 +269,21 @@ public final class Waypoints extends Module {
 		collector.submitCustomGeometry(pose, RenderTypes.debugQuads(), (p, buffer) -> {
 			for (Point point : shown) {
 				float x = (float) (point.x - cam.x), y = (float) (point.y - cam.y), z = (float) (point.z - cam.z);
+				float k = fade.on() ? closeness(Math.sqrt(x * x + z * z)) : 1f;
+				if (k <= 0f) {
+					continue;
+				}
 				float top = y + 384f;
-				column(p, buffer, x, y, z, top, half, Theme.withAlpha(point.color, coreAlpha));
-				column(p, buffer, x, y, z, top, half * 2.2f, Theme.withAlpha(point.color, glowAlpha));
+				column(p, buffer, x, y, z, top, half, Theme.withAlpha(point.color, Math.round(coreAlpha * k)));
+				column(p, buffer, x, y, z, top, half * 2.2f, Theme.withAlpha(point.color, Math.round(glowAlpha * k)));
 			}
 		});
+	}
+
+	private float closeness(double distance) {
+		float hidden = fadeHidden.f();
+		float full = Math.max(hidden + 1f, fadeFull.f());
+		return (float) Math.max(0, Math.min(1, (distance - hidden) / (full - hidden)));
 	}
 
 	private static void column(PoseStack.Pose p, VertexConsumer b, float cx, float y0, float cz, float y1, float r, int c) {
@@ -326,6 +339,12 @@ public final class Waypoints extends Module {
 			if (sx < -100 || sx > screenW + 100 || sy < -50 || sy > screenH + 50) {
 				continue;
 			}
+			float k = fade.on() ? closeness(Math.sqrt(dx * dx + dz * dz)) : 1f;
+			if (k <= 0f) {
+				continue;
+			}
+			float before = d.alpha();
+			d.alpha(before * k);
 			float x = (float) sx / d.s, y = (float) sy / d.s;
 			String meters = distance.on() ? String.format(Locale.ROOT, "%.0fm", dist) : "";
 			float nameW = d.width(p.name, Fonts.Style.SEMIBOLD, 8);
@@ -338,6 +357,7 @@ public final class Waypoints extends Module {
 			if (!meters.isEmpty()) {
 				d.textMid(meters, left + 12 + nameW + 5, y, Fonts.Style.MEDIUM, 7.5f, Theme.MUTED);
 			}
+			d.alpha(before);
 		}
 	}
 }

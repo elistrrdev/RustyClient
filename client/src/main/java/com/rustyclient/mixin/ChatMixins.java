@@ -1,12 +1,15 @@
 package com.rustyclient.mixin;
 
+import com.rustyclient.core.Modules;
 import com.rustyclient.core.Theme;
 import com.rustyclient.module.utility.Utilities;
 import com.rustyclient.platform.Compat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.client.multiplayer.chat.GuiMessageSource;
@@ -108,6 +111,27 @@ public final class ChatMixins {
 			mc.keyboardHandler.setClipboard(StringDecomposer.getPlainText(Component.literal(text)));
 			Compat.chat().addClientSystemMessage(Component.literal("Copied message to clipboard").withStyle(Style.EMPTY.withColor(TextColor.fromRgb(Theme.accent() & 0xFFFFFF))));
 			cir.setReturnValue(true);
+		}
+	}
+
+	@Mixin(ChatScreen.class)
+	public abstract static class Blur extends Screen {
+		protected Blur(Component title) {
+			super(title);
+		}
+
+		@Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
+		private void rusty$blur(GuiGraphicsExtractor g, int mouseX, int mouseY, float partial, CallbackInfo ci) {
+			Utilities.MenuBlur blur = Modules.get(Utilities.MenuBlur.class);
+			if (blur == null || !blur.blurs(this)) {
+				return;
+			}
+			extractBlurredBackground(g);
+			int alpha = Math.round(blur.dim.f() * 255);
+			if (alpha > 0) {
+				g.fill(0, 0, width, height, alpha << 24);
+			}
+			ci.cancel();
 		}
 	}
 }

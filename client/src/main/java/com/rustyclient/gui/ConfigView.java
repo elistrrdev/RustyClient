@@ -159,7 +159,8 @@ final class ConfigView {
 		sectionLabel(d, "Layout and files", x0, y);
 		y += 17;
 		actionRow("HUD layout", "Edit", x0, y, colW, () -> Compat.setScreen(new HudEditorScreen(screen)));
-		actionRow("Reset HUD layout", "Reset", x0 + colW + COL_GAP, y, colW, RustyScreen::resetHud);
+		boolean pending = RustyScreen.resetPending();
+		actionRow(pending ? "Click again to reset" : "Reset HUD layout", pending ? "Confirm" : "Reset", x0 + colW + COL_GAP, y, colW, pending, RustyScreen::pressReset);
 		y += 51;
 		actionRow("Config folder", "Open", x0, y, colW, () -> RustyClient.openFolder(Config.file().getParent()));
 		actionRow("Screenshots folder", "Open", x0 + colW + COL_GAP, y, colW, () -> RustyClient.openFolder(FabricLoader.getInstance().getGameDir().resolve("screenshots")));
@@ -168,6 +169,10 @@ final class ConfigView {
 	}
 
 	private void actionRow(String label, String button, float x, float y, float w, Runnable action) {
+		actionRow(label, button, x, y, w, false, action);
+	}
+
+	private void actionRow(String label, String button, float x, float y, float w, boolean danger, Runnable action) {
 		Ui ui = screen.ui;
 		Draw d = ui.d;
 		d.round(x, y, w, 42, 10, Theme.SURFACE);
@@ -175,8 +180,9 @@ final class ConfigView {
 		float bw = d.width(button, Fonts.Style.SEMIBOLD, 12) + 26;
 		float bx = x + w - 10 - bw;
 		boolean hover = ui.hover(bx, y + 8, bw, 26);
-		d.round(bx, y + 8, bw, 26, 7, hover ? Theme.accentHover() : Theme.accent());
-		d.textCenter(button, bx + bw / 2f, y + 21, Fonts.Style.SEMIBOLD, 12, Theme.INK);
+		int bg = danger ? (hover ? Theme.mix(Theme.DANGER, 0xFFFFFFFF, 0.14f) : Theme.DANGER) : (hover ? Theme.accentHover() : Theme.accent());
+		d.round(bx, y + 8, bw, 26, 7, bg);
+		d.textCenter(button, bx + bw / 2f, y + 21, Fonts.Style.SEMIBOLD, 12, danger ? 0xFFFFFFFF : Theme.INK);
 		ui.click(bx, y + 8, bw, 26, action);
 	}
 
@@ -230,14 +236,14 @@ final class ConfigView {
 		float tx = x, tw = w - 6;
 		String key = "sl" + System.identityHashCode(setting);
 		float frac = ui.anim(key, (float) setting.fraction(), 22f);
+		float kr = 6.5f;
+		float kx = tx + kr + (tw - kr * 2) * frac;
 		d.round(tx, ty - 2.5f, tw, 5, 2.5f, Theme.SURFACE_3);
-		d.round(tx, ty - 2.5f, Math.max(5, tw * frac), 5, 2.5f, Theme.accent());
-		float kx = tx + tw * frac;
+		d.round(tx, ty - 2.5f, Math.max(5, kx - tx), 5, 2.5f, Theme.accent());
 		boolean hover = ui.hover(tx - 8, ty - 12, tw + 16, 24);
-		float r = hover || ui.activeDrag != null ? 8.5f : 8f;
-		d.circle(kx, ty, r + 1, 0x40000000);
-		d.circle(kx, ty, r, 0xFFF4F1EE);
-		ui.drag(tx - 8, ty - 12, tw + 16, 24, (mx, my) -> setting.setFraction((mx - tx) / tw));
+		boolean active = hover || ui.activeDrag != null;
+		d.knob(kx, ty, active ? 7f : kr, active, Theme.accent());
+		ui.drag(tx - 8, ty - 12, tw + 16, 24, (mx, my) -> setting.setFraction((mx - tx - kr) / (tw - kr * 2)));
 	}
 
 	private float choice(ChoiceSetting setting, float x, float y, float w) {

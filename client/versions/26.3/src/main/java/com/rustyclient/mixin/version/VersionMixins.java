@@ -84,4 +84,12 @@ public final class VersionMixins {
 			Visuals.Nametags.end(pose);
 		}
 	}
+
+	@Mixin(net.minecraft.client.renderer.SubmitNodeCollection.class)
+	public abstract static class NameShadow {
+		@org.spongepowered.asm.mixin.injection.ModifyArg(method = "nameTag", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/feature/TextFeatureRenderer$Content$Text;<init>(FFLnet/minecraft/util/FormattedCharSequence;ZIII)V"), index = 3)
+		private static boolean rusty$shadow(boolean shadow) {
+			return Visuals.Nametags.shadow(shadow);
+		}
+	}
 }

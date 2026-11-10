@@ -50,6 +50,18 @@ public abstract class Module {
 		return false;
 	}
 
+	protected String legacyId() {
+		return null;
+	}
+
+	public final String savedId(com.google.gson.JsonObject modules) {
+		if (modules.has(id)) {
+			return id;
+		}
+		String old = legacyId();
+		return old != null && modules.has(old) ? old : id;
+	}
+
 	public boolean hidden() {
 		return false;
 	}

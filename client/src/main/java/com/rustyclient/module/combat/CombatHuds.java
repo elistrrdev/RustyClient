@@ -71,7 +71,12 @@ public final class CombatHuds {
 		private final ColorSetting color = color("Color", APPEARANCE, Theme.DEFAULT_ACCENT);
 
 		public HitDelay() {
-			super("Hit Delay Indicator", "timer", Category.COMBAT, false, 0.5, 0.56);
+			super("Attack Indicator", "timer", Category.COMBAT, false, 0.5, 0.56);
+		}
+
+		@Override
+		protected String legacyId() {
+			return "hit_delay_indicator";
 		}
 
 		private float progress() {
