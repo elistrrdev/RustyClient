@@ -7,11 +7,18 @@ import com.rustyclient.core.setting.BoolSetting;
 import com.rustyclient.core.setting.ChoiceSetting;
 import com.rustyclient.core.setting.ColorSetting;
 import com.rustyclient.core.setting.NumberSetting;
+import com.rustyclient.core.setting.TextSetting;
 import com.rustyclient.platform.Compat;
 import com.rustyclient.render.Draw;
 import com.rustyclient.render.Fonts;
+import com.rustyclient.render.Tex;
+import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -20,8 +27,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Locale;
 
 public final class InfoHuds {
@@ -43,7 +56,7 @@ public final class InfoHuds {
 			width = w;
 			height = h;
 			if (background.on()) {
-				d.round(0, 0, w, h, 4, backgroundColor.argb());
+				d.round(0, 0, w, h, radius(), backgroundColor.argb());
 			}
 		}
 
@@ -379,38 +392,262 @@ public final class InfoHuds {
 	}
 
 	public static final class PackDisplay extends Panel {
-		private final NumberSetting max = number("Packs shown", APPEARANCE, 3, 1, 8, 1, NumberSetting.integer(""));
+		private static final String LIST = "Pack list";
+		private final BoolSetting icons = bool("Show pack icons", GENERAL, true);
+		private final BoolSetting names = bool("Show pack names", GENERAL, true);
+		private final BoolSetting descriptions = bool("Show descriptions", GENERAL, false);
+		private final BoolSetting header = bool("Show header", GENERAL, false);
+		private final BoolSetting count = bool("Show pack count", GENERAL, true);
+		private final BoolSetting colors = bool("Keep pack text colors", GENERAL, false);
+		private final BoolSetting showDefault = bool("Show Default when empty", GENERAL, true);
+		private final BoolSetting builtIn = bool("Show built-in packs", LIST, true);
+		private final BoolSetting server = bool("Show server packs", LIST, true);
+		private final BoolSetting samples = bool("Show sample packs in editor", LIST, true);
+		private final ChoiceSetting order = choice("Order", LIST, "Highest first", "Highest first", "Lowest first");
+		private final NumberSetting max = number("Packs shown", LIST, 3, 1, 12, 1, NumberSetting.integer(""));
+		private final NumberSetting maxName = number("Max name length", LIST, 32, 6, 64, 1, NumberSetting.integer(""));
+		private final TextSetting title = text("Header text", LIST, "Resource Packs", 32);
+		private final ChoiceSetting layout = choice("Layout", APPEARANCE, "Vertical", "Vertical", "Horizontal");
+		private final ChoiceSetting align = choice("Alignment", APPEARANCE, "Left", "Left", "Right");
+		private final NumberSetting iconSize = number("Icon size", APPEARANCE, 14, 8, 40, 1, NumberSetting.integer(""));
+		private final NumberSetting textSize = number("Name size", APPEARANCE, 8.5, 5, 16, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting descSize = number("Description size", APPEARANCE, 7, 5, 14, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting spacing = number("Row spacing", APPEARANCE, 2, 0, 10, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting padding = number("Padding", APPEARANCE, 4, 0, 12, 0.5, NumberSetting.decimal(""));
+		private final BoolSetting iconFrame = bool("Icon frame", APPEARANCE, false);
+		private final ColorSetting frameColor = colorAlpha("Icon frame color", APPEARANCE, 0x60FFFFFF);
+		private final ColorSetting descColor = colorAlpha("Description color", APPEARANCE, 0xB0F2EEEA);
+		private final Map<String, Tex> cache = new HashMap<>();
+		private final Set<String> failed = new HashSet<>();
+		private Tex unknown;
 
 		public PackDisplay() {
 			super("Pack Display", "layers", false, 0.01, 0.9);
+			descSize.visibleWhen(descriptions::on);
+			descColor.visibleWhen(descriptions::on);
+			title.visibleWhen(header::on);
+			count.visibleWhen(header::on);
+			iconSize.visibleWhen(icons::on);
+			iconFrame.visibleWhen(icons::on);
+			frameColor.visibleWhen(() -> icons.on() && iconFrame.on());
+			textSize.visibleWhen(names::on);
+			maxName.visibleWhen(() -> names.on() || descriptions.on());
+			colors.visibleWhen(names::on);
+		}
+
+		private record Entry(String id, Pack pack, String name, Component styled, String description) {
+		}
+
+		private List<Entry> entries(boolean editing) {
+			List<Entry> list = new ArrayList<>();
+			Pack vanilla = null;
+			for (Pack p : Minecraft.getInstance().getResourcePackRepository().getSelectedPacks()) {
+				String id = p.getId();
+				if (id.equals("vanilla")) {
+					vanilla = p;
+					continue;
+				}
+				if (id.startsWith("fabric") || id.equals("rustyclient")) {
+					continue;
+				}
+				if (!builtIn.on() && p.getPackSource() == PackSource.BUILT_IN) {
+					continue;
+				}
+				if (!server.on() && p.getPackSource() == PackSource.SERVER) {
+					continue;
+				}
+				list.add(new Entry(id, p, p.getTitle().getString(), p.getTitle(), firstLine(p.getDescription().getString())));
+			}
+			if (order.is("Highest first")) {
+				Collections.reverse(list);
+			}
+			if (list.isEmpty() && editing && samples.on()) {
+				list.add(new Entry("sample_a", null, "Faithful 32x", Component.literal("Faithful 32x"), "A sample pack"));
+				list.add(new Entry("sample_b", null, "Low Fire", Component.literal("Low Fire"), "Lower fire overlay"));
+			}
+			if (list.isEmpty() && showDefault.on()) {
+				String description = vanilla == null ? "" : firstLine(vanilla.getDescription().getString());
+				list.add(new Entry("vanilla", vanilla, "Default", Component.literal("Default"), description));
+			}
+			while (list.size() > max.i()) {
+				list.remove(list.size() - 1);
+			}
+			return list;
+		}
+
+		private static String firstLine(String text) {
+			int nl = text.indexOf('\n');
+			return (nl >= 0 ? text.substring(0, nl) : text).trim();
+		}
+
+		private String clip(String text) {
+			int limit = maxName.i();
+			return text.length() > limit ? text.substring(0, Math.max(1, limit - 3)).trim() + "..." : text;
+		}
+
+		private Tex icon(Entry e) {
+			if (e.pack() == null) {
+				return unknown();
+			}
+			Tex tex = cache.get(e.id());
+			if (tex != null) {
+				return tex;
+			}
+			if (failed.contains(e.id())) {
+				return unknown();
+			}
+			byte[] bytes = Compat.packIcon(e.pack());
+			try {
+				if (bytes != null) {
+					tex = Tex.color("pack", NativeImage.read(bytes));
+					cache.put(e.id(), tex);
+					return tex;
+				}
+			} catch (Exception ignored) {
+			}
+			failed.add(e.id());
+			return unknown();
+		}
+
+		private Tex unknown() {
+			if (unknown == null) {
+				try (InputStream in = Minecraft.getInstance().getResourceManager().open(Identifier.withDefaultNamespace("textures/misc/unknown_pack.png"))) {
+					unknown = Tex.color("pack_unknown", NativeImage.read(in));
+				} catch (Exception ignored) {
+				}
+			}
+			return unknown;
+		}
+
+		private void release(List<Entry> shown) {
+			Set<String> keep = new HashSet<>();
+			for (Entry e : shown) {
+				keep.add(e.id());
+			}
+			cache.entrySet().removeIf(entry -> {
+				if (keep.contains(entry.getKey())) {
+					return false;
+				}
+				entry.getValue().close();
+				return true;
+			});
+			failed.retainAll(keep);
+		}
+
+		private Component styledName(Entry e) {
+			return Component.literal(clip(e.name())).withStyle(e.styled().getStyle());
+		}
+
+		private float nameWidth(Draw d, Entry e) {
+			if (!names.on()) {
+				return 0;
+			}
+			if (colors.on()) {
+				return Draw.vanillaWidth(styledName(e), textSize.f());
+			}
+			return d.width(clip(e.name()), Fonts.Style.SEMIBOLD, textSize.f());
+		}
+
+		private float descWidth(Draw d, Entry e) {
+			if (!descriptions.on() || e.description().isEmpty()) {
+				return 0;
+			}
+			return d.width(clip(e.description()), Fonts.Style.MEDIUM, descSize.f());
+		}
+
+		private float iconSpace() {
+			return icons.on() ? iconSize.f() : 0;
+		}
+
+		private float textGap() {
+			return icons.on() && (names.on() || descriptions.on()) ? 5 : 0;
+		}
+
+		private float cellWidth(Draw d, Entry e) {
+			return iconSpace() + textGap() + Math.max(nameWidth(d, e), descWidth(d, e));
+		}
+
+		private float textHeight() {
+			float h = names.on() ? textSize.f() : 0;
+			if (descriptions.on()) {
+				h += (names.on() ? 1.5f : 0) + descSize.f();
+			}
+			return h;
+		}
+
+		private String headerText(int n) {
+			String t = title.get().isBlank() ? "Resource Packs" : title.get();
+			return count.on() ? t + " (" + n + ")" : t;
 		}
 
 		@Override
 		public void render(Draw d, boolean editing) {
-			List<String> names = new ArrayList<>();
-			Minecraft.getInstance().getResourcePackRepository().getSelectedPacks().forEach(p -> {
-				String id = p.getId();
-				if (!id.equals("vanilla") && !id.startsWith("fabric") && !id.equals("rustyclient")) {
-					names.add(0, p.getTitle().getString());
+			List<Entry> list = entries(editing);
+			release(list);
+			float pad = background.on() ? padding.f() : 0;
+			float rowH = Math.max(iconSpace(), textHeight());
+			float headerH = header.on() ? 12 : 0;
+			String head = headerText(list.size());
+			float headW = header.on() ? d.width(head, Fonts.Style.BOLD, 8.5f) : 0;
+			boolean horizontal = layout.is("Horizontal");
+			boolean right = align.is("Right");
+			float gapX = Math.max(6, spacing.f() * 3);
+			float inner = 0;
+			for (Entry e : list) {
+				float cw = cellWidth(d, e);
+				inner = horizontal ? inner + cw : Math.max(inner, cw);
+			}
+			if (horizontal) {
+				inner += Math.max(0, list.size() - 1) * gapX;
+			}
+			float w = Math.max(20, Math.max(inner, headW) + pad * 2);
+			float body = horizontal ? rowH : list.size() * rowH + Math.max(0, list.size() - 1) * spacing.f();
+			float h = Math.max(4, pad * 2 + headerH + body);
+			panel(d, w, h);
+			if (header.on()) {
+				float hx = right ? w - pad - headW : pad;
+				d.textShadowed(head, hx, pad + 4.5f, Fonts.Style.BOLD, 8.5f, accent(), shadow.on());
+			}
+			float x = right && horizontal ? w - pad - inner : pad;
+			float y = pad + headerH;
+			for (Entry e : list) {
+				float cw = cellWidth(d, e);
+				float cx = horizontal ? x : (right ? w - pad - cw : pad);
+				drawEntry(d, e, cx, y, rowH, cw, right);
+				if (horizontal) {
+					x += cw + gapX;
+				} else {
+					y += rowH + spacing.f();
 				}
-			});
-			if (names.isEmpty()) {
-				names.add("Default");
 			}
-			while (names.size() > max.i()) {
-				names.remove(names.size() - 1);
+		}
+
+		private void drawEntry(Draw d, Entry e, float x, float y, float rowH, float cellW, boolean right) {
+			float is = iconSpace(), gap = textGap();
+			float ix = right ? x + cellW - is : x;
+			if (is > 0) {
+				float iy = y + (rowH - is) / 2f;
+				if (iconFrame.on()) {
+					d.ring(ix - 1, iy - 1, is + 2, is + 2, Math.min(radius(), is / 4f), 1, frameColor.argb());
+				}
+				d.image(icon(e), ix, iy, is, is, 0xFFFFFFFF);
 			}
-			float w = 60;
-			for (String n : names) {
-				w = Math.max(w, d.width(n, Fonts.Style.SEMIBOLD, 8.5f) + 22);
+			float textRight = x + cellW - is - gap;
+			float tx = right ? x : x + is + gap;
+			float ty = y + (rowH - textHeight()) / 2f;
+			float ts = textSize.f(), ds = descSize.f();
+			if (names.on()) {
+				float nx = right ? textRight - nameWidth(d, e) : tx;
+				if (colors.on()) {
+					d.vanillaText(styledName(e), nx, ty + ts / 2f - ts * 4f / 9f, ts, textColor.argb(), shadow.on());
+				} else {
+					d.textShadowed(clip(e.name()), nx, ty + ts / 2f, Fonts.Style.SEMIBOLD, ts, textColor.argb(), shadow.on());
+				}
+				ty += ts + 1.5f;
 			}
-			float row = 12;
-			panel(d, w, names.size() * row + 6);
-			float y = 3 + row / 2f;
-			for (String n : names) {
-				d.icon("layers", 8, y, 7, accent());
-				d.textShadowed(n, 15, y, Fonts.Style.SEMIBOLD, 8.5f, textColor.argb(), shadow.on());
-				y += row;
+			if (descriptions.on() && !e.description().isEmpty()) {
+				float dx = right ? textRight - descWidth(d, e) : tx;
+				d.textShadowed(clip(e.description()), dx, ty + ds / 2f, Fonts.Style.MEDIUM, ds, descColor.argb(), shadow.on());
 			}
 		}
 	}

@@ -75,4 +75,22 @@ public final class Compat {
 
 	public static void textInput(Object owner, boolean on) {
 	}
+
+	public static void setOverlay(net.minecraft.client.gui.screens.Overlay overlay) {
+		Minecraft.getInstance().gui.setOverlay(overlay);
+	}
+
+	public static byte[] packIcon(net.minecraft.server.packs.repository.Pack pack) {
+		try (net.minecraft.server.packs.PackResources resources = pack.open()) {
+			net.minecraft.server.packs.resources.IoSupplier<java.io.InputStream> supplier = resources.getRootResource("pack.png");
+			if (supplier == null) {
+				return null;
+			}
+			try (java.io.InputStream in = supplier.get()) {
+				return in.readAllBytes();
+			}
+		} catch (Exception e) {
+			return null;
+		}
+	}
 }

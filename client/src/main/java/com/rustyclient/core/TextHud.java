@@ -52,7 +52,7 @@ public abstract class TextHud extends HudModule {
 		width = w;
 		height = h;
 		if (background.on()) {
-			d.round(0, 0, w, h, 4, backgroundColor.argb());
+			d.round(0, 0, w, h, radius(), backgroundColor.argb());
 		}
 		float x;
 		if (align.is("Left")) {

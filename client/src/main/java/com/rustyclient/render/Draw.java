@@ -231,6 +231,22 @@ public final class Draw {
 		blit(tex, x, y, w, h, 0, 0, w, h, col(argb));
 	}
 
+	public void image(Tex tex, float x, float y, float w, float h, int argb) {
+		if (tex == null || (argb >>> 24) == 0 || alpha <= 0f) {
+			return;
+		}
+		int x0 = sx(x), y0 = sy(y);
+		blit(tex, x0, y0, sx(x + w) - x0, sy(y + h) - y0, 0, 0, tex.width, tex.height, col(argb));
+	}
+
+	public void region(Tex tex, float x, float y, float w, float h, int u, int v, int uw, int vh, int argb) {
+		if (tex == null || (argb >>> 24) == 0 || alpha <= 0f) {
+			return;
+		}
+		int x0 = sx(x), y0 = sy(y);
+		blit(tex, x0, y0, sx(x + w) - x0, sy(y + h) - y0, u, v, uw, vh, col(argb));
+	}
+
 	public void icon(String name, float cx, float cy, float size, int argb) {
 		if ((argb >>> 24) == 0 || alpha <= 0f) {
 			return;

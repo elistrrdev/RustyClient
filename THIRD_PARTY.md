@@ -19,6 +19,10 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 Copyright (c) 2008-2026 Marshall A. Greenblatt. Licensed under the BSD 3-Clause License. The CEF runtime files that ship next to `RustyClient.exe` come from the official CEF binary distribution.
 
+## AppleSkin
+
+The Saturation module offers the feature set of AppleSkin by squeek502 (food values in tooltips, saturation and exhaustion on the HUD, hunger, saturation and health restore previews, debug screen info). It is an independent implementation, no AppleSkin code or textures are bundled.
+
 ## Build tools
 
 Gradle and Fabric Loom build the in-game client. They are build tools only and nothing from them is bundled.

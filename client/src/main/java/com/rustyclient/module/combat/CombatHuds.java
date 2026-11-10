@@ -107,8 +107,8 @@ public final class CombatHuds {
 			}
 			width = 40;
 			height = 4;
-			d.round(0, 0, 40, 4, 2, 0x88000000);
-			d.round(0, 0, Math.max(4, 40 * p), 4, 2, c);
+			d.round(0, 0, 40, 4, radius(2f), 0x88000000);
+			d.round(0, 0, Math.max(4, 40 * p), 4, radius(2f), c);
 		}
 	}
 
@@ -139,7 +139,7 @@ public final class CombatHuds {
 			width = w;
 			height = h;
 			if (background.on()) {
-				d.round(0, 0, w, h, 4, 0x8C0F0E0D);
+				d.round(0, 0, w, h, radius(), 0x8C0F0E0D);
 			}
 			d.icon("heart-pulse", 9, 8, 7, Theme.accent());
 			d.textMid("Totem pops", 16, 8, Fonts.Style.BOLD, 8.5f, Theme.accent());

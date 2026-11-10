@@ -80,4 +80,22 @@ public final class Compat {
 			Minecraft.getInstance().textInputManager().stopTextInput(owner);
 		}
 	}
+
+	public static void setOverlay(net.minecraft.client.gui.screens.Overlay overlay) {
+		Minecraft.getInstance().gui.setOverlay(overlay);
+	}
+
+	public static byte[] packIcon(net.minecraft.server.packs.repository.Pack pack) {
+		try (net.minecraft.server.packs.PackMetadataResources resources = pack.openMetadata()) {
+			net.minecraft.server.packs.resources.IoSupplier<java.io.InputStream> supplier = resources.getRootResource("pack.png");
+			if (supplier == null) {
+				return null;
+			}
+			try (java.io.InputStream in = supplier.get()) {
+				return in.readAllBytes();
+			}
+		} catch (Exception e) {
+			return null;
+		}
+	}
 }

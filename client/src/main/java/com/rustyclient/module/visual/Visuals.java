@@ -244,8 +244,14 @@ public final class Visuals {
 
 	public static final class Freelook extends Module {
 		public final KeySetting key = key("Freelook key", GENERAL, "key.keyboard.left.alt");
-		public final BoolSetting hold = bool("Hold to look", GENERAL, true);
-		public final BoolSetting invert = bool("Invert pitch", GENERAL, false);
+		public final ChoiceSetting mode = choice("Mode", GENERAL, "Hold", "Hold", "Toggle");
+		public final BoolSetting invertX = bool("Invert X", GENERAL, false);
+		public final BoolSetting invertY = bool("Invert Y", GENERAL, false);
+		public final BoolSetting perspectiveStops = bool("Perspective key ends freelook", GENERAL, true);
+		public final BoolSetting screenStops = bool("End when a screen opens", GENERAL, true);
+		public final NumberSetting speed = number("Freelook speed", APPEARANCE, 1, 0.2, 2, 0.05, NumberSetting.percent());
+		public final ChoiceSetting perspective = choice("Camera", APPEARANCE, "Third person back", "Third person back", "Third person front", "First person", "Keep current");
+		public final NumberSetting pitchLimit = number("Pitch limit", APPEARANCE, 90, 30, 90, 1, NumberSetting.integer("°"));
 		private boolean active;
 		private boolean keyWas;
 		private CameraType previous;
@@ -254,6 +260,11 @@ public final class Visuals {
 
 		public Freelook() {
 			super("Freelook", "eye", Category.VISUAL, false);
+		}
+
+		public static Freelook look() {
+			Freelook f = Modules.get(Freelook.class);
+			return f != null && f.active() ? f : null;
 		}
 
 		@Override
@@ -267,37 +278,112 @@ public final class Visuals {
 
 		@Override
 		public void alwaysTick() {
-			boolean down = enabled() && Compat.screen() == null && Compat.isKeyDown(key.get());
+			boolean blocked = Compat.screen() != null;
+			boolean down = enabled() && !blocked && Compat.isKeyDown(key.get());
 			boolean next = active;
-			if (hold.on()) {
-				next = down;
+			if (mode.is("Hold")) {
+				next = down || (blocked && !screenStops.on() && active);
 			} else if (down && !keyWas) {
 				next = !active;
 			}
 			keyWas = down;
-			if (!enabled()) {
+			if (!enabled() || mc.player == null || mc.player.isDeadOrDying() || (blocked && screenStops.on())) {
 				next = false;
 			}
 			if (next != active) {
-				active = next;
-				if (active && mc.player != null) {
-					yaw = mc.player.getYRot();
-					pitch = mc.player.getXRot();
-					previous = mc.options.getCameraType();
-					if (previous.isFirstPerson()) {
-						mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-					}
-				} else if (previous != null) {
-					mc.options.setCameraType(previous);
-					previous = null;
+				if (next) {
+					start();
+				} else {
+					stop();
 				}
 			}
 		}
 
+		private void start() {
+			if (mc.player == null) {
+				return;
+			}
+			active = true;
+			yaw = mc.player.getYRot();
+			pitch = mc.player.getXRot();
+			previous = mc.options.getCameraType();
+			CameraType wanted = switch (perspective.get()) {
+				case "Third person front" -> CameraType.THIRD_PERSON_FRONT;
+				case "First person" -> CameraType.FIRST_PERSON;
+				case "Keep current" -> previous;
+				default -> previous.isFirstPerson() ? CameraType.THIRD_PERSON_BACK : previous;
+			};
+			if (wanted != previous) {
+				mc.options.setCameraType(wanted);
+			}
+		}
+
+		public void stop() {
+			if (!active) {
+				return;
+			}
+			active = false;
+			if (previous != null) {
+				mc.options.setCameraType(previous);
+				previous = null;
+			}
+		}
+
+		public boolean perspectiveEnds() {
+			return perspectiveStops.on();
+		}
+
+		@Override
+		protected void onDisable() {
+			stop();
+		}
+
 		public void turn(double dx, double dy) {
-			yaw += (float) (dx * 0.15);
-			pitch += (float) ((invert.on() ? -dy : dy) * 0.15);
-			pitch = Math.max(-90f, Math.min(90f, pitch));
+			double k = 0.15 * speed.v();
+			yaw += (float) ((invertX.on() ? -dx : dx) * k);
+			pitch += (float) ((invertY.on() ? -dy : dy) * k);
+			float limit = pitchLimit.f();
+			pitch = Math.max(-limit, Math.min(limit, pitch));
+		}
+
+		public boolean mirrored() {
+			return mc.options.getCameraType().isMirrored();
+		}
+
+		public boolean firstPerson() {
+			return mc.options.getCameraType().isFirstPerson();
+		}
+	}
+
+	public static final class Fadeless extends Module {
+		private final BoolSetting fadeOut = bool("Skip fade out", GENERAL, true);
+		private final BoolSetting fadeIn = bool("Skip fade in", GENERAL, false);
+
+		public Fadeless() {
+			super("Fadeless", "fast-forward", Category.VISUAL, false);
+		}
+
+		public static boolean skipsFadeOut() {
+			Fadeless f = Modules.get(Fadeless.class);
+			return f != null && f.enabled() && f.fadeOut.on();
+		}
+
+		public static boolean skipsFadeIn() {
+			Fadeless f = Modules.get(Fadeless.class);
+			return f != null && f.enabled() && f.fadeIn.on();
+		}
+	}
+
+	public static final class LoadingScreen extends Module {
+		private final ColorSetting background = color("Background color", APPEARANCE, 0xFF000000);
+
+		public LoadingScreen() {
+			super("Black Loading Screen", "monitor", Category.VISUAL, false);
+		}
+
+		public static Integer color() {
+			LoadingScreen l = Modules.get(LoadingScreen.class);
+			return l != null && l.enabled() ? l.background.argb() | 0xFF000000 : null;
 		}
 	}
 

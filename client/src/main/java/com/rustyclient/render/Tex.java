@@ -41,6 +41,10 @@ public final class Tex {
 		return new Tex(kind, image);
 	}
 
+	public static Tex color(String kind, NativeImage image) {
+		return new Tex(kind, image);
+	}
+
 	public static Tex blank(String kind, int width, int height) {
 		NativeImage image = new NativeImage(width, height, true);
 		return new Tex(kind, image);

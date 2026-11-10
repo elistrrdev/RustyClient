@@ -35,18 +35,25 @@ public final class Utilities {
 	}
 
 	public static final class ToggleSprint extends TextHud {
-		private final BoolSetting sprint = bool("Toggle sprint", GENERAL, true);
+		private final ChoiceSetting mode = choice("Sprint mode", GENERAL, "Toggle", "Toggle", "Hold");
+		private final BoolSetting toggled = bool("Sprint toggled", GENERAL, true);
 		private final BoolSetting sneak = bool("Toggle sneak", GENERAL, false);
+		private final BoolSetting actionBar = bool("Action bar message", GENERAL, true);
 		private final BoolSetting showHud = bool("Show status on HUD", GENERAL, true);
-		private boolean sprinting;
+		private final BoolSetting keepVanilla = bool("Allow vanilla sprinting", GENERAL, true);
+		private final BoolSetting brackets = bool("Brackets around status", APPEARANCE, false);
 		private boolean sneaking;
-		private boolean sprintWas;
-		private boolean sneakWas;
 
 		public ToggleSprint() {
 			super("Toggle Sprint", "footprints", Category.UTILITY, false, 0.01, 0.97);
 			background.set(false);
 			showLabel.set(false);
+			toggled.visibleWhen(() -> mode.is("Toggle"));
+		}
+
+		public static ToggleSprint active() {
+			ToggleSprint t = Modules.get(ToggleSprint.class);
+			return t != null && t.enabled() ? t : null;
 		}
 
 		@Override
@@ -64,52 +71,76 @@ public final class Utilities {
 			if (mc.options.keyShift.isDown() && mc.player.isShiftKeyDown()) {
 				return "Sneaking (Key Held)";
 			}
-			if (sprinting) {
+			if (mode.is("Toggle") && toggled.on()) {
 				return "Sprinting (Toggled)";
 			}
+			if (mc.options.keySprint.isDown()) {
+				return "Sprinting (Key Held)";
+			}
 			if (mc.player.isSprinting()) {
-				return mc.options.keySprint.isDown() ? "Sprinting (Key Held)" : "Sprinting (Vanilla)";
+				return "Sprinting (Vanilla)";
 			}
 			return null;
 		}
 
+		public boolean shouldSprint() {
+			return mode.is("Toggle") ? toggled.on() : mc.options.keySprint.isDown();
+		}
+
+		public boolean sneaking() {
+			return sneaking;
+		}
+
+		public boolean allowsVanilla() {
+			return keepVanilla.on();
+		}
+
 		@Override
 		public void tick() {
-			if (Compat.screen() == null) {
-				boolean sprintDown = Compat.isKeyDown(mc.options.keySprint.saveString());
-				boolean sneakDown = Compat.isKeyDown(mc.options.keyShift.saveString());
-				if (sprint.on() && sprintDown && !sprintWas) {
-					sprinting = !sprinting;
+			if (mc.options.toggleSprint().get()) {
+				mc.options.toggleSprint().set(false);
+			}
+			if (Compat.screen() != null || mc.player == null || mc.player.isDeadOrDying()) {
+				return;
+			}
+			if (mode.is("Toggle")) {
+				while (mc.options.keySprint.consumeClick()) {
+					toggled.toggle();
+					if (!toggled.on()) {
+						mc.options.keySprint.setDown(false);
+						if (!mc.player.isSwimming()) {
+							mc.player.setSprinting(false);
+						}
+					}
+					notify("Toggle Sprint", toggled.on());
 				}
-				if (sneak.on() && sneakDown && !sneakWas) {
+			}
+			if (sneak.on()) {
+				while (mc.options.keyShift.consumeClick()) {
 					sneaking = !sneaking;
+					notify("Toggle Sneak", sneaking);
 				}
-				sprintWas = sprintDown;
-				sneakWas = sneakDown;
-			}
-			if (!sprint.on()) {
-				sprinting = false;
-			}
-			if (!sneak.on()) {
+			} else {
 				sneaking = false;
 			}
-			if (sprinting) {
-				mc.options.keySprint.setDown(true);
+		}
+
+		private void notify(String what, boolean on) {
+			if (actionBar.on() && mc.player != null) {
+				mc.player.sendOverlayMessage(Component.literal(what + ": " + (on ? "ON" : "OFF")));
 			}
-			if (sneaking) {
-				mc.options.keyShift.setDown(true);
+		}
+
+		@Override
+		protected void onEnable() {
+			while (mc.options.keySprint.consumeClick()) {
+			}
+			while (mc.options.keyShift.consumeClick()) {
 			}
 		}
 
 		@Override
 		protected void onDisable() {
-			if (sprinting) {
-				mc.options.keySprint.setDown(false);
-			}
-			if (sneaking) {
-				mc.options.keyShift.setDown(false);
-			}
-			sprinting = false;
 			sneaking = false;
 		}
 
@@ -121,7 +152,10 @@ public final class Utilities {
 		@Override
 		protected String value() {
 			String status = status();
-			return status == null ? "Sprinting (Toggled)" : status;
+			if (status == null) {
+				status = "Sprinting (Toggled)";
+			}
+			return brackets.on() ? "[" + status + "]" : status;
 		}
 	}
 

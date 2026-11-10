@@ -42,7 +42,7 @@ public final class VanillaHuds {
 				width = 60;
 				height = 20;
 				if (editing) {
-					d.round(0, 0, width, height, 3, 0x40000000);
+					d.round(0, 0, width, height, radius(), 0x40000000);
 				}
 				return;
 			}
@@ -98,8 +98,13 @@ public final class VanillaHuds {
 			float h = (lines.size() + 1) * lineH + 1;
 			width = w;
 			height = h;
-			d.rect(0, 0, w, lineH + 1, titleBackground.argb());
-			d.rect(0, lineH + 1, w, h - lineH - 1, background.argb());
+			float r = radius(Math.min(w, h) / 2f);
+			d.scissor(0, 0, w, lineH + 1);
+			d.round(0, 0, w, lineH + 1 + r * 2, r, titleBackground.argb());
+			d.endScissor();
+			d.scissor(0, lineH + 1, w, h - lineH - 1);
+			d.round(0, lineH + 1 - r * 2, w, h - lineH - 1 + r * 2, r, background.argb());
+			d.endScissor();
 			float tw = Draw.vanillaWidth(title, size);
 			d.vanillaText(title, (w - tw) / 2f, 1, size, 0xFFFFFFFF, shadow.on());
 			float y = lineH + 1;
@@ -119,6 +124,11 @@ public final class VanillaHuds {
 
 		public BossBar() {
 			super("Boss Bar", "skull", Category.HUD, false, 0.5, 0.0);
+		}
+
+		@Override
+		protected boolean usesRadius() {
+			return false;
 		}
 
 		public boolean hideBars() {

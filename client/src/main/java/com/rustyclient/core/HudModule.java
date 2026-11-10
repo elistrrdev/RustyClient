@@ -1,5 +1,6 @@
 package com.rustyclient.core;
 
+import com.rustyclient.core.setting.BoolSetting;
 import com.rustyclient.core.setting.ChoiceSetting;
 import com.rustyclient.core.setting.NumberSetting;
 import com.rustyclient.module.ClientSettings;
@@ -8,6 +9,8 @@ import com.rustyclient.render.Draw;
 public abstract class HudModule extends Module {
 	public final NumberSetting scale;
 	public final ChoiceSetting font;
+	public final BoolSetting customRadius;
+	public final NumberSetting radius;
 	public float width = 40;
 	public float height = 12;
 	public double fx;
@@ -23,6 +26,26 @@ public abstract class HudModule extends Module {
 		this.defaultFy = fy;
 		this.scale = number("Scale", APPEARANCE, 1.0, 0.5, 2.5, 0.05, NumberSetting.times());
 		this.font = choice("Font", APPEARANCE, "Global", "Global", "Vanilla", "Rusty Client");
+		this.customRadius = bool("Custom border radius", APPEARANCE, false);
+		this.radius = number("Border radius", APPEARANCE, 4, 0, 12, 0.5, NumberSetting.decimal("px"));
+		this.radius.visibleWhen(() -> usesRadius() && customRadius.on());
+		this.customRadius.visibleWhen(this::usesRadius);
+	}
+
+	protected boolean usesRadius() {
+		return true;
+	}
+
+	public float radius() {
+		if (customRadius.on()) {
+			return radius.f();
+		}
+		ClientSettings settings = ClientSettings.get();
+		return settings == null ? 4f : settings.hudRadius.f();
+	}
+
+	public float radius(float max) {
+		return Math.min(radius(), max);
 	}
 
 	public boolean vanillaFont() {

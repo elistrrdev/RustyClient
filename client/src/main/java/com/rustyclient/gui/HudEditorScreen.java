@@ -87,12 +87,9 @@ public final class HudEditorScreen extends Screen {
 		d.rect(ww / 2f - 0.5f, 0, 1, wh, line);
 		d.rect(0, wh / 2f - 0.5f, ww, 1, line);
 		hovered = null;
-		for (HudModule hud : Modules.hud()) {
-			if (!hud.enabled()) {
-				continue;
-			}
-			float x = hud.pixelX(), y = hud.pixelY(), w = hud.pixelWidth(), h = hud.pixelHeight();
-			if (m >= x && n >= y && m < x + w && n < y + h) {
+		for (int i = Modules.hud().size() - 1; i >= 0 && hovered == null; i--) {
+			HudModule hud = Modules.hud().get(i);
+			if (hud.enabled() && (overHandle(hud, m, n) || overBox(hud, m, n))) {
 				hovered = hud;
 			}
 		}
@@ -106,9 +103,12 @@ public final class HudEditorScreen extends Screen {
 			float pad = 2 * gs;
 			d.round(x - pad, y - pad, w + pad * 2, h + pad * 2, 3 * gs, focus ? Theme.withAlpha(Theme.accent(), 0x22) : 0x18FFFFFF);
 			d.ring(x - pad, y - pad, w + pad * 2, h + pad * 2, 3 * gs, Math.max(1, gs / 2f), border);
+			float[] handle = handle(hud);
+			boolean onHandle = hud == scaling || (hud == hovered && overHandle(hud, m, n));
+			float hs = (onHandle ? 6 : 5) * gs;
+			d.circle(handle[0], handle[1], hs / 2f + Math.max(1, gs / 2f), focus ? 0xC0000000 : 0x80000000);
+			d.circle(handle[0], handle[1], hs / 2f, focus ? Theme.accent() : Theme.withAlpha(0xFFFFFFFF, 0xB0));
 			if (focus) {
-				float hs = 5 * gs;
-				d.round(x + w + pad - hs / 2f, y + h + pad - hs / 2f, hs, hs, hs / 3f, Theme.accent());
 				String label = hud.name + "  " + Math.round(hud.scale.v() * 100) + "%";
 				float size = 6 * gs;
 				float lw = d.width(label, Fonts.Style.SEMIBOLD, size) + 8 * gs;
@@ -163,6 +163,29 @@ public final class HudEditorScreen extends Screen {
 		return -1;
 	}
 
+	private static float[] handle(HudModule hud) {
+		float gs = Draw.guiScale();
+		float pad = 2 * gs, edge = 4 * gs;
+		float hx = hud.pixelX() + hud.pixelWidth() + pad;
+		float hy = hud.pixelY() + hud.pixelHeight() + pad;
+		hx = Math.max(edge, Math.min(Draw.windowWidth() - edge, hx));
+		hy = Math.max(edge, Math.min(Draw.windowHeight() - edge, hy));
+		return new float[]{hx, hy};
+	}
+
+	private static boolean overHandle(HudModule hud, float m, float n) {
+		float[] h = handle(hud);
+		float reach = 7 * Draw.guiScale();
+		float dx = m - h[0], dy = n - h[1];
+		return dx * dx + dy * dy <= reach * reach;
+	}
+
+	private static boolean overBox(HudModule hud, float m, float n) {
+		float pad = 2 * Draw.guiScale();
+		float x = hud.pixelX(), y = hud.pixelY(), w = Math.max(1, hud.pixelWidth()), h = Math.max(1, hud.pixelHeight());
+		return m >= x - pad && n >= y - pad && m < x + w + pad && n < y + h + pad;
+	}
+
 	@Override
 	public void mouseMoved(double x, double y) {
 		mouseX = x;
@@ -185,23 +208,24 @@ public final class HudEditorScreen extends Screen {
 			}
 			return true;
 		}
-		float gs = Draw.guiScale();
+		for (int i = Modules.hud().size() - 1; i >= 0; i--) {
+			HudModule hud = Modules.hud().get(i);
+			if (hud.enabled() && Ui.button(event) == 0 && overHandle(hud, m, n)) {
+				scaling = hud;
+				scaleStart = hud.scale.v();
+				scaleStartW = Math.max(1, hud.pixelWidth());
+				scaleOriginX = hud.pixelX();
+				scaleOriginY = hud.pixelY();
+				return true;
+			}
+		}
 		for (int i = Modules.hud().size() - 1; i >= 0; i--) {
 			HudModule hud = Modules.hud().get(i);
 			if (!hud.enabled()) {
 				continue;
 			}
-			float x = hud.pixelX(), y = hud.pixelY(), w = hud.pixelWidth(), h = hud.pixelHeight();
-			float pad = 2 * gs, hs = 7 * gs;
-			if (Ui.button(event) == 0 && m >= x + w + pad - hs && n >= y + h + pad - hs && m < x + w + pad + hs && n < y + h + pad + hs) {
-				scaling = hud;
-				scaleStart = hud.scale.v();
-				scaleStartW = Math.max(1, w);
-				scaleOriginX = x;
-				scaleOriginY = y;
-				return true;
-			}
-			if (m >= x - pad && n >= y - pad && m < x + w + pad && n < y + h + pad) {
+			float x = hud.pixelX(), y = hud.pixelY();
+			if (overBox(hud, m, n)) {
 				if (Ui.button(event) == 1) {
 					parent.openConfig(hud);
 					parent.resetOpenAnimation();
@@ -296,7 +320,9 @@ public final class HudEditorScreen extends Screen {
 	@Override
 	public boolean mouseScrolled(double x, double y, double h, double v) {
 		if (hovered != null) {
+			float px = hovered.pixelX(), py = hovered.pixelY();
 			hovered.scale.set(hovered.scale.v() + v * 0.05);
+			hovered.setPixelPosition(px, py);
 		}
 		return true;
 	}

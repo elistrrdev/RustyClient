@@ -20,6 +20,7 @@ public final class ClientSettings extends Module {
 	public final BoolSetting hideInF3;
 	public final ChoiceSetting hudFont;
 	public final ChoiceSetting textShadow;
+	public final NumberSetting hudRadius;
 
 	public ClientSettings() {
 		super("Client", "settings", Category.UTILITY, true);
@@ -34,6 +35,7 @@ public final class ClientSettings extends Module {
 		accent.visibleWhen(() -> !followLauncher.on());
 		hudFont = choice("HUD font", "Text", "Vanilla", "Vanilla", "Rusty Client");
 		textShadow = choice("Text shadow", "Text", "Per module", "Per module", "Always", "Never");
+		hudRadius = number("HUD border radius", "HUD style", 4, 0, 12, 0.5, NumberSetting.decimal("px"));
 	}
 
 	public static ClientSettings get() {

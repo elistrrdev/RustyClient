@@ -27,6 +27,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
 import net.minecraft.core.BlockPos;
@@ -75,6 +76,8 @@ public final class ModuleList {
 		Modules.register(new Visuals.TimeWeather());
 		Modules.register(new Visuals.ClearFluids());
 		Modules.register(new Visuals.ScreenOverlays());
+		Modules.register(new Visuals.Fadeless());
+		Modules.register(new Visuals.LoadingScreen());
 		Modules.register(new Utilities.AutoGG());
 		Modules.register(new Utilities.ScreenshotHelper());
 		Modules.register(new Utilities.Chat());
@@ -104,10 +107,28 @@ public final class ModuleList {
 				d.end();
 			}
 		});
-		HudElementRegistry.attachElementAfter(VanillaHudElements.FOOD_BAR, Identifier.fromNamespaceAndPath("rustyclient", "saturation"), (g, delta) -> {
-			Saturation saturation = Modules.get(Saturation.class);
+		HudElementRegistry.attachElementBefore(VanillaHudElements.FOOD_BAR, Identifier.fromNamespaceAndPath("rustyclient", "exhaustion"), (g, delta) -> {
+			Saturation saturation = Saturation.active();
 			if (saturation != null) {
-				saturation.draw(g);
+				saturation.drawUnderlay(g);
+			}
+		});
+		HudElementRegistry.attachElementAfter(VanillaHudElements.FOOD_BAR, Identifier.fromNamespaceAndPath("rustyclient", "saturation"), (g, delta) -> {
+			Saturation saturation = Saturation.active();
+			if (saturation != null) {
+				saturation.drawFood(g);
+			}
+		});
+		HudElementRegistry.attachElementAfter(VanillaHudElements.HEALTH_BAR, Identifier.fromNamespaceAndPath("rustyclient", "health_preview"), (g, delta) -> {
+			Saturation saturation = Saturation.active();
+			if (saturation != null) {
+				saturation.drawHealth(g);
+			}
+		});
+		DebugScreenEntries.register(Saturation.DEBUG_ENTRY, (displayer, level, clientChunk, serverChunk) -> {
+			Saturation saturation = Saturation.active();
+			if (saturation != null) {
+				saturation.debugLines(displayer);
 			}
 		});
 		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {
@@ -162,6 +183,10 @@ public final class ModuleList {
 			if (level.isClientSide() && player == Minecraft.getInstance().player) {
 				try {
 					Combat.onAttack(entity);
+					Saturation saturation = Saturation.active();
+					if (saturation != null) {
+						saturation.onAttack();
+					}
 					Visuals.Particles particles = Modules.get(Visuals.Particles.class);
 					if (particles != null && particles.enabled()) {
 						particles.onAttack(entity);
