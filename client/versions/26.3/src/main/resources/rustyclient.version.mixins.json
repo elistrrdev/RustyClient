@@ -3,7 +3,9 @@
 	"package": "com.rustyclient.mixin.version",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"VersionMixins$BlockEntityDistance",
 		"VersionMixins$Clock",
+		"VersionMixins$EntityDistance",
 		"VersionMixins$Fire",
 		"VersionMixins$Hand",
 		"VersionMixins$Motion",

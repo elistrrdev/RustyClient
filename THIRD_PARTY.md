@@ -26,6 +26,17 @@ The About page of the launcher shows the logos of the software it depends on, in
 - Fabric (`fabric.png`): FabricMC, the icon from the Fabric Loader jar (Apache License 2.0).
 - Windows (`windows10.svg`, `windows11.svg`): Microsoft, the SVGs are from devicon (MIT License).
 
+## Optimization mods
+
+The launcher downloads these Fabric mods from Modrinth into every game instance and keeps them updated, the same way it handles Fabric API. They are not part of `RustyClient.exe`, `RustyClient-Setup.exe` or this repository, and no code from them is used in Rusty Client.
+
+- Sodium by CaffeineMC, PolyForm Shield License 1.0.0 (https://modrinth.com/mod/sodium).
+- Lithium by CaffeineMC, LGPL-3.0-only (https://modrinth.com/mod/lithium).
+- FerriteCore by malte0811, MIT License (https://modrinth.com/mod/ferrite-core).
+- ImmediatelyFast by RaphiMC, LGPL-3.0-or-later (https://modrinth.com/mod/immediatelyfast).
+- EntityCulling by tr7zw, tr7zw Protective License (https://modrinth.com/mod/entityculling).
+- Fabric API by FabricMC, Apache License 2.0 (https://modrinth.com/mod/fabric-api).
+
 ## Chromium Embedded Framework
 
 Copyright (c) 2008-2026 Marshall A. Greenblatt. Licensed under the BSD 3-Clause License. The CEF runtime files are not part of `RustyClient.exe` or `RustyClient-Setup.exe`. They are downloaded once from the official CEF binary distribution (`cef-builds.spotifycdn.com`, the minimal Windows 64 bit archive) and checked against its sha1.

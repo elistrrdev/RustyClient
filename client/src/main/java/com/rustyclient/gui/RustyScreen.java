@@ -10,6 +10,7 @@ import com.rustyclient.core.Modules;
 import com.rustyclient.core.Theme;
 import com.rustyclient.core.setting.KeySetting;
 import com.rustyclient.module.ClientSettings;
+import com.rustyclient.module.Performance;
 import com.rustyclient.platform.Compat;
 import com.rustyclient.render.Draw;
 import com.rustyclient.render.Fonts;
@@ -26,7 +27,7 @@ import java.util.Locale;
 
 public final class RustyScreen extends Screen {
 	public enum Page {
-		MODULES, PROFILE, SETTINGS, WAYPOINTS, CONFIG
+		MODULES, PROFILE, SETTINGS, PERFORMANCE, WAYPOINTS, CONFIG
 	}
 
 	public static final float PANEL_W = 1118;
@@ -186,6 +187,7 @@ public final class RustyScreen extends Screen {
 			case CONFIG -> configView.draw(configModule);
 			case PROFILE -> profileView.draw();
 			case SETTINGS -> configView.draw(ClientSettings.get());
+			case PERFORMANCE -> configView.draw(Performance.get());
 			case WAYPOINTS -> waypointsView.draw();
 		}
 		d.alpha(baseAlpha);
@@ -208,7 +210,8 @@ public final class RustyScreen extends Screen {
 		railButton("layout-grid", 68, page == Page.MODULES || page == Page.CONFIG && configModule != ClientSettings.get(), () -> switchPage(Page.MODULES));
 		railButton("circle-user", 112, page == Page.PROFILE, () -> switchPage(Page.PROFILE));
 		railButton("settings", 156, page == Page.SETTINGS, () -> switchPage(Page.SETTINGS));
-		railButton("map-pin", 200, page == Page.WAYPOINTS, () -> switchPage(Page.WAYPOINTS));
+		railButton("gauge", 200, page == Page.PERFORMANCE, () -> switchPage(Page.PERFORMANCE));
+		railButton("map-pin", 244, page == Page.WAYPOINTS, () -> switchPage(Page.WAYPOINTS));
 		float ex = 12.5f, ey = PANEL_H - 52;
 		boolean hoverEdit = ui.hover(ex, ey, 38, 38);
 		d.round(ex, ey, 38, 38, 8, hoverEdit ? Theme.SURFACE_3 : Theme.SURFACE);

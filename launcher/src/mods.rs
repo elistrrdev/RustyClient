@@ -30,6 +30,14 @@ fn valid_file(file: &str) -> bool {
         && base_name(file).to_ascii_lowercase().ends_with(".jar")
 }
 
+pub fn safe_file_name(file: &str) -> bool {
+    valid_file(file)
+}
+
+pub fn mod_id(path: &Path) -> Option<String> {
+    read_metadata(path)?["id"].as_str().map(str::to_string)
+}
+
 fn read_metadata(path: &Path) -> Option<Value> {
     let file = std::fs::File::open(path).ok()?;
     let mut archive = zip::ZipArchive::new(file).ok()?;
@@ -56,11 +64,10 @@ fn managed_files(major: &str) -> Vec<String> {
         .ok()
         .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
         .unwrap_or(Value::Null);
-    let mut files = Vec::new();
-    if let Some(file) = record["fabricApi"]["file"].as_str() {
-        files.push(file.to_string());
-    }
-    files
+    record
+        .as_object()
+        .map(|map| map.values().filter_map(|entry| entry["file"].as_str().map(str::to_string)).collect())
+        .unwrap_or_default()
 }
 
 pub fn list(major: &str) -> Vec<ModInfo> {

@@ -45,6 +45,7 @@ public final class ModuleList {
 
 	public static void registerAll() {
 		Modules.register(new ClientSettings());
+		Modules.register(new Performance());
 		Modules.register(new Keystrokes());
 		Modules.register(new SimpleHuds.Cps());
 		Modules.register(new SimpleHuds.Fps());

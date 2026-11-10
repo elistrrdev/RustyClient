@@ -114,4 +114,24 @@ public final class VersionMixins {
 			return Visuals.Nametags.shadow(shadow);
 		}
 	}
+
+	@Mixin(net.minecraft.client.renderer.entity.EntityRenderDispatcher.class)
+	public abstract static class EntityDistance {
+		@Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
+		private void rusty$distance(net.minecraft.world.entity.Entity entity, net.minecraft.client.renderer.culling.Frustum culler, double camX, double camY, double camZ, CallbackInfoReturnable<Boolean> cir) {
+			if (com.rustyclient.module.Performance.hideEntity(entity, camX, camY, camZ)) {
+				cir.setReturnValue(false);
+			}
+		}
+	}
+
+	@Mixin(net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher.class)
+	public abstract static class BlockEntityDistance {
+		@Inject(method = "tryExtractRenderState", at = @At("HEAD"), cancellable = true)
+		private void rusty$distance(net.minecraft.world.level.block.entity.BlockEntity blockEntity, float partial, net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay progress, boolean global, CallbackInfoReturnable<net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState> cir) {
+			if (com.rustyclient.module.Performance.hideBlockEntity(blockEntity.getBlockPos())) {
+				cir.setReturnValue(null);
+			}
+		}
+	}
 }

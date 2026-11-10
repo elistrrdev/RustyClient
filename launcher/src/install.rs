@@ -21,7 +21,20 @@ const JAVA_RUNTIMES: &str =
 const RESOURCES: &str = "https://resources.download.minecraft.net";
 const FABRIC_META: &str = "https://meta.fabricmc.net/v2";
 const MODRINTH: &str = "https://api.modrinth.com/v2";
-const FABRIC_API_PROJECT: &str = "P7dR8mSH";
+struct ManagedMod {
+    key: &'static str,
+    project: &'static str,
+    id: &'static str,
+}
+
+const MANAGED_MODS: &[ManagedMod] = &[
+    ManagedMod { key: "fabricApi", project: "P7dR8mSH", id: "fabric-api" },
+    ManagedMod { key: "sodium", project: "AANobbMI", id: "sodium" },
+    ManagedMod { key: "lithium", project: "gvQqBUqZ", id: "lithium" },
+    ManagedMod { key: "ferritecore", project: "uXXizFIs", id: "ferritecore" },
+    ManagedMod { key: "immediatelyfast", project: "5ZwdcRci", id: "immediatelyfast" },
+    ManagedMod { key: "entityculling", project: "NNAgCjsB", id: "entityculling" },
+];
 const RUNTIME_MARKER: &str = "v2";
 
 #[derive(Clone, Debug)]
@@ -406,7 +419,7 @@ pub async fn prepare(core: &Arc<Core>, entry: &VersionEntry, major: &str, settin
         return Err("Fabric could not be loaded for this version. Check your internet connection and try again.".into());
     }
     core.set_task("Preparing", "Updating mods", 0.98);
-    let _ = sync_fabric_api(core, &entry.id, major).await;
+    sync_managed_mods(core, &entry.id, major).await;
     remove_stray_client_jars(major).await;
     let major_owned = major.to_string();
     let client_mod = tokio::task::spawn_blocking(move || client::install(&major_owned))
@@ -646,27 +659,48 @@ fn managed_file(major: &str) -> PathBuf {
     paths::instance(major).join(".rustyclient").join("managed.json")
 }
 
-async fn remove_other_fabric_api(mods: &Path, keep: &str) {
-    let Ok(mut entries) = tokio::fs::read_dir(mods).await else {
+fn remove_duplicates(mods: &Path, kept: &[(&'static str, String)]) {
+    let Ok(entries) = std::fs::read_dir(mods) else {
         return;
     };
-    while let Ok(Some(entry)) = entries.next_entry().await {
+    for entry in entries.flatten() {
         let name = entry.file_name().to_string_lossy().to_string();
         let lower = name.to_ascii_lowercase();
-        let jar = lower.ends_with(".jar") || lower.ends_with(".jar.disabled");
-        let fabric_api = lower.strip_prefix("fabric-api-").is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()));
-        if jar && fabric_api && name != keep {
-            let _ = tokio::fs::remove_file(entry.path()).await;
+        if !(lower.ends_with(".jar") || lower.ends_with(".jar.disabled")) {
+            continue;
+        }
+        let base = name.strip_suffix(".disabled").unwrap_or(&name);
+        if kept.iter().any(|(_, file)| file == base) {
+            continue;
+        }
+        let Some(id) = crate::mods::mod_id(&entry.path()) else {
+            continue;
+        };
+        if kept.iter().any(|(kept_id, _)| *kept_id == id) {
+            let _ = std::fs::remove_file(entry.path());
         }
     }
 }
 
-async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
+async fn sync_managed_mods(core: &Core, game: &str, major: &str) {
     let mods = paths::mods(major);
     let record_path = managed_file(major);
     let mut record = read_json(&record_path).await.unwrap_or_else(|| json!({}));
-    let current_file = record["fabricApi"]["file"].as_str().map(str::to_string);
-    let current_game = record["fabricApi"]["game"].as_str().map(str::to_string);
+    let mut kept: Vec<(&'static str, String)> = Vec::new();
+    for managed in MANAGED_MODS {
+        if let Some(file) = sync_managed(core, game, &mods, &mut record, managed).await {
+            kept.push((managed.id, file));
+        }
+    }
+    if let Ok(bytes) = serde_json::to_vec_pretty(&record) {
+        let _ = write_atomic(&record_path, &bytes);
+    }
+    let _ = tokio::task::spawn_blocking(move || remove_duplicates(&mods, &kept)).await;
+}
+
+async fn sync_managed(core: &Core, game: &str, mods: &Path, record: &mut Value, managed: &ManagedMod) -> Option<String> {
+    let current_file = record[managed.key]["file"].as_str().map(str::to_string);
+    let current_game = record[managed.key]["game"].as_str().map(str::to_string);
 
     if let Some(file) = &current_file {
         let disabled = mods.join(format!("{file}.disabled"));
@@ -674,18 +708,27 @@ async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
             let _ = tokio::fs::rename(&disabled, mods.join(file)).await;
         }
     }
+    let keep_current = || current_file.clone().filter(|file| mods.join(file).exists());
 
     let query = format!(
-        "{MODRINTH}/project/{FABRIC_API_PROJECT}/version?loaders={}&game_versions={}",
+        "{MODRINTH}/project/{}/version?loaders={}&game_versions={}",
+        managed.project,
         urlencode("[\"fabric\"]"),
         urlencode(&format!("[\"{game}\"]"))
     );
-    let versions = fetch_json(core, &query).await.ok()?;
-    let list = versions.as_array()?;
-    let chosen = list
+    let Ok(versions) = fetch_json(core, &query).await else {
+        return keep_current();
+    };
+    let Some(list) = versions.as_array() else {
+        return keep_current();
+    };
+    let Some(chosen) = list
         .iter()
         .find(|v| v["version_type"].as_str() == Some("release"))
-        .or_else(|| list.first())?;
+        .or_else(|| list.first())
+    else {
+        return keep_current();
+    };
     let files = chosen["files"].as_array()?;
     let file = files
         .iter()
@@ -693,32 +736,33 @@ async fn sync_fabric_api(core: &Core, game: &str, major: &str) -> Option<()> {
         .or_else(|| files.first())?;
     let filename = file["filename"].as_str()?.to_string();
     let url = file["url"].as_str()?.to_string();
+    if !crate::mods::safe_file_name(&filename) {
+        return keep_current();
+    }
 
     let target = mods.join(&filename);
     let up_to_date = current_file.as_deref() == Some(filename.as_str())
         && current_game.as_deref() == Some(game)
         && target.exists();
-    if up_to_date {
-        remove_other_fabric_api(&mods, &filename).await;
-        return Some(());
-    }
-    let download = Download {
-        url,
-        path: target,
-        sha1: file["hashes"]["sha1"].as_str().map(str::to_string),
-        size: file["size"].as_u64().unwrap_or(0),
-    };
-    let counter = AtomicU64::new(0);
-    download_one(core, &download, &counter).await.ok()?;
-    if let Some(old) = current_file {
-        if old != filename {
-            let _ = tokio::fs::remove_file(mods.join(old)).await;
+    if !up_to_date {
+        let download = Download {
+            url,
+            path: target,
+            sha1: file["hashes"]["sha1"].as_str().map(str::to_string),
+            size: file["size"].as_u64().unwrap_or(0),
+        };
+        let counter = AtomicU64::new(0);
+        if download_one(core, &download, &counter).await.is_err() {
+            return keep_current();
+        }
+        if let Some(old) = &current_file {
+            if *old != filename {
+                let _ = tokio::fs::remove_file(mods.join(old)).await;
+            }
         }
     }
-    remove_other_fabric_api(&mods, &filename).await;
-    record["fabricApi"] = json!({ "file": filename, "game": game });
-    let _ = write_atomic(&record_path, &serde_json::to_vec_pretty(&record).ok()?);
-    Some(())
+    record[managed.key] = json!({ "file": filename, "game": game });
+    Some(filename)
 }
 
 async fn remove_stray_client_jars(major: &str) {

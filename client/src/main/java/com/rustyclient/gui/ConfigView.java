@@ -12,6 +12,7 @@ import com.rustyclient.core.setting.NumberSetting;
 import com.rustyclient.core.setting.Setting;
 import com.rustyclient.core.setting.TextSetting;
 import com.rustyclient.module.ClientSettings;
+import com.rustyclient.module.Performance;
 import com.rustyclient.render.Draw;
 import com.rustyclient.render.Fonts;
 import com.rustyclient.RustyClient;
@@ -47,7 +48,7 @@ final class ConfigView {
 		}
 		Ui ui = screen.ui;
 		Draw d = ui.d;
-		boolean settingsPage = module instanceof ClientSettings;
+		boolean settingsPage = module instanceof ClientSettings || module instanceof Performance;
 		float x0 = RustyScreen.CONTENT_X;
 		float titleX = x0;
 		if (!settingsPage) {
@@ -57,7 +58,7 @@ final class ConfigView {
 			ui.click(x0, 22, 34, 34, () -> screen.switchPage(RustyScreen.Page.MODULES));
 			titleX = x0 + 46;
 		}
-		d.textMid(settingsPage ? "Settings" : module.name, titleX, 39, Fonts.Style.BOLD, 18, Theme.TEXT);
+		d.textMid(module instanceof ClientSettings ? "Settings" : module.name, titleX, 39, Fonts.Style.BOLD, 18, Theme.TEXT);
 		if (!settingsPage) {
 			float tw = d.width(module.name, Fonts.Style.BOLD, 18);
 			String state = module.enabled() ? "Enabled" : "Disabled";
@@ -146,10 +147,32 @@ final class ConfigView {
 			}
 		}
 		float end = Math.max(leftY, rightY);
+		if (module instanceof Performance) {
+			end = optimizationMods(x0, end, colW);
+		}
 		screen.contentHeight = end + screen.scroll - top + 4;
 		ui.resetClip();
 		d.endScissor();
 		screen.scrollbar(x0 + fullW + 7, top + 4, viewH - 8);
+	}
+
+	private float optimizationMods(float x0, float y, float colW) {
+		Draw d = screen.ui.d;
+		sectionLabel(d, Performance.MODS, x0, y);
+		y += 17;
+		List<Performance.ModStatus> mods = Performance.mods();
+		for (int i = 0; i < mods.size(); i++) {
+			Performance.ModStatus mod = mods.get(i);
+			float x = x0 + (i % 2) * (colW + COL_GAP);
+			float ry = y + (i / 2) * 51;
+			d.round(x, ry, colW, 42, 10, Theme.SURFACE);
+			d.textMid(mod.name(), x + 12, ry + 15, Fonts.Style.SEMIBOLD, 13, Theme.TEXT_2);
+			d.textMid(mod.description(), x + 12, ry + 30, Fonts.Style.MEDIUM, 11, Theme.MUTED);
+			boolean loaded = mod.version() != null;
+			d.textRight(loaded ? mod.version() : "Not loaded", x + colW - 12, ry + 21, Fonts.Style.SEMIBOLD, 12, loaded ? Theme.accentText() : Theme.FAINT);
+		}
+		y += ((mods.size() + 1) / 2) * 51;
+		return y + 12;
 	}
 
 	private float folders(float x, float y, float w) {

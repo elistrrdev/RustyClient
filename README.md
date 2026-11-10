@@ -13,7 +13,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-555555?style=for-the-badge" alt="GPL-3.0"></a>
 </p>
 
-A fast, lightweight Minecraft launcher written in Rust. Sign in with your Microsoft account, pick a version and play. Java, Fabric and Fabric API are all set up for you.
+A fast, lightweight Minecraft launcher written in Rust. Sign in with your Microsoft account, pick a version and play. Java, Fabric, Fabric API and the optimization mods are all set up for you.
 
 ## Features
 
@@ -21,6 +21,7 @@ A fast, lightweight Minecraft launcher written in Rust. Sign in with your Micros
 - **Microsoft sign-in** with support for multiple accounts
 - **Java included**: the right Java runtime is downloaded automatically, nothing to install yourself
 - **Fabric ready**: Fabric Loader and Fabric API are installed and kept up to date on every launch
+- **Fast out of the box**: Sodium, Lithium, FerriteCore, ImmediatelyFast and EntityCulling are installed and updated on every launch, and the in-game Performance page adds FPS limits, entity distances and particle toggles
 - **Mod manager**: drop `.jar` files in, turn mods on and off or remove them, per version
 - **Official news** and version art straight from Mojang
 - **Your look**: pick an accent color for the whole launcher

@@ -21,6 +21,8 @@
 		"MinecraftMixin",
 		"OptionsMixin",
 		"OverlayTextureAccessor",
+		"PerformanceMixins$Framerate",
+		"PerformanceMixins$Particles",
 		"PlayerMixins$Sprint",
 		"RenderMixins$NameBackground",
 		"RenderMixins$HealthName",
