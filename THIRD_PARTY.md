@@ -15,6 +15,17 @@ Permission to use, copy, modify, and/or distribute this software for any purpose
 
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+## Dependency logos
+
+The About page of the launcher shows the logos of the software it depends on, in `launcher/ui/brands/`. They are trademarks of their owners and are only used to name that software. Rusty Client is not affiliated with or endorsed by any of them.
+
+- Chromium (`chromium.svg`): The Chromium Authors, from Wikimedia Commons (`Chromium_Logo.svg`).
+- Rust (`rust.svg`): the Rust logo from rust-lang.org, owned by the Rust Foundation and published under CC-BY 4.0, recolored to a single light color.
+- Java (`java.svg`): Oracle, the SVG is from devicon (MIT License, https://github.com/devicons/devicon).
+- Minecraft (`minecraft.png`): Mojang Studios, the `pack.png` from the Minecraft client.
+- Fabric (`fabric.png`): FabricMC, the icon from the Fabric Loader jar (Apache License 2.0).
+- Windows (`windows10.svg`, `windows11.svg`): Microsoft, the SVGs are from devicon (MIT License).
+
 ## Chromium Embedded Framework
 
 Copyright (c) 2008-2026 Marshall A. Greenblatt. Licensed under the BSD 3-Clause License. The CEF runtime files are not part of `RustyClient.exe` or `RustyClient-Setup.exe`. They are downloaded once from the official CEF binary distribution (`cef-builds.spotifycdn.com`, the minimal Windows 64 bit archive) and checked against its sha1.

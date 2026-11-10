@@ -556,14 +556,6 @@ public final class Visuals {
 		}
 	}
 
-	public static final class ItemPhysics extends Module {
-		public final BoolSetting flatBlocks = bool("Lay blocks flat", GENERAL, false);
-
-		public ItemPhysics() {
-			super("Item Physics", "package-open", Category.VISUAL, false);
-		}
-	}
-
 	public static final class Particles extends Module {
 		public final NumberSetting multiplier = number("Crit multiplier", APPEARANCE, 2, 1, 10, 1, NumberSetting.integer("x"));
 		public final BoolSetting alwaysCrits = bool("Always show crits", GENERAL, true);

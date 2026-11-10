@@ -14,6 +14,19 @@ const OUTFIT: &[u8] = include_bytes!("../ui/fonts/outfit.woff2");
 const LOGO: &[u8] = include_bytes!("../ui/logo.png");
 
 #[cfg(not(feature = "setup"))]
+const BRANDS: &[(&str, &str, &[u8])] = &[
+    ("/brands/chromium.svg", "image/svg+xml", include_bytes!("../ui/brands/chromium.svg")),
+    ("/brands/rust.svg", "image/svg+xml", include_bytes!("../ui/brands/rust.svg")),
+    ("/brands/java.svg", "image/svg+xml", include_bytes!("../ui/brands/java.svg")),
+    ("/brands/minecraft.png", "image/png", include_bytes!("../ui/brands/minecraft.png")),
+    ("/brands/fabric.png", "image/png", include_bytes!("../ui/brands/fabric.png")),
+    ("/brands/windows10.svg", "image/svg+xml", include_bytes!("../ui/brands/windows10.svg")),
+    ("/brands/windows11.svg", "image/svg+xml", include_bytes!("../ui/brands/windows11.svg")),
+];
+#[cfg(feature = "setup")]
+const BRANDS: &[(&str, &str, &[u8])] = &[];
+
+#[cfg(not(feature = "setup"))]
 const PAGE: &str = include_str!("../ui/index.html");
 #[cfg(not(feature = "setup"))]
 const STYLE: &str = include_str!("../ui/app.css");
@@ -114,6 +127,9 @@ pub fn register() {
 }
 
 fn static_asset(path: &str) -> Option<Reply> {
+    if let Some((_, mime, bytes)) = BRANDS.iter().find(|(name, _, _)| *name == path) {
+        return Some(Reply::bytes(*mime, bytes.to_vec(), "max-age=31536000"));
+    }
     Some(match path {
         "/" | "/index.html" => Reply::bytes("text/html", PAGE.as_bytes().to_vec(), "no-store"),
         "/app.css" => Reply::bytes("text/css", STYLE.as_bytes().to_vec(), "no-store"),

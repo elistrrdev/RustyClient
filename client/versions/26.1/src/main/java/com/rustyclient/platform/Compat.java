@@ -93,4 +93,9 @@ public final class Compat {
 			return null;
 		}
 	}
+
+	public static boolean tabHeads() {
+		Minecraft mc = Minecraft.getInstance();
+		return mc.isLocalServer() || (mc.getConnection() != null && mc.getConnection().getConnection().isEncrypted());
+	}
 }

@@ -345,7 +345,7 @@ public final class Draw {
 		drawRun(atlas, text, ox + rx * s - w, baseline, argb);
 	}
 
-	private boolean hudShadow(boolean shadow) {
+	public boolean hudShadow(boolean shadow) {
 		if (!hud) {
 			return shadow;
 		}

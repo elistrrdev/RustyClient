@@ -3,6 +3,7 @@ package com.rustyclient.module;
 import com.rustyclient.core.Category;
 import com.rustyclient.core.Module;
 import com.rustyclient.core.Modules;
+import com.rustyclient.core.RustyUsers;
 import com.rustyclient.core.setting.BoolSetting;
 import com.rustyclient.core.setting.ChoiceSetting;
 import com.rustyclient.core.setting.ColorSetting;
@@ -21,6 +22,9 @@ public final class ClientSettings extends Module {
 	public final ChoiceSetting hudFont;
 	public final ChoiceSetting textShadow;
 	public final NumberSetting hudRadius;
+	public final BoolSetting nametagIcon;
+	public final BoolSetting tablistIcon;
+	public final BoolSetting shareUsage;
 
 	public ClientSettings() {
 		super("Client", "settings", Category.UTILITY, true);
@@ -36,10 +40,18 @@ public final class ClientSettings extends Module {
 		hudFont = choice("HUD font", "Text", "Vanilla", "Vanilla", "Rusty Client");
 		textShadow = choice("Text shadow", "Text", "Per module", "Per module", "Always", "Never");
 		hudRadius = number("HUD border radius", "HUD style", 0, 0, 12, 0.5, NumberSetting.decimal("px"));
+		nametagIcon = bool("Rusty Client icon on nametags", "Rusty Client users", true);
+		tablistIcon = bool("Rusty Client icon in tab list", "Rusty Client users", true);
+		shareUsage = bool("Show others that I use Rusty Client", "Rusty Client users", true);
 	}
 
 	public static ClientSettings get() {
 		return Modules.get(ClientSettings.class);
+	}
+
+	@Override
+	public void alwaysTick() {
+		RustyUsers.tick(mc);
 	}
 
 	@Override

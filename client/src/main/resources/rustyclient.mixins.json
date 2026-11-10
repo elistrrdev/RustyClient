@@ -3,6 +3,7 @@
 	"package": "com.rustyclient.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"AvatarAccessor",
 		"BossOverlayAccessor",
 		"CameraMixin",
 		"ChatAccessor",
@@ -26,9 +27,13 @@
 		"RenderMixins$HealthState",
 		"RenderMixins$HealthSubmit",
 		"RenderMixins$NameHealth",
+		"RenderMixins$NameIcon",
 		"RenderMixins$OwnName",
 		"RenderMixins$Physics",
+		"RenderMixins$PhysicsState",
 		"ScreenMixin",
+		"TabMixins$Fields",
+		"TabMixins$Overlay",
 		"WorldMixins$Events",
 		"WorldMixins$Weather"
 	],

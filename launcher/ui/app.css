@@ -2114,6 +2114,21 @@ svg {
   mask: url("/logo.png") center / contain no-repeat;
 }
 
+.dep-icon:has(.dep-brand) {
+  background: var(--surface-3);
+}
+
+.dep-brand {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.dep-brand.pixel {
+  image-rendering: pixelated;
+}
+
 .dep-text {
   flex: 1;
   min-width: 0;

@@ -10,10 +10,6 @@ include!(concat!(env!("OUT_DIR"), "/client_mods.rs"));
 
 static PACK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/client-mods.zst"));
 
-pub fn version() -> Option<&'static str> {
-    (!JARS.is_empty()).then_some(MOD_VERSION)
-}
-
 pub fn path(major: &str) -> PathBuf {
     paths::root()
         .join("client")

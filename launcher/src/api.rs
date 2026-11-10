@@ -194,7 +194,6 @@ fn about(request: &Incoming) -> Reply {
         "minecraft": major.as_ref().map(|_| version.clone()),
         "fabricLoader": major.as_ref().and_then(|_| fabric_loader_version(&version)),
         "fabricApi": major.as_deref().and_then(fabric_api_version),
-        "clientMod": crate::client::version(),
     }))
 }
 

@@ -816,6 +816,10 @@ function renderUpdate(update) {
   if (status) status.textContent = updateText(update) || `${state.aboutBuild || ""} build`;
 }
 
+function brand(file, pixel = false) {
+  return `<img class="dep-brand${pixel ? " pixel" : ""}" src="/brands/${file}" alt="" draggable="false">`;
+}
+
 function dependencyCard(iconMarkup, name, sub, value, id = "") {
   return `<div class="dep-card"><span class="dep-icon">${iconMarkup}</span><div class="dep-text"><span class="dep-name">${esc(name)}</span><span class="dep-sub" ${id ? `id="${id}"` : ""}>${esc(sub)}</span></div><span class="dep-value ${value ? "" : "missing"}">${esc(value || "Not installed yet")}</span></div>`;
 }
@@ -839,14 +843,13 @@ async function renderAbout() {
   <div class="group-label">Dependencies</div>
   <div class="about-grid">
     ${dependencyCard('<span class="dep-logo"></span>', "Rusty Client", updateText(state.update) || `${info.build} build`, info.launcher, "about-update")}
-    ${dependencyCard(icon("app-window", 17), "Chromium", `Embedded through CEF ${info.cef}`, info.chromium)}
-    ${dependencyCard(icon("cog", 17), "Rust", "Compiler the launcher was built with", info.rust)}
-    ${dependencyCard(icon("coffee", 17), "Java", "Mojang runtime, downloaded for you", info.java)}
-    ${dependencyCard(icon("box", 17), "Minecraft", "Selected version", info.minecraft)}
-    ${dependencyCard(icon("layers", 17), "Fabric Loader", `Latest stable for ${info.minecraft || "the selected version"}`, info.fabricLoader)}
-    ${dependencyCard(icon("puzzle", 17), "Fabric API", "Installed and updated on every launch", info.fabricApi)}
-    ${dependencyCard(icon("sparkles", 17), "Rusty Client mod", "In-game client, loaded on every launch", info.clientMod)}
-    ${dependencyCard(icon("monitor", 17), info.windows, "Operating system build", info.windowsBuild)}
+    ${dependencyCard(brand("chromium.svg"), "Chromium", `Embedded through CEF ${info.cef}`, info.chromium)}
+    ${dependencyCard(brand("rust.svg"), "Rust", "Compiler the launcher was built with", info.rust)}
+    ${dependencyCard(brand("java.svg"), "Java", "Mojang runtime, downloaded for you", info.java)}
+    ${dependencyCard(brand("minecraft.png"), "Minecraft", "Selected version", info.minecraft)}
+    ${dependencyCard(brand("fabric.png", true), "Fabric Loader", `Latest stable for ${info.minecraft || "the selected version"}`, info.fabricLoader)}
+    ${dependencyCard(brand("fabric.png", true), "Fabric API", "Installed and updated on every launch", info.fabricApi)}
+    ${dependencyCard(brand(info.windows === "Windows 11" ? "windows11.svg" : "windows10.svg"), info.windows, "Operating system build", info.windowsBuild)}
   </div>
   <div class="group-label">Folders${major ? ` <span class="badge">${esc(major)}</span>` : ""}</div>
   <div class="about-grid">

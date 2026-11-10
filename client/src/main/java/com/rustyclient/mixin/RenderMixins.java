@@ -1,9 +1,10 @@
 package com.rustyclient.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import com.rustyclient.core.Modules;
+import com.rustyclient.core.RustyUsers;
 import com.rustyclient.module.visual.HealthIndicator;
+import com.rustyclient.module.visual.ItemPhysics;
 import com.rustyclient.module.visual.Visuals;
 import com.rustyclient.platform.Compat;
 import net.minecraft.client.Minecraft;
@@ -16,10 +17,11 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.ItemEntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.util.Mth;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -102,24 +104,63 @@ public final class RenderMixins {
 		@Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/ItemEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/ItemEntityRenderer;submitMultipleFromCount(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ILnet/minecraft/client/renderer/entity/state/ItemClusterRenderState;Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/phys/AABB;)V"))
 		private void rusty$flat(ItemEntityRenderState state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
-			Visuals.ItemPhysics physics = Modules.get(Visuals.ItemPhysics.class);
-			if (physics == null || !physics.enabled()) {
-				return;
+			ItemPhysics.apply(state, pose);
+		}
+
+		@Inject(method = "extractRenderState(Lnet/minecraft/world/entity/item/ItemEntity;Lnet/minecraft/client/renderer/entity/state/ItemEntityRenderState;F)V", at = @At("RETURN"))
+		private void rusty$motion(ItemEntity entity, ItemEntityRenderState state, float partial, CallbackInfo ci) {
+			ItemPhysics.capture(entity, state);
+		}
+	}
+
+	@Mixin(ItemEntityRenderState.class)
+	public abstract static class PhysicsState implements ItemPhysics.Holder {
+		@Unique
+		private int rusty$id;
+		@Unique
+		private boolean rusty$ground;
+		@Unique
+		private boolean rusty$water;
+		@Unique
+		private float rusty$speed;
+
+		@Override
+		public void rusty$motion(int id, boolean ground, boolean water, float speed) {
+			rusty$id = id;
+			rusty$ground = ground;
+			rusty$water = water;
+			rusty$speed = speed;
+		}
+
+		@Override
+		public int rusty$id() {
+			return rusty$id;
+		}
+
+		@Override
+		public boolean rusty$ground() {
+			return rusty$ground;
+		}
+
+		@Override
+		public boolean rusty$water() {
+			return rusty$water;
+		}
+
+		@Override
+		public float rusty$speed() {
+			return rusty$speed;
+		}
+	}
+
+	@Mixin(EntityRenderer.class)
+	public abstract static class NameIcon {
+		@Inject(method = "getNameTag", at = @At("RETURN"), cancellable = true)
+		private void rusty$icon(Entity entity, CallbackInfoReturnable<Component> cir) {
+			Component name = cir.getReturnValue();
+			if (name != null && entity instanceof Player && RustyUsers.nametagIcon() && RustyUsers.uses(entity.getUUID())) {
+				cir.setReturnValue(RustyUsers.prefixed(name));
 			}
-			float spin = ItemEntity.getSpin(state.ageInTicks, state.bobOffset);
-			float bob = Mth.sin(state.ageInTicks / 10.0F + state.bobOffset) * 0.1F + 0.1F;
-			Compat.rotate(pose, Axis.YP.rotation(-spin));
-			pose.translate(0f, -bob, 0f);
-			AABB box = state.item.getModelBoundingBox();
-			boolean block = box.getYsize() > 0.3;
-			if (block && !physics.flatBlocks.on()) {
-				Compat.rotate(pose, Axis.YP.rotationDegrees((state.seed & 0xFFFF) % 360));
-				return;
-			}
-			float lift = (float) -box.minY + 0.0625F;
-			pose.translate(0f, -lift + (float) box.getZsize() / 2f + 0.002f, 0f);
-			Compat.rotate(pose, Axis.XP.rotationDegrees(90f));
-			Compat.rotate(pose, Axis.ZP.rotationDegrees((state.seed & 0xFFFF) % 360));
 		}
 	}
 }

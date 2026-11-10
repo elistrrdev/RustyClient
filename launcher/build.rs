@@ -134,14 +134,6 @@ fn write_runtime_table(archive_json: &Path, files: &[(PathBuf, String)], target:
 fn write_client_mods(out_dir: &Path, setup: bool) {
     println!("cargo::rerun-if-env-changed=RUSTY_CLIENT_JARS");
     let client = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("..").join("client");
-    let properties = client.join("gradle.properties");
-    println!("cargo::rerun-if-changed={}", properties.display());
-    let mod_version = std::fs::read_to_string(&properties)
-        .unwrap_or_default()
-        .lines()
-        .find_map(|line| line.trim().strip_prefix("mod_version=").map(|v| v.trim().to_string()))
-        .unwrap_or_default();
-
     let required = std::env::var_os("RUSTY_CLIENT_JARS").map(PathBuf::from);
     let dir = required.clone().unwrap_or_else(|| client.join("build").join("jars"));
     println!("cargo::rerun-if-changed={}", dir.display());
@@ -172,6 +164,6 @@ fn write_client_mods(out_dir: &Path, setup: bool) {
     }
     let pack = output.finish().unwrap();
     std::fs::write(out_dir.join("client-mods.zst"), pack).unwrap();
-    let source = format!("pub const MOD_VERSION: &str = \"{mod_version}\";\npub const JARS: &[(&str, u64, &str)] = &[\n{table}];\n");
+    let source = format!("pub const JARS: &[(&str, u64, &str)] = &[\n{table}];\n");
     std::fs::write(out_dir.join("client_mods.rs"), source).unwrap();
 }
