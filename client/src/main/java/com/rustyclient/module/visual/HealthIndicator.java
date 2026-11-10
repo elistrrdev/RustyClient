@@ -51,35 +51,42 @@ public final class HealthIndicator extends Module {
 	private final NumberSetting perRow = number("Hearts per row", APPEARANCE, 10, 5, 20, 1, NumberSetting.integer(""));
 	private final NumberSetting distance = number("Max distance", APPEARANCE, 48, 4, 128, 1, NumberSetting.integer(" blocks"));
 
-	private static float lift;
+	private static int lifted;
 
-	public static float nameLift() {
-		return lift;
+	public static void beginName(EntityRenderState state, PoseStack pose) {
+		float lift = liftFor(state);
+		if (lift > 0f) {
+			pose.pushPose();
+			pose.translate(0f, lift, 0f);
+			lifted++;
+		}
 	}
 
-	public static void beginName(EntityRenderState state) {
-		lift = 0f;
+	public static void endName(PoseStack pose) {
+		if (lifted > 0) {
+			lifted--;
+			pose.popPose();
+		}
+	}
+
+	private static float liftFor(EntityRenderState state) {
 		HealthIndicator h = active();
 		if (h == null || !(state instanceof Holder holder) || holder.rusty$hearts() == null || !h.position.is("Below name")) {
-			return;
+			return 0f;
 		}
 		if (state.nameTag == null || state.distanceToCameraSq > 4096.0) {
-			return;
+			return 0f;
 		}
 		float[] data = holder.rusty$hearts();
 		int total = (int) Math.ceil(Math.ceil(data[1]) / 2f) + (int) Math.ceil(Math.ceil(data[2]) / 2f);
 		if (total <= 0) {
-			return;
+			return 0f;
 		}
 		int row = h.stacking.on() ? h.perRow.i() : total;
 		int rows = (total + row - 1) / row;
 		int rowOffset = Math.max(10 - (rows - 2), 3);
 		float height = (9f + (rows - 1) * rowOffset) * h.scale.f();
-		lift = (height + 3f + Math.max(0f, h.offset.f())) * 0.025f;
-	}
-
-	public static void endName() {
-		lift = 0f;
+		return (height + 3f + Math.max(0f, h.offset.f())) * 0.025f;
 	}
 
 	public HealthIndicator() {

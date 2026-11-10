@@ -452,22 +452,15 @@ public final class Visuals {
 			inside = true;
 			pushed = false;
 			Nametags tags = active();
-			float lift = HealthIndicator.nameLift();
-			boolean scale = tags != null && attachment != null && Math.abs(tags.size.v() - 1) >= 0.001;
-			if (!scale && lift <= 0f) {
+			if (tags == null || attachment == null || Math.abs(tags.size.v() - 1) < 0.001) {
 				return;
 			}
+			float k = tags.size.f();
 			pose.pushPose();
 			pushed = true;
-			if (lift > 0f) {
-				pose.translate(0f, lift, 0f);
-			}
-			if (scale) {
-				float k = tags.size.f();
-				pose.translate(attachment.x, attachment.y, attachment.z);
-				pose.scale(k, k, k);
-				pose.translate(-attachment.x, -attachment.y, -attachment.z);
-			}
+			pose.translate(attachment.x, attachment.y, attachment.z);
+			pose.scale(k, k, k);
+			pose.translate(-attachment.x, -attachment.y, -attachment.z);
 		}
 
 		public static void end(com.mojang.blaze3d.vertex.PoseStack pose) {
