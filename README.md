@@ -26,6 +26,30 @@ A fast, lightweight Minecraft launcher written in Rust. Sign in with your Micros
 - **Your look**: pick an accent color for the whole launcher
 - **Crash help**: when the game crashes you get the reason and the crash report in one click
 
+## Screenshots
+
+### Launcher
+
+<p align="center">
+  <a href="assets/screenshots/Launcher-1.png"><img src="assets/screenshots/Launcher-1.png" alt="Launcher home page with the version picker and Minecraft news" width="100%"></a>
+</p>
+<p align="center">
+  <a href="assets/screenshots/Launcher-2.png"><img src="assets/screenshots/Launcher-2.png" alt="Launcher settings" width="49%"></a>
+  <a href="assets/screenshots/Launcher-3.png"><img src="assets/screenshots/Launcher-3.png" alt="About page with dependencies and folders" width="49%"></a>
+</p>
+
+### In-game menu
+
+Every launch also loads the Rusty Client mod. Press Right Shift in game to open its menu with all modules, your profile and the client settings.
+
+<p align="center">
+  <a href="assets/screenshots/Menu-1.png"><img src="assets/screenshots/Menu-1.png" alt="In-game menu with the module grid" width="100%"></a>
+</p>
+<p align="center">
+  <a href="assets/screenshots/Menu-2.png"><img src="assets/screenshots/Menu-2.png" alt="Profile page of the in-game menu" width="49%"></a>
+  <a href="assets/screenshots/Menu-3.png"><img src="assets/screenshots/Menu-3.png" alt="Settings page of the in-game menu" width="49%"></a>
+</p>
+
 ## Download
 
 Grab the latest build from the [Releases](../../releases) page. There are two ways to run it:
