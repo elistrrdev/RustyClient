@@ -41,7 +41,7 @@ A fast, lightweight Minecraft launcher written in Rust. Sign in with your Micros
 
 ### In-game menu
 
-Every launch also loads the Rusty Client mod. Press Right Shift in game to open its menu with all modules, your profile and the client settings.
+Every launch also loads the Rusty Client mod. Press Right Shift in game to open its menu with all modules, your profile, the client settings, the performance options and your waypoints.
 
 <p align="center">
   <a href="assets/screenshots/Menu-1.png"><img src="assets/screenshots/Menu-1.png" alt="In-game menu with the module grid" width="100%"></a>
@@ -49,6 +49,10 @@ Every launch also loads the Rusty Client mod. Press Right Shift in game to open 
 <p align="center">
   <a href="assets/screenshots/Menu-2.png"><img src="assets/screenshots/Menu-2.png" alt="Profile page of the in-game menu" width="49%"></a>
   <a href="assets/screenshots/Menu-3.png"><img src="assets/screenshots/Menu-3.png" alt="Settings page of the in-game menu" width="49%"></a>
+</p>
+<p align="center">
+  <a href="assets/screenshots/Menu-4.png"><img src="assets/screenshots/Menu-4.png" alt="Performance page with FPS limits, particle toggles and entity distances" width="49%"></a>
+  <a href="assets/screenshots/Menu-5.png"><img src="assets/screenshots/Menu-5.png" alt="Waypoints page of the in-game menu" width="49%"></a>
 </p>
 
 ## Download

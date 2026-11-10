@@ -4,7 +4,7 @@
 
 Copyright 2021 The Outfit Project Authors. Licensed under the SIL Open Font License 1.1.
 Bundled as `launcher/ui/fonts/outfit.woff2`.
-The in-game client bundles static instances `client/src/main/resources/assets/rustyclient/fonts/outfit-medium.ttf`, `outfit-semibold.ttf` and `outfit-bold.ttf` (weights 500, 600 and 700), made with the fontTools instancer from the Google Fonts variable font.
+The in-game client bundles static instances `client/src/main/resources/assets/rustyclient/font/outfit-medium.ttf`, `outfit-semibold.ttf` and `outfit-bold.ttf` (weights 500, 600 and 700), made with the fontTools instancer from the Google Fonts variable font.
 
 ## Lucide icons
 

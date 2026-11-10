@@ -426,9 +426,43 @@ public final class Visuals {
 		public final BoolSetting shadow = bool("Text shadow", GENERAL, false);
 		public final NumberSetting opacity = number("Background opacity", APPEARANCE, 0.25, 0, 1, 0.05, NumberSetting.percent());
 		public final NumberSetting size = number("Nametag scale", APPEARANCE, 1, 0.5, 2, 0.05, NumberSetting.times());
+		public final ChoiceSetting font = choice("Font", "Text", "Global", "Global", "Vanilla", "Rusty Client");
+		public final ChoiceSetting weight = choice("Font weight", "Text", "SemiBold", "Medium", "SemiBold", "Bold");
 
 		public Nametags() {
 			super("Nametags", "tag", Category.VISUAL, false);
+			weight.visibleWhen(() -> !vanillaFont());
+		}
+
+		public boolean vanillaFont() {
+			if (font.is("Vanilla")) {
+				return true;
+			}
+			if (font.is("Rusty Client")) {
+				return false;
+			}
+			com.rustyclient.module.ClientSettings settings = com.rustyclient.module.ClientSettings.get();
+			return settings == null || settings.hudFont.is("Vanilla");
+		}
+
+		public static net.minecraft.network.chat.Component font(net.minecraft.network.chat.Component text) {
+			Nametags tags = active();
+			if (tags == null || text == null || tags.vanillaFont()) {
+				return text;
+			}
+			String file = switch (tags.weight.get()) {
+				case "Medium" -> "outfit_medium";
+				case "Bold" -> "outfit_bold";
+				default -> "outfit_semibold";
+			};
+			net.minecraft.network.chat.FontDescription outfit = new net.minecraft.network.chat.FontDescription.Resource(Identifier.fromNamespaceAndPath("rustyclient", file));
+			net.minecraft.network.chat.MutableComponent out = net.minecraft.network.chat.Component.empty();
+			text.visit((style, part) -> {
+				net.minecraft.network.chat.Style st = net.minecraft.network.chat.FontDescription.DEFAULT.equals(style.getFont()) ? style.withFont(outfit) : style;
+				out.append(net.minecraft.network.chat.Component.literal(part).withStyle(st));
+				return java.util.Optional.empty();
+			}, net.minecraft.network.chat.Style.EMPTY);
+			return out;
 		}
 
 		@Override

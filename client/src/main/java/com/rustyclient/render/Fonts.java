@@ -45,7 +45,7 @@ public final class Fonts {
 
 	private static Font base(Style style) {
 		return BASE.computeIfAbsent(style, s -> {
-			try (InputStream in = Fonts.class.getResourceAsStream("/assets/rustyclient/fonts/" + s.file)) {
+			try (InputStream in = Fonts.class.getResourceAsStream("/assets/rustyclient/font/" + s.file)) {
 				if (in == null) {
 					return new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 				}

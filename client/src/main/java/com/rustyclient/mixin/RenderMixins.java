@@ -153,6 +153,14 @@ public final class RenderMixins {
 		}
 	}
 
+	@Mixin(net.minecraft.client.renderer.SubmitNodeCollection.class)
+	public abstract static class NameFont {
+		@org.spongepowered.asm.mixin.injection.ModifyVariable(method = "submitNameTag", at = @At("HEAD"), argsOnly = true)
+		private Component rusty$font(Component text) {
+			return Visuals.Nametags.font(text);
+		}
+	}
+
 	@Mixin(EntityRenderer.class)
 	public abstract static class NameIcon {
 		@Inject(method = "getNameTag", at = @At("RETURN"), cancellable = true)

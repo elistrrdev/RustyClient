@@ -30,6 +30,7 @@
 		"RenderMixins$HealthName",
 		"RenderMixins$HealthState",
 		"RenderMixins$HealthSubmit",
+		"RenderMixins$NameFont",
 		"RenderMixins$NameHealth",
 		"RenderMixins$NameIcon",
 		"RenderMixins$OwnName",
