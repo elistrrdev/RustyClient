@@ -302,9 +302,71 @@ public final class Utilities {
 		public final BoolSetting longer = bool("Longer chat history", GENERAL, true);
 		public final BoolSetting copy = bool("Right click to copy", GENERAL, true);
 		public final ChoiceSetting format = choice("Timestamp format", APPEARANCE, "24 hour", "24 hour", "12 hour", "With seconds");
+		public final ChoiceSetting font = choice("Font", "Text", "Global", "Global", "Vanilla", "Rusty Client");
+		public final ChoiceSetting weight = choice("Font weight", "Text", "Medium", "Medium", "SemiBold", "Bold");
+		public final BoolSetting shadow = bool("Text shadow", "Text", true);
 
 		public Chat() {
 			super("Chat", "message-square", Category.UTILITY, false);
+			weight.visibleWhen(() -> !vanillaFont());
+		}
+
+		public boolean vanillaFont() {
+			if (font.is("Vanilla")) {
+				return true;
+			}
+			if (font.is("Rusty Client")) {
+				return false;
+			}
+			com.rustyclient.module.ClientSettings settings = com.rustyclient.module.ClientSettings.get();
+			return settings == null || settings.hudFont.is("Vanilla");
+		}
+
+		public static boolean customText() {
+			Chat chat = active();
+			return chat != null && (!chat.vanillaFont() || !chat.shadow.on());
+		}
+
+		public static void drawLine(net.minecraft.client.gui.GuiGraphicsExtractor g, int top, float opacity, net.minecraft.util.FormattedCharSequence message) {
+			Chat chat = active();
+			if (chat == null || !customText() || opacity <= 0f) {
+				return;
+			}
+			int color = net.minecraft.util.ARGB.white(opacity);
+			if (chat.vanillaFont()) {
+				g.text(Minecraft.getInstance().font, message, 0, top, color, chat.shadow.on());
+				return;
+			}
+			com.rustyclient.render.Fonts.Style style = switch (chat.weight.get()) {
+				case "SemiBold" -> com.rustyclient.render.Fonts.Style.SEMIBOLD;
+				case "Bold" -> com.rustyclient.render.Fonts.Style.BOLD;
+				default -> com.rustyclient.render.Fonts.Style.MEDIUM;
+			};
+			com.rustyclient.render.Draw d = new com.rustyclient.render.Draw(g, com.rustyclient.render.Draw.guiScale());
+			try {
+				d.styledText(component(message), 0, top + 4f, style, 9, color, chat.shadow.on());
+			} finally {
+				d.end();
+			}
+		}
+
+		private static Component component(net.minecraft.util.FormattedCharSequence message) {
+			net.minecraft.network.chat.MutableComponent out = Component.empty();
+			StringBuilder text = new StringBuilder();
+			net.minecraft.network.chat.Style[] current = {null};
+			message.accept((index, style, codePoint) -> {
+				if (current[0] != null && !style.equals(current[0])) {
+					out.append(Component.literal(text.toString()).withStyle(current[0]));
+					text.setLength(0);
+				}
+				current[0] = style;
+				text.appendCodePoint(codePoint);
+				return true;
+			});
+			if (current[0] != null && !text.isEmpty()) {
+				out.append(Component.literal(text.toString()).withStyle(current[0]));
+			}
+			return out;
 		}
 
 		public static Chat active() {

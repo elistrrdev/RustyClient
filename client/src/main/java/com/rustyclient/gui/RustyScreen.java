@@ -249,7 +249,18 @@ public final class RustyScreen extends Screen {
 			}
 			list.add(module);
 		}
-		return list;
+		List<Module> sorted = new ArrayList<>(list.size());
+		for (Module module : list) {
+			if (module.favorite()) {
+				sorted.add(module);
+			}
+		}
+		for (Module module : list) {
+			if (!module.favorite()) {
+				sorted.add(module);
+			}
+		}
+		return sorted;
 	}
 
 	private void drawModules() {
@@ -368,6 +379,19 @@ public final class RustyScreen extends Screen {
 				openConfig(module);
 			}
 		});
+		float ss = 28, sx = x + w - 12 - ss, sy = y + 12;
+		boolean hoverStar = ui.hover(sx, sy, ss, ss);
+		float ft = ui.anim("fav" + module.id, module.favorite() ? 1f : 0f, 16f);
+		if (hoverStar) {
+			d.round(sx, sy, ss, ss, 8, Theme.SURFACE_3);
+		}
+		if (ft > 0.01f) {
+			d.icon("star-filled", sx + ss / 2f, sy + ss / 2f, 15, Theme.fade(Theme.accent(), ft));
+		}
+		if (ft < 0.99f && (hover || ft > 0.01f)) {
+			d.icon("star", sx + ss / 2f, sy + ss / 2f, 15, Theme.fade(hoverStar ? Theme.TEXT : Theme.MUTED, 1f - ft));
+		}
+		ui.click(sx, sy, ss, ss, module::toggleFavorite);
 		ui.click(bx, by, bw, bh, b -> {
 			if (b == 0) {
 				module.toggle();

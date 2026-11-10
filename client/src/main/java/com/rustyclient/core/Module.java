@@ -28,6 +28,7 @@ public abstract class Module {
 	protected final Minecraft mc = Minecraft.getInstance();
 	private final boolean defaultEnabled;
 	private boolean enabled;
+	private boolean favorite;
 	private boolean keyWasDown;
 
 	protected Module(String name, String icon, Category category, boolean defaultEnabled) {
@@ -89,6 +90,19 @@ public abstract class Module {
 
 	public void loadEnabled(boolean value) {
 		enabled = value;
+	}
+
+	public boolean favorite() {
+		return favorite;
+	}
+
+	public void toggleFavorite() {
+		favorite = !favorite;
+		Config.markDirty();
+	}
+
+	public void loadFavorite(boolean value) {
+		favorite = value;
 	}
 
 	public void toggle() {

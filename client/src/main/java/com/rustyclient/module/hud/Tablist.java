@@ -94,7 +94,7 @@ public final class Tablist extends Module {
 	private final NumberSetting padding = number("Padding", LAYOUT, 1, 0, 10, 0.5, NumberSetting.decimal(""));
 	private final NumberSetting minWidth = number("Minimum column width", LAYOUT, 0, 0, 300, 1, NumberSetting.integer(""));
 	private final NumberSetting top = number("Distance from top", LAYOUT, 10, 0, 120, 1, NumberSetting.integer(""));
-	private final BoolSetting onePanel = bool("One background panel", APPEARANCE, false);
+	private final BoolSetting onePanel = add(new BoolSetting("single_panel", "One background panel", APPEARANCE, true));
 	private final NumberSetting radius = number("Border radius", APPEARANCE, 0, 0, 12, 0.5, NumberSetting.decimal("px"));
 	private final ColorSetting background = colorAlpha("Background color", APPEARANCE, 0x80000000);
 	private final ColorSetting headerBackground = colorAlpha("Header and footer background", APPEARANCE, 0x80000000);

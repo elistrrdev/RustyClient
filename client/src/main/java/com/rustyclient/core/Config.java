@@ -65,6 +65,9 @@ public final class Config {
 				if (obj.has("enabled") && obj.get("enabled").isJsonPrimitive()) {
 					module.loadEnabled(obj.get("enabled").getAsBoolean());
 				}
+				if (obj.has("favorite") && obj.get("favorite").isJsonPrimitive()) {
+					module.loadFavorite(obj.get("favorite").getAsBoolean());
+				}
 				JsonObject settings = obj.getAsJsonObject("settings");
 				if (settings != null) {
 					for (Setting<?> setting : module.settings) {
@@ -92,6 +95,9 @@ public final class Config {
 		for (Module module : Modules.all()) {
 			JsonObject obj = new JsonObject();
 			obj.addProperty("enabled", module.enabled());
+			if (module.favorite()) {
+				obj.addProperty("favorite", true);
+			}
 			JsonObject settings = new JsonObject();
 			for (Setting<?> setting : module.settings) {
 				settings.add(setting.id, setting.save());

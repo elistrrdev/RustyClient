@@ -816,8 +816,8 @@ function renderUpdate(update) {
   if (status) status.textContent = updateText(update) || `${state.aboutBuild || ""} build`;
 }
 
-function brand(file, pixel = false) {
-  return `<img class="dep-brand${pixel ? " pixel" : ""}" src="/brands/${file}" alt="" draggable="false">`;
+function brand(file, kind = "") {
+  return `<img class="dep-brand${kind ? ` ${kind}` : ""}" src="/brands/${file}" alt="" draggable="false">`;
 }
 
 function dependencyCard(iconMarkup, name, sub, value, id = "") {
@@ -846,10 +846,10 @@ async function renderAbout() {
     ${dependencyCard(brand("chromium.svg"), "Chromium", `Embedded through CEF ${info.cef}`, info.chromium)}
     ${dependencyCard(brand("rust.svg"), "Rust", "Compiler the launcher was built with", info.rust)}
     ${dependencyCard(brand("java.svg"), "Java", "Mojang runtime, downloaded for you", info.java)}
-    ${dependencyCard(brand("minecraft.png"), "Minecraft", "Selected version", info.minecraft)}
-    ${dependencyCard(brand("fabric.png", true), "Fabric Loader", `Latest stable for ${info.minecraft || "the selected version"}`, info.fabricLoader)}
-    ${dependencyCard(brand("fabric.png", true), "Fabric API", "Installed and updated on every launch", info.fabricApi)}
-    ${dependencyCard(brand(info.windows === "Windows 11" ? "windows11.svg" : "windows10.svg"), info.windows, "Operating system build", info.windowsBuild)}
+    ${dependencyCard(brand("minecraft.png", "fill"), "Minecraft", "Selected version", info.minecraft)}
+    ${dependencyCard(brand("fabric.png", "pixel"), "Fabric Loader", `Latest stable for ${info.minecraft || "the selected version"}`, info.fabricLoader)}
+    ${dependencyCard(brand("fabric.png", "pixel"), "Fabric API", "Installed and updated on every launch", info.fabricApi)}
+    ${dependencyCard(brand(info.windows === "Windows 11" ? "windows11.svg" : "windows10.svg", "windows"), info.windows, "Operating system build", info.windowsBuild)}
   </div>
   <div class="group-label">Folders${major ? ` <span class="badge">${esc(major)}</span>` : ""}</div>
   <div class="about-grid">

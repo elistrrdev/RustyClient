@@ -2,6 +2,7 @@ package com.rustyclient.module.visual;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Transformation;
 import com.rustyclient.core.Category;
 import com.rustyclient.core.Module;
 import com.rustyclient.core.Modules;
@@ -19,9 +20,16 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityAttachment;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
 
 public final class HealthIndicator extends Module {
 	public interface Holder {
@@ -141,7 +149,49 @@ public final class HealthIndicator extends Module {
 			case "Normal" -> false;
 			default -> mc.level != null && mc.level.getLevelData().isHardcore();
 		};
-		return new float[]{health, maxHealth, extra, type, hardcore ? 1 : 0};
+		float[] out = {health, maxHealth, extra, type, hardcore ? 1 : 0, Float.NaN, Float.NaN, Float.NaN};
+		if (state.nameTagAttachment == null) {
+			Vec3 at = entity.getAttachments().getNullable(EntityAttachment.NAME_TAG, 0, entity.getYRot());
+			if (at != null) {
+				double y = at.y;
+				float top = customTop(mc, entity);
+				if (!Float.isNaN(top)) {
+					y = Math.max(y, top - 0.25);
+				}
+				out[5] = (float) at.x;
+				out[6] = (float) y;
+				out[7] = (float) at.z;
+			}
+		}
+		return out;
+	}
+
+	private static float customTop(Minecraft mc, LivingEntity entity) {
+		if (mc.level == null) {
+			return Float.NaN;
+		}
+		AABB box = entity.getBoundingBox().inflate(0.4, 0, 0.4).expandTowards(0, 3, 0);
+		List<Entity> labels = mc.level.getEntities(entity, box, e -> e instanceof Display.TextDisplay || (e instanceof ArmorStand && e.isCustomNameVisible() && e.hasCustomName()));
+		float top = Float.NaN;
+		for (Entity label : labels) {
+			float t;
+			if (label instanceof Display.TextDisplay text) {
+				int lines = Math.max(1, mc.font.split(text.getText(), Math.max(1, text.getLineWidth())).size());
+				float scale = 1f;
+				float lift = 0f;
+				Display.RenderState render = text.renderState();
+				if (render != null) {
+					Transformation transformation = render.transformation().get(1f);
+					scale = Math.abs(transformation.scale().y());
+					lift = transformation.translation().y();
+				}
+				t = (float) (label.getY() - entity.getY()) + lift + lines * 10 * 0.025f * scale;
+			} else {
+				t = (float) (label.getY() - entity.getY()) + label.getBbHeight() + 0.8f;
+			}
+			top = Float.isNaN(top) ? t : Math.max(top, t);
+		}
+		return top;
 	}
 
 	private static String prefix(int type) {
@@ -156,6 +206,9 @@ public final class HealthIndicator extends Module {
 	public static void submit(EntityRenderState state, float[] data, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
 		HealthIndicator h = active();
 		Vec3 attachment = state.nameTagAttachment;
+		if (attachment == null && data != null && data.length > 7 && !Float.isNaN(data[5])) {
+			attachment = new Vec3(data[5], data[6], data[7]);
+		}
 		if (h == null || data == null || attachment == null || camera == null) {
 			return;
 		}

@@ -458,10 +458,27 @@ public final class Draw {
 	}
 
 	public void knob(float cx, float cy, float r, boolean active, int color) {
-		float edge = Math.max(0.75f, 1f / s);
-		circle(cx, cy, r + edge, 0x24FFFFFF);
-		circle(cx, cy, r, 0xFF45423F);
-		circle(cx, cy, r * (active ? 0.62f : 0.5f), color);
+		if (alpha <= 0f) {
+			return;
+		}
+		int body = Math.max(2, Math.round(r * 2 * s));
+		int edge = Math.max(1, Math.round(Math.max(0.75f, 1f / s) * s));
+		int dot = Math.max(1, Math.round(r * (active ? 0.62f : 0.5f) * 2 * s));
+		if ((body - dot) % 2 != 0) {
+			dot += dot + 1 <= body ? 1 : -1;
+		}
+		int x0 = Math.round(ox + cx * s - body / 2f);
+		int y0 = Math.round(oy + cy * s - body / 2f);
+		disc(x0 - edge, y0 - edge, body + edge * 2, 0x24FFFFFF);
+		disc(x0, y0, body, 0xFF45423F);
+		disc(x0 + (body - dot) / 2, y0 + (body - dot) / 2, dot, color);
+	}
+
+	private void disc(int x, int y, int size, int argb) {
+		if ((argb >>> 24) == 0 || size <= 0) {
+			return;
+		}
+		blit(Shapes.disc(size), x, y, size, size, 0, 0, size, size, col(argb));
 	}
 
 	public void spriteRegion(net.minecraft.resources.Identifier sprite, int texW, int texH, int u, int v, float x, float y, int w, int h, int argb) {
