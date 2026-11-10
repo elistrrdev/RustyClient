@@ -12,7 +12,6 @@ import com.rustyclient.core.setting.NumberSetting;
 import com.rustyclient.core.setting.Setting;
 import com.rustyclient.core.setting.TextSetting;
 import com.rustyclient.module.ClientSettings;
-import com.rustyclient.platform.Compat;
 import com.rustyclient.render.Draw;
 import com.rustyclient.render.Fonts;
 import com.rustyclient.RustyClient;
@@ -137,6 +136,9 @@ final class ConfigView {
 				cy += item(setting, cx, cy, colW);
 			}
 			cy += 21;
+			if (module instanceof ClientSettings && name.equals("Text")) {
+				cy = folders(cx, cy, colW);
+			}
 			if (left) {
 				leftY = cy;
 			} else {
@@ -144,28 +146,20 @@ final class ConfigView {
 			}
 		}
 		float end = Math.max(leftY, rightY);
-		if (module instanceof ClientSettings) {
-			end = actions(x0, end, colW, fullW);
-		}
 		screen.contentHeight = end + screen.scroll - top + 4;
 		ui.resetClip();
 		d.endScissor();
 		screen.scrollbar(x0 + fullW + 7, top + 4, viewH - 8);
 	}
 
-	private float actions(float x0, float y, float colW, float fullW) {
-		Ui ui = screen.ui;
-		Draw d = ui.d;
-		sectionLabel(d, "Layout and files", x0, y);
+	private float folders(float x, float y, float w) {
+		sectionLabel(screen.ui.d, "Folders", x, y);
 		y += 17;
-		actionRow("HUD layout", "Edit", x0, y, colW, () -> Compat.setScreen(new HudEditorScreen(screen)));
-		boolean pending = RustyScreen.resetPending();
-		actionRow(pending ? "Click again to reset" : "Reset HUD layout", pending ? "Confirm" : "Reset", x0 + colW + COL_GAP, y, colW, pending, RustyScreen::pressReset);
+		actionRow("Config folder", "Open", x, y, w, () -> RustyClient.openFolder(Config.file().getParent()));
 		y += 51;
-		actionRow("Config folder", "Open", x0, y, colW, () -> RustyClient.openFolder(Config.file().getParent()));
-		actionRow("Screenshots folder", "Open", x0 + colW + COL_GAP, y, colW, () -> RustyClient.openFolder(FabricLoader.getInstance().getGameDir().resolve("screenshots")));
+		actionRow("Screenshots folder", "Open", x, y, w, () -> RustyClient.openFolder(FabricLoader.getInstance().getGameDir().resolve("screenshots")));
 		y += 51;
-		return y + 12;
+		return y + 21;
 	}
 
 	private void actionRow(String label, String button, float x, float y, float w, Runnable action) {

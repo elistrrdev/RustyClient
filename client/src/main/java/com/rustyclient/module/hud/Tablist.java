@@ -258,7 +258,7 @@ public final class Tablist extends Module {
 		boolean hearts = showScores && objective.getRenderType() == ObjectiveCriteria.RenderType.HEARTS;
 		float rowH = rowHeight.f();
 		float pitch = rowH + rowGap.f();
-		float iconW = rowH + 1.5f;
+		float iconW = 11f * textSize.f() / 9f;
 		float spacer = width(d, Component.literal(" "));
 		List<Entry> entries = new ArrayList<>(infos.size());
 		float maxName = 0;
@@ -386,8 +386,8 @@ public final class Tablist extends Module {
 			}
 			float tx = nameStart;
 			if (entry.icon()) {
-				float size = rowH * 0.9f;
-				d.sprite(RustyUsers.LOGO, tx, ry + (rowH - size) / 2f, size);
+				float size = textSize.f();
+				d.vanillaText(RustyUsers.icon(), tx, ry + (rowH - 8f * size / 9f) / 2f, size, 0xFFFFFFFF, d.hudShadow(shadow.on()));
 				tx += iconW;
 			}
 			boolean spectator = info.getGameMode() == GameType.SPECTATOR;
