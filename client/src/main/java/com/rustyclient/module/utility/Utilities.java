@@ -335,6 +335,7 @@ public final class Utilities {
 		public final BoolSetting allowSneak = bool("Allow drop while sneaking", GENERAL, true);
 		public final BoolSetting swap = bool("Block offhand swap", GENERAL, false);
 		public final BoolSetting scroll = bool("Lock scroll wheel", GENERAL, false);
+		public final com.rustyclient.core.setting.SlotsSetting slots = add(new com.rustyclient.core.setting.SlotsSetting("protected_slots", "Protected slots", "Slots"));
 
 		public HotbarLock() {
 			super("Hotbar Lock", "lock", Category.UTILITY, false);
@@ -350,6 +351,9 @@ public final class Utilities {
 				return;
 			}
 			boolean sneakOk = allowSneak.on() && mc.player.isShiftKeyDown();
+			if (!slots.protects(mc.player.getInventory().getSelectedSlot())) {
+				return;
+			}
 			if (drop.on() && !sneakOk) {
 				while (mc.options.keyDrop.consumeClick()) {
 				}

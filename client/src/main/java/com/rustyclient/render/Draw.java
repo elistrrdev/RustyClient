@@ -458,11 +458,10 @@ public final class Draw {
 	}
 
 	public void knob(float cx, float cy, float r, boolean active, int color) {
-		if (active) {
-			circle(cx, cy, r * 1.75f, (Math.round((color >>> 24) * 0.22f) << 24) | (color & 0xFFFFFF));
-		}
-		circle(cx, cy, r + Math.max(0.75f, 1f / s), 0x66000000);
-		circle(cx, cy, r, color);
+		float edge = Math.max(0.75f, 1f / s);
+		circle(cx, cy, r + edge, 0x24FFFFFF);
+		circle(cx, cy, r, 0xFF45423F);
+		circle(cx, cy, r * (active ? 0.62f : 0.5f), color);
 	}
 
 	public void spriteRegion(net.minecraft.resources.Identifier sprite, int texW, int texH, int u, int v, float x, float y, int w, int h, int argb) {
@@ -496,7 +495,24 @@ public final class Draw {
 		return out;
 	}
 
-	private record Run(String text, int color, boolean bold, net.minecraft.network.chat.Style style) {
+	private record Run(String text, int color, boolean bold, boolean strike, boolean underline, net.minecraft.network.chat.Style style) {
+	}
+
+	private static final String SMALL_CAPS = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ";
+	private static final float SMALL_CAPS_SIZE = 0.8f;
+
+	private static int smallCap(int cp) {
+		int i = SMALL_CAPS.indexOf(cp);
+		return i >= 0 && cp != 'x' ? 'A' + i : -1;
+	}
+
+	private static boolean hasSmallCaps(String text) {
+		for (int i = 0; i < text.length(); i++) {
+			if (smallCap(text.charAt(i)) >= 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static java.util.List<Run> runs(net.minecraft.network.chat.Component text, int argb) {
@@ -504,24 +520,32 @@ public final class Draw {
 		text.visit((st, part) -> {
 			int base = st.getColor() != null ? (argb & 0xFF000000) | (st.getColor().getValue() & 0xFFFFFF) : argb;
 			int color = base;
-			boolean bold = st.isBold();
+			boolean bold = st.isBold(), strike = st.isStrikethrough(), underline = st.isUnderlined();
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < part.length(); i++) {
 				char ch = part.charAt(i);
 				if (ch == '§' && i + 1 < part.length()) {
 					if (!sb.isEmpty()) {
-						out.add(new Run(sb.toString(), color, bold, st));
+						out.add(new Run(sb.toString(), color, bold, strike, underline, st));
 						sb.setLength(0);
 					}
 					net.minecraft.ChatFormatting f = net.minecraft.ChatFormatting.getByCode(part.charAt(i + 1));
 					if (f == net.minecraft.ChatFormatting.RESET) {
 						color = base;
 						bold = st.isBold();
+						strike = st.isStrikethrough();
+						underline = st.isUnderlined();
 					} else if (f != null && net.minecraft.network.chat.TextColor.fromLegacyFormat(f) != null) {
 						color = (argb & 0xFF000000) | (net.minecraft.network.chat.TextColor.fromLegacyFormat(f).getValue() & 0xFFFFFF);
 						bold = false;
+						strike = false;
+						underline = false;
 					} else if (f == net.minecraft.ChatFormatting.BOLD) {
 						bold = true;
+					} else if (f == net.minecraft.ChatFormatting.STRIKETHROUGH) {
+						strike = true;
+					} else if (f == net.minecraft.ChatFormatting.UNDERLINE) {
+						underline = true;
 					}
 					i++;
 					continue;
@@ -529,7 +553,7 @@ public final class Draw {
 				sb.append(ch);
 			}
 			if (!sb.isEmpty()) {
-				out.add(new Run(sb.toString(), color, bold, st));
+				out.add(new Run(sb.toString(), color, bold, strike, underline, st));
 			}
 			return java.util.Optional.empty();
 		}, net.minecraft.network.chat.Style.EMPTY);
@@ -541,7 +565,7 @@ public final class Draw {
 		for (int i = 0; i < text.length(); ) {
 			int cp = text.codePointAt(i);
 			i += Character.charCount(cp);
-			if (!Character.isWhitespace(cp) && !atlas.canDisplay(cp)) {
+			if (!Character.isWhitespace(cp) && smallCap(cp) < 0 && !atlas.canDisplay(cp)) {
 				return false;
 			}
 		}
@@ -549,13 +573,58 @@ public final class Draw {
 	}
 
 	private static net.minecraft.network.chat.Component runComponent(Run run) {
-		return net.minecraft.network.chat.Component.literal(run.text()).withStyle(run.style().withColor(net.minecraft.network.chat.TextColor.fromRgb(run.color() & 0xFFFFFF)).withBold(run.bold()));
+		net.minecraft.network.chat.Style st = run.style().withColor(net.minecraft.network.chat.TextColor.fromRgb(run.color() & 0xFFFFFF)).withBold(run.bold()).withStrikethrough(run.strike()).withUnderlined(run.underline());
+		return net.minecraft.network.chat.Component.literal(run.text()).withStyle(st);
+	}
+
+	private java.util.List<String[]> pieces(String text) {
+		java.util.List<String[]> out = new java.util.ArrayList<>();
+		if (!hasSmallCaps(text)) {
+			out.add(new String[]{text, ""});
+			return out;
+		}
+		StringBuilder normal = new StringBuilder(), small = new StringBuilder();
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			int cap = smallCap(c);
+			if (cap < 0 && c >= 'a' && c <= 'z') {
+				cap = Character.toUpperCase(c);
+			}
+			if (cap >= 0) {
+				if (!normal.isEmpty()) {
+					out.add(new String[]{normal.toString(), ""});
+					normal.setLength(0);
+				}
+				small.append((char) cap);
+			} else {
+				if (!small.isEmpty()) {
+					out.add(new String[]{small.toString(), "s"});
+					small.setLength(0);
+				}
+				normal.append(c);
+			}
+		}
+		if (!normal.isEmpty()) {
+			out.add(new String[]{normal.toString(), ""});
+		}
+		if (!small.isEmpty()) {
+			out.add(new String[]{small.toString(), "s"});
+		}
+		return out;
+	}
+
+	private float ownWidth(String text, Fonts.Style style, float size) {
+		float w = 0;
+		for (String[] piece : pieces(text)) {
+			w += width(piece[0], style, piece[1].isEmpty() ? size : size * SMALL_CAPS_SIZE);
+		}
+		return w;
 	}
 
 	private float runWidth(Run run, Fonts.Style style, float size) {
 		Fonts.Style fs = run.bold() ? Fonts.Style.BOLD : style;
 		if (ownFont(run.text(), fs, size)) {
-			return width(run.text(), fs, size);
+			return ownWidth(run.text(), fs, size);
 		}
 		return Minecraft.getInstance().font.width(runComponent(run)) * vanillaScale(size) / s;
 	}
@@ -588,8 +657,28 @@ public final class Draw {
 		float pen = x;
 		for (Run run : runs(text, argb)) {
 			Fonts.Style fs = run.bold() ? Fonts.Style.BOLD : style;
+			float w = runWidth(run, style, size);
 			if (ownFont(run.text(), fs, size)) {
-				textShadowed(run.text(), pen, cy, fs, size, run.color(), drop);
+				float cap = font(fs, size).capHeight / s;
+				float px = pen;
+				for (String[] piece : pieces(run.text())) {
+					boolean small = !piece[1].isEmpty();
+					float ps = small ? size * SMALL_CAPS_SIZE : size;
+					float pcy = small ? cy + (cap - font(fs, ps).capHeight / s) / 2f : cy;
+					textShadowed(piece[0], px, pcy, fs, ps, run.color(), drop);
+					px += width(piece[0], fs, ps);
+				}
+				float t = Math.max(1f / s, size / 10f);
+				if (run.strike()) {
+					if (drop) {
+						rect(pen + t * 0.7f, cy - t / 2f + t * 0.7f, w, t, ((run.color() >>> 24) * 3 / 5) << 24);
+					}
+					rect(pen, cy - t / 2f, w, t, run.color());
+				}
+				if (run.underline()) {
+					float uy = cy + cap / 2f + t * 0.8f;
+					rect(pen, uy, w, t, run.color());
+				}
 			} else if ((argb >>> 24) != 0 && alpha > 0f) {
 				float k = vanillaScale(size);
 				g.pose().pushMatrix();
@@ -598,7 +687,7 @@ public final class Draw {
 				g.text(Minecraft.getInstance().font, runComponent(run), 0, 0, col(run.color()), drop);
 				g.pose().popMatrix();
 			}
-			pen += runWidth(run, style, size);
+			pen += w;
 		}
 	}
 

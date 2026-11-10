@@ -214,6 +214,10 @@ final class ConfigView {
 			textRow(t, x, y, w);
 			return 51;
 		}
+		if (setting instanceof com.rustyclient.core.setting.SlotsSetting s) {
+			slotsRow(s, x, y, w);
+			return 84;
+		}
 		return 0;
 	}
 
@@ -241,7 +245,8 @@ final class ConfigView {
 		d.round(tx, ty - 2.5f, tw, 5, 2.5f, Theme.SURFACE_3);
 		d.round(tx, ty - 2.5f, Math.max(5, kx - tx), 5, 2.5f, Theme.accent());
 		boolean hover = ui.hover(tx - 8, ty - 12, tw + 16, 24);
-		boolean active = hover || ui.activeDrag != null;
+		boolean held = ui.dragging(tx - 8, ty - 12, tw + 16, 24);
+		boolean active = held || hover && ui.activeDrag == null;
 		d.knob(kx, ty, active ? 7f : kr, active, Theme.accent());
 		ui.drag(tx - 8, ty - 12, tw + 16, 24, (mx, my) -> setting.setFraction((mx - tx - kr) / (tw - kr * 2)));
 	}
@@ -333,6 +338,34 @@ final class ConfigView {
 				setting.set(KeySetting.NONE);
 			}
 		});
+	}
+
+	private void slotsRow(com.rustyclient.core.setting.SlotsSetting setting, float x, float y, float w) {
+		Ui ui = screen.ui;
+		Draw d = ui.d;
+		d.textMid(setting.name, x, y + 13, Fonts.Style.SEMIBOLD, 13, Theme.TEXT_2);
+		String hint = setting.none() ? "None picked, every slot" : "Only the picked slots";
+		d.textRight(hint, x + w - 6, y + 13, Fonts.Style.MEDIUM, 11, Theme.MUTED);
+		int n = com.rustyclient.core.setting.SlotsSetting.SLOTS;
+		float gap = 6;
+		float box = Math.min(34, (w - gap * (n - 1)) / n);
+		float total = box * n + gap * (n - 1);
+		float bx = x + (w - total) / 2f, by = y + 30;
+		for (int i = 0; i < n; i++) {
+			float sx = bx + i * (box + gap);
+			boolean on = setting.selected(i);
+			boolean hover = ui.hover(sx, by, box, box);
+			float t = ui.anim("slot" + System.identityHashCode(setting) + i, on ? 1f : 0f, 18f);
+			int idle = hover ? Theme.SURFACE_3 : Theme.SURFACE_2;
+			d.round(sx, by, box, box, 8, Theme.mix(idle, Theme.accent(), t));
+			d.textCenter(String.valueOf(i + 1), sx + box / 2f, by + box / 2f, Fonts.Style.SEMIBOLD, 12, Theme.mix(hover ? Theme.TEXT_3 : Theme.FAINT, Theme.INK, t));
+			int slot = i;
+			ui.click(sx, by, box, box, b -> {
+				if (b == 0 || b == 1) {
+					setting.toggle(slot);
+				}
+			});
+		}
 	}
 
 	private void textRow(TextSetting setting, float x, float y, float w) {

@@ -22,6 +22,7 @@
 		"OverlayTextureAccessor",
 		"PlayerMixins$Sprint",
 		"RenderMixins$NameBackground",
+		"RenderMixins$HealthName",
 		"RenderMixins$HealthState",
 		"RenderMixins$HealthSubmit",
 		"RenderMixins$NameHealth",

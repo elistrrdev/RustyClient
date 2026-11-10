@@ -33,6 +33,8 @@ public final class Ui {
 	private final Map<String, Float> anims = new HashMap<>();
 	private float clipX = -1e9f, clipY = -1e9f, clipW = 2e9f, clipH = 2e9f;
 	public Drag activeDrag;
+	private float dragX = Float.NaN;
+	private float dragY = Float.NaN;
 	public boolean blockHover;
 
 	public static int button(MouseButtonEvent event) {
@@ -126,6 +128,8 @@ public final class Ui {
 				if (hit.drag() != null) {
 					if (button == 0) {
 						activeDrag = hit.drag();
+						dragX = hit.x();
+						dragY = hit.y();
 						activeDrag.update(x, y);
 					}
 				} else if (hit.action() != null) {
@@ -139,6 +143,16 @@ public final class Ui {
 
 	public void release() {
 		activeDrag = null;
+		dragX = Float.NaN;
+		dragY = Float.NaN;
+	}
+
+	public boolean dragging(float x, float y, float w, float h) {
+		if (activeDrag == null) {
+			return false;
+		}
+		float cx = Math.max(x, clipX), cy = Math.max(y, clipY);
+		return Math.abs(cx - dragX) < 0.5f && Math.abs(cy - dragY) < 0.5f;
 	}
 
 	public void dragTo(float x, float y) {

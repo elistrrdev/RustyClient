@@ -108,7 +108,7 @@ public final class HudEditorScreen extends Screen {
 			d.ring(x - pad, y - pad, w + pad * 2, h + pad * 2, 3 * gs, Math.max(1, gs / 2f), border);
 			float[] handle = handle(hud);
 			boolean onHandle = hud == scaling || (hud == hovered && overHandle(hud, m, n));
-			float hr = (onHandle ? 4f : 3.25f) * gs;
+			float hr = (onHandle ? 4.5f : 4f) * gs;
 			d.knob(handle[0], handle[1], hr, onHandle, focus ? Theme.accent() : Theme.withAlpha(0xFFFFFFFF, 0xD8));
 			if (focus) {
 				String label = hud.name + "  " + Math.round(hud.scale.v() * 100) + "%";

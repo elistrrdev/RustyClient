@@ -33,6 +33,11 @@ public final class VersionMixins {
 		private void rusty$hand(PlayerRenderState player, FirstPersonHandsAndItemsRenderState state, float partial, float pitch, InteractionHand hand, float swing, ItemStack stack, float equip, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
 			Visuals.CustomHand.apply(pose, hand == InteractionHand.MAIN_HAND, stack);
 		}
+
+		@Inject(method = "submitArmWithItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V"))
+		private void rusty$itemScale(PlayerRenderState player, FirstPersonHandsAndItemsRenderState state, float partial, float pitch, InteractionHand hand, float swing, ItemStack stack, float equip, PoseStack pose, SubmitNodeCollector collector, int light, CallbackInfo ci) {
+			Visuals.CustomHand.scaleItem(pose, hand == InteractionHand.MAIN_HAND);
+		}
 	}
 
 	@Mixin(ScreenEffectRenderer.class)

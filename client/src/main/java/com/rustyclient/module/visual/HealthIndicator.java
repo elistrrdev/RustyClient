@@ -51,6 +51,37 @@ public final class HealthIndicator extends Module {
 	private final NumberSetting perRow = number("Hearts per row", APPEARANCE, 10, 5, 20, 1, NumberSetting.integer(""));
 	private final NumberSetting distance = number("Max distance", APPEARANCE, 48, 4, 128, 1, NumberSetting.integer(" blocks"));
 
+	private static float lift;
+
+	public static float nameLift() {
+		return lift;
+	}
+
+	public static void beginName(EntityRenderState state) {
+		lift = 0f;
+		HealthIndicator h = active();
+		if (h == null || !(state instanceof Holder holder) || holder.rusty$hearts() == null || !h.position.is("Below name")) {
+			return;
+		}
+		if (state.nameTag == null || state.distanceToCameraSq > 4096.0) {
+			return;
+		}
+		float[] data = holder.rusty$hearts();
+		int total = (int) Math.ceil(Math.ceil(data[1]) / 2f) + (int) Math.ceil(Math.ceil(data[2]) / 2f);
+		if (total <= 0) {
+			return;
+		}
+		int row = h.stacking.on() ? h.perRow.i() : total;
+		int rows = (total + row - 1) / row;
+		int rowOffset = Math.max(10 - (rows - 2), 3);
+		float height = (9f + (rows - 1) * rowOffset) * h.scale.f();
+		lift = (height + 3f + Math.max(0f, h.offset.f())) * 0.025f;
+	}
+
+	public static void endName() {
+		lift = 0f;
+	}
+
 	public HealthIndicator() {
 		super("Health Indicator", "heart", Category.VISUAL, false);
 		perRow.visibleWhen(stacking::on);
@@ -148,15 +179,13 @@ public final class HealthIndicator extends Module {
 		float startX = -pixels / 2f;
 		boolean label = state.nameTag != null && state.distanceToCameraSq <= 4096.0;
 		float bottom;
-		if (!label) {
+		if (!label || h.position.is("Below name")) {
 			bottom = 8f;
-		} else if (h.position.is("Above name")) {
+		} else {
 			bottom = -2f;
 			if (state.scoreText != null && state.distanceToCameraSq < 100.0) {
 				bottom -= LINE;
 			}
-		} else {
-			bottom = 19f;
 		}
 		bottom -= h.offset.f();
 		String hc = hardcore ? "hardcore_" : "";
@@ -172,8 +201,8 @@ public final class HealthIndicator extends Module {
 		pose.translate(attachment.x, attachment.y + 0.5, attachment.z);
 		Compat.rotate(pose, camera.orientation);
 		pose.scale(k, -k, k);
-		int dir = label && h.position.is("Below name") ? 1 : -1;
-		float base = dir > 0 ? (10f - h.offset.f()) / h.scale.f() + 9f : bottom / h.scale.f();
+		int dir = -1;
+		float base = bottom / h.scale.f();
 		Identifier location = container.atlasLocation();
 		collector.submitCustomGeometry(pose, RenderTypes.text(location), (p, buffer) -> {
 			for (int heart = 0; heart < total; heart++) {

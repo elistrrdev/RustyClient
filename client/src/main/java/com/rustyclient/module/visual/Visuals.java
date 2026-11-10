@@ -452,15 +452,22 @@ public final class Visuals {
 			inside = true;
 			pushed = false;
 			Nametags tags = active();
-			if (tags == null || attachment == null || Math.abs(tags.size.v() - 1) < 0.001) {
+			float lift = HealthIndicator.nameLift();
+			boolean scale = tags != null && attachment != null && Math.abs(tags.size.v() - 1) >= 0.001;
+			if (!scale && lift <= 0f) {
 				return;
 			}
-			float k = tags.size.f();
 			pose.pushPose();
-			pose.translate(attachment.x, attachment.y, attachment.z);
-			pose.scale(k, k, k);
-			pose.translate(-attachment.x, -attachment.y, -attachment.z);
 			pushed = true;
+			if (lift > 0f) {
+				pose.translate(0f, lift, 0f);
+			}
+			if (scale) {
+				float k = tags.size.f();
+				pose.translate(attachment.x, attachment.y, attachment.z);
+				pose.scale(k, k, k);
+				pose.translate(-attachment.x, -attachment.y, -attachment.z);
+			}
 		}
 
 		public static void end(com.mojang.blaze3d.vertex.PoseStack pose) {
@@ -594,22 +601,33 @@ public final class Visuals {
 		public final NumberSetting y = number("Vertical offset", APPEARANCE, 0, -1, 1, 0.02, NumberSetting.decimal(""));
 		public final NumberSetting z = number("Depth offset", APPEARANCE, 0, -1, 1, 0.02, NumberSetting.decimal(""));
 		public final NumberSetting scale = number("Item scale", APPEARANCE, 1, 0.3, 1.5, 0.05, NumberSetting.times());
-		public final NumberSetting shield = number("Shield height", APPEARANCE, 0, 0, 0.5, 0.02, NumberSetting.decimal(""));
 		public final BoolSetting offhand = bool("Apply to offhand", GENERAL, true);
 
 		public CustomHand() {
 			super("Custom Hand", "hand", Category.VISUAL, false);
 		}
 
-		public static void apply(com.mojang.blaze3d.vertex.PoseStack pose, boolean mainHand, net.minecraft.world.item.ItemStack stack) {
+		private static CustomHand active(boolean mainHand) {
 			CustomHand m = Modules.get(CustomHand.class);
-			if (m == null || !m.enabled() || (!mainHand && !m.offhand.on())) {
+			return m != null && m.enabled() && (mainHand || m.offhand.on()) ? m : null;
+		}
+
+		public static void apply(com.mojang.blaze3d.vertex.PoseStack pose, boolean mainHand, net.minecraft.world.item.ItemStack stack) {
+			if (stack != null && stack.getItem() instanceof net.minecraft.world.item.ShieldItem) {
+				pose.translate(0f, -ScreenOverlays.shieldOffset(), 0f);
+			}
+			CustomHand m = active(mainHand);
+			if (m == null) {
 				return;
 			}
 			float side = mainHand ? 1f : -1f;
 			pose.translate(m.x.f() * side, m.y.f(), m.z.f());
-			if (stack != null && stack.getItem() instanceof net.minecraft.world.item.ShieldItem) {
-				pose.translate(0f, -m.shield.f(), 0f);
+		}
+
+		public static void scaleItem(com.mojang.blaze3d.vertex.PoseStack pose, boolean mainHand) {
+			CustomHand m = active(mainHand);
+			if (m == null || Math.abs(m.scale.f() - 1f) < 0.001f) {
+				return;
 			}
 			float k = m.scale.f();
 			pose.scale(k, k, k);
@@ -683,6 +701,7 @@ public final class Visuals {
 	public static final class ScreenOverlays extends Module {
 		public final NumberSetting hurtCam = number("Hurt camera shake", APPEARANCE, 0, 0, 1, 0.05, NumberSetting.percent());
 		public final NumberSetting fireHeight = number("Fire overlay lowered", APPEARANCE, 0.3, 0, 0.6, 0.02, NumberSetting.decimal(""));
+		public final NumberSetting shield = number("Shield height", APPEARANCE, 0, 0, 0.5, 0.02, NumberSetting.decimal(""));
 
 		public ScreenOverlays() {
 			super("Screen Overlays", "monitor", Category.VISUAL, false);
@@ -691,6 +710,11 @@ public final class Visuals {
 		public static float hurtScale() {
 			ScreenOverlays m = Modules.get(ScreenOverlays.class);
 			return m != null && m.enabled() ? m.hurtCam.f() : 1f;
+		}
+
+		public static float shieldOffset() {
+			ScreenOverlays m = Modules.get(ScreenOverlays.class);
+			return m != null && m.enabled() ? m.shield.f() : 0f;
 		}
 
 		public static float fireOffset() {
