@@ -28,8 +28,11 @@ public final class Compat {
 	public static boolean isKeyDown(String name) {
 		try {
 			InputConstants.Key key = InputConstants.getKey(name);
-			if (key == InputConstants.UNKNOWN || key.getType() == InputConstants.Type.MOUSE) {
+			if (key == InputConstants.UNKNOWN) {
 				return false;
+			}
+			if (key.getType() == InputConstants.Type.MOUSE) {
+				return com.rustyclient.core.MouseButtons.down(key.getValue());
 			}
 			return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), key.getValue());
 		} catch (Exception e) {

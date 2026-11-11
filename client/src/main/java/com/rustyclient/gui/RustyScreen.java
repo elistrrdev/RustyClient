@@ -27,7 +27,7 @@ import java.util.Locale;
 
 public final class RustyScreen extends Screen {
 	public enum Page {
-		MODULES, PROFILE, SETTINGS, PERFORMANCE, WAYPOINTS, CONFIG
+		MODULES, PROFILE, SETTINGS, PROFILES, PERFORMANCE, WAYPOINTS, CONFIG
 	}
 
 	public static final float PANEL_W = 1118;
@@ -51,6 +51,7 @@ public final class RustyScreen extends Screen {
 	final ConfigView configView = new ConfigView(this);
 	final ProfileView profileView = new ProfileView(this);
 	final WaypointsView waypointsView = new WaypointsView(this);
+	final ProfilesView profilesView = new ProfilesView(this);
 	float scroll;
 	float scrollTarget;
 	private static float modulesScroll;
@@ -189,6 +190,7 @@ public final class RustyScreen extends Screen {
 			case SETTINGS -> configView.draw(ClientSettings.get());
 			case PERFORMANCE -> configView.draw(Performance.get());
 			case WAYPOINTS -> waypointsView.draw();
+			case PROFILES -> profilesView.draw();
 		}
 		d.alpha(baseAlpha);
 		configView.drawPopups();
@@ -210,8 +212,9 @@ public final class RustyScreen extends Screen {
 		railButton("layout-grid", 68, page == Page.MODULES || page == Page.CONFIG && configModule != ClientSettings.get(), () -> switchPage(Page.MODULES));
 		railButton("circle-user", 112, page == Page.PROFILE, () -> switchPage(Page.PROFILE));
 		railButton("settings", 156, page == Page.SETTINGS, () -> switchPage(Page.SETTINGS));
-		railButton("gauge", 200, page == Page.PERFORMANCE, () -> switchPage(Page.PERFORMANCE));
-		railButton("map-pin", 244, page == Page.WAYPOINTS, () -> switchPage(Page.WAYPOINTS));
+		railButton("folder-cog", 200, page == Page.PROFILES, () -> switchPage(Page.PROFILES));
+		railButton("gauge", 244, page == Page.PERFORMANCE, () -> switchPage(Page.PERFORMANCE));
+		railButton("map-pin", 288, page == Page.WAYPOINTS, () -> switchPage(Page.WAYPOINTS));
 		float ex = 12.5f, ey = PANEL_H - 52;
 		boolean hoverEdit = ui.hover(ex, ey, 38, 38);
 		d.round(ex, ey, 38, 38, 8, hoverEdit ? Theme.SURFACE_3 : Theme.SURFACE);
@@ -421,6 +424,10 @@ public final class RustyScreen extends Screen {
 		mouseY = event.y();
 		float x = ux(event.x()), y = uy(event.y());
 		if (listening != null) {
+			int button = Ui.button(event);
+			if (button != 0 && button != 1) {
+				listening.set(InputConstants.Type.MOUSE.getOrCreate(event.button()).getName());
+			}
 			listening = null;
 			return true;
 		}
@@ -462,6 +469,9 @@ public final class RustyScreen extends Screen {
 	@Override
 	public boolean mouseScrolled(double x, double y, double h, double v) {
 		if (configView.popupScroll(v)) {
+			return true;
+		}
+		if (page == Page.PROFILES && profilesView.scroll(ux(x), uy(y), v)) {
 			return true;
 		}
 		scrollTarget -= (float) v * 60f;

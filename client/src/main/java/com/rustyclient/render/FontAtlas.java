@@ -90,6 +90,7 @@ public final class FontAtlas {
 	}
 
 	public float width(String text) {
+		text = com.rustyclient.module.utility.NameProtect.apply(text);
 		float w = 0;
 		for (int i = 0; i < text.length(); ) {
 			int cp = text.codePointAt(i);

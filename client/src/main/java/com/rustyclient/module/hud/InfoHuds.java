@@ -840,6 +840,169 @@ public final class InfoHuds {
 		}
 	}
 
+	public static final class ItemCooldowns extends Panel {
+		private static final String BAR = "Bar";
+		private final BoolSetting showTime = bool("Show time left", GENERAL, true);
+		private final BoolSetting showNames = bool("Show item names", GENERAL, false);
+		private final BoolSetting showBar = bool("Show progress bar", GENERAL, true);
+		private final BoolSetting samples = bool("Show samples in editor", GENERAL, true);
+		private final ChoiceSetting layout = choice("Layout", APPEARANCE, "Vertical", "Vertical", "Horizontal");
+		private final ChoiceSetting timeFormat = choice("Time format", APPEARANCE, "One decimal", "One decimal", "Whole seconds", "Percent");
+		private final ChoiceSetting sort = choice("Order", APPEARANCE, "Ending first", "Ending first", "Ending last", "Newest first");
+		private final NumberSetting max = number("Items shown", APPEARANCE, 5, 1, 10, 1, NumberSetting.integer(""));
+		private final NumberSetting textSize = number("Text size", APPEARANCE, 9, 5, 16, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting spacing = number("Spacing", APPEARANCE, 2, 0, 10, 0.5, NumberSetting.decimal(""));
+		private final NumberSetting barHeight = number("Bar height", BAR, 2, 1, 6, 0.5, NumberSetting.decimal("px"));
+		private final ColorSetting barColor = color("Bar color", BAR, Theme.DEFAULT_ACCENT);
+		private final ColorSetting barBack = colorAlpha("Bar background", BAR, 0x40FFFFFF);
+		private final BoolSetting warn = bool("Highlight the last second", BAR, true);
+		private final ColorSetting warnColor = color("Last second color", BAR, 0xFFEF5B52);
+
+		public ItemCooldowns() {
+			super("Item Cooldowns", "hourglass", false, 0.5, 0.78);
+			background.set(false);
+			barHeight.visibleWhen(showBar::on);
+			barColor.visibleWhen(showBar::on);
+			barBack.visibleWhen(showBar::on);
+			warnColor.visibleWhen(warn::on);
+			timeFormat.visibleWhen(showTime::on);
+		}
+
+		private record Entry(ItemStack stack, float seconds, float fraction, int start) {
+		}
+
+		private List<Entry> entries(boolean editing) {
+			List<Entry> list = new ArrayList<>();
+			Player p = mc.player;
+			if (p != null) {
+				com.rustyclient.mixin.CooldownsAccessor cooldowns = (com.rustyclient.mixin.CooldownsAccessor) p.getCooldowns();
+				float now = cooldowns.rusty$tickCount() + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+				for (Map.Entry<Identifier, Object> e : cooldowns.rusty$cooldowns().entrySet()) {
+					com.rustyclient.mixin.CooldownInstanceAccessor inst = (com.rustyclient.mixin.CooldownInstanceAccessor) e.getValue();
+					float total = Math.max(1, inst.rusty$endTime() - inst.rusty$startTime());
+					float left = inst.rusty$endTime() - now;
+					if (left <= 0) {
+						continue;
+					}
+					list.add(new Entry(stackFor(p, e.getKey()), left / 20f, Math.min(1f, left / total), inst.rusty$startTime()));
+				}
+			}
+			if (list.isEmpty() && editing && samples.on()) {
+				list.add(new Entry(new ItemStack(Items.ENDER_PEARL), 0.6f, 0.6f, 2));
+				list.add(new Entry(new ItemStack(Items.SHIELD), 3.4f, 0.68f, 1));
+				list.add(new Entry(new ItemStack(Items.CHORUS_FRUIT), 0.3f, 0.3f, 0));
+			}
+			switch (sort.get()) {
+				case "Ending last" -> list.sort((a, b) -> Float.compare(b.seconds(), a.seconds()));
+				case "Newest first" -> list.sort((a, b) -> Integer.compare(b.start(), a.start()));
+				default -> list.sort((a, b) -> Float.compare(a.seconds(), b.seconds()));
+			}
+			return list.size() > max.i() ? list.subList(0, max.i()) : list;
+		}
+
+		private ItemStack stackFor(Player p, Identifier group) {
+			for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+				ItemStack s = p.getInventory().getItem(i);
+				if (!s.isEmpty() && group.equals(p.getCooldowns().getCooldownGroup(s))) {
+					return s;
+				}
+			}
+			return net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(group).map(ItemStack::new).orElse(new ItemStack(Items.BARRIER));
+		}
+
+		private String time(Entry e) {
+			return switch (timeFormat.get()) {
+				case "Whole seconds" -> (int) Math.ceil(e.seconds()) + "s";
+				case "Percent" -> Math.round(e.fraction() * 100) + "%";
+				default -> String.format(Locale.ROOT, "%.1fs", e.seconds());
+			};
+		}
+
+		private String label(Entry e) {
+			String time = showTime.on() ? time(e) : "";
+			if (!showNames.on()) {
+				return time;
+			}
+			String name = e.stack().getHoverName().getString();
+			return time.isEmpty() ? name : name + "  " + time;
+		}
+
+		@Override
+		public boolean visibleNow() {
+			return !entries(false).isEmpty();
+		}
+
+		@Override
+		public void render(Draw d, boolean editing) {
+			List<Entry> list = entries(editing);
+			float size = textSize.f();
+			float bar = showBar.on() ? barHeight.f() : 0;
+			float gap = spacing.f();
+			int text = textColor.argb();
+			if (layout.is("Horizontal")) {
+				float cellH = 18 + (showTime.on() || showNames.on() ? size + 2 : 0) + (bar > 0 ? bar + 2 : 0);
+				float x = 2;
+				List<Float> widths = new ArrayList<>();
+				for (Entry e : list) {
+					widths.add(Math.max(20, d.width(label(e), Fonts.Style.SEMIBOLD, size) + 4));
+				}
+				float total = 2;
+				for (float w : widths) {
+					total += w + gap;
+				}
+				panel(d, Math.max(24, total - gap + 2), Math.max(20, cellH + 2));
+				for (int i = 0; i < list.size(); i++) {
+					Entry e = list.get(i);
+					float w = widths.get(i);
+					d.item(e.stack(), x + (w - 16) / 2f, 2, 16, false);
+					float y = 19;
+					String label = label(e);
+					if (!label.isEmpty()) {
+						d.textShadowed(label, x + (w - d.width(label, Fonts.Style.SEMIBOLD, size)) / 2f, y + size / 2f + 1, Fonts.Style.SEMIBOLD, size, warning(e) ? warnColor.argb() : text, shadow.on());
+						y += size + 2;
+					}
+					if (bar > 0) {
+						bar(d, e, x + 2, y + 1, w - 4, bar);
+					}
+					x += w + gap;
+				}
+				return;
+			}
+			float rowH = Math.max(16, (showTime.on() || showNames.on() ? size + 2 : 0) + (bar > 0 ? bar + 3 : 0));
+			float textW = 0;
+			for (Entry e : list) {
+				textW = Math.max(textW, d.width(label(e), Fonts.Style.SEMIBOLD, size));
+			}
+			float w = 22 + Math.max(bar > 0 ? 36 : 0, textW) + 4;
+			float h = list.isEmpty() ? 18 : list.size() * rowH + (list.size() - 1) * gap + 2;
+			panel(d, Math.max(40, w), h);
+			float y = 1;
+			for (Entry e : list) {
+				d.item(e.stack(), 2, y + (rowH - 16) / 2f, 16, false);
+				String label = label(e);
+				float ty = y + (bar > 0 && !label.isEmpty() ? (rowH - bar - 3) / 2f : rowH / 2f);
+				if (!label.isEmpty()) {
+					d.textShadowed(label, 22, ty, Fonts.Style.SEMIBOLD, size, warning(e) ? warnColor.argb() : text, shadow.on());
+				}
+				if (bar > 0) {
+					float by = label.isEmpty() ? y + (rowH - bar) / 2f : y + rowH - bar - 1;
+					bar(d, e, 22, by, Math.max(36, w - 26), bar);
+				}
+				y += rowH + gap;
+			}
+		}
+
+		private boolean warning(Entry e) {
+			return warn.on() && e.seconds() <= 1f;
+		}
+
+		private void bar(Draw d, Entry e, float x, float y, float w, float h) {
+			d.round(x, y, w, h, h / 2f, barBack.argb());
+			int color = warning(e) ? warnColor.argb() : Theme.hudAccent(barColor.argb());
+			d.round(x, y, Math.max(h, w * e.fraction()), h, h / 2f, color);
+		}
+	}
+
 	public static final class PackDisplay extends Panel {
 		private static final String LIST = "Pack list";
 		private final BoolSetting icons = bool("Show pack icons", GENERAL, true);

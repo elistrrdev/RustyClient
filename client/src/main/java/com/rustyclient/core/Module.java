@@ -92,6 +92,18 @@ public abstract class Module {
 		enabled = value;
 	}
 
+	public void applyEnabled(boolean value) {
+		if (value == enabled) {
+			return;
+		}
+		enabled = value;
+		if (value) {
+			onEnable();
+		} else {
+			onDisable();
+		}
+	}
+
 	public boolean favorite() {
 		return favorite;
 	}

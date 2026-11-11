@@ -1,10 +1,12 @@
 package com.rustyclient.mixin;
 
 import com.rustyclient.core.Modules;
+import com.rustyclient.core.MouseButtons;
 import com.rustyclient.module.utility.Utilities;
 import com.rustyclient.module.visual.Visuals;
 import com.rustyclient.platform.Compat;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,6 +32,14 @@ public final class InputMixins {
 			if (lock != null && lock.blocksScroll()) {
 				ci.cancel();
 			}
+		}
+	}
+
+	@Mixin(MouseHandler.class)
+	public abstract static class Buttons {
+		@Inject(method = "onButton", at = @At("HEAD"))
+		private void rusty$button(long window, MouseButtonInfo info, int action, CallbackInfo ci) {
+			MouseButtons.update(info.button(), action);
 		}
 	}
 }

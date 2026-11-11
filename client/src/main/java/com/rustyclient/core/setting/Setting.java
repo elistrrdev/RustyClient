@@ -37,6 +37,18 @@ public abstract class Setting<T> {
 		Config.markDirty();
 	}
 
+	public void applyJson(JsonElement element) {
+		T before = value;
+		if (element == null || element.isJsonNull()) {
+			value = defaultValue;
+		} else {
+			load(element);
+		}
+		if (!java.util.Objects.equals(before, value)) {
+			onChange.run();
+		}
+	}
+
 	public void reset() {
 		set(defaultValue);
 	}

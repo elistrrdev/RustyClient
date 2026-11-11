@@ -371,6 +371,7 @@ public final class Draw {
 	}
 
 	private float drawRun(FontAtlas atlas, String text, float x, float baseline, int argb) {
+		text = com.rustyclient.module.utility.NameProtect.apply(text);
 		if ((argb >>> 24) == 0 || alpha <= 0f) {
 			return atlas.width(text);
 		}

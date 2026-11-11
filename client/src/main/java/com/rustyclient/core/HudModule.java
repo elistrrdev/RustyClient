@@ -69,6 +69,11 @@ public abstract class HudModule extends Module {
 		return false;
 	}
 
+	public void applyPosition(Double x, Double y) {
+		fx = x == null || x.isNaN() ? defaultFx : Math.max(0, Math.min(1, x));
+		fy = y == null || y.isNaN() ? defaultFy : Math.max(0, Math.min(1, y));
+	}
+
 	public void resetPosition() {
 		fx = defaultFx;
 		fy = defaultFy;

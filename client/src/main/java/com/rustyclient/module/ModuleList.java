@@ -15,6 +15,8 @@ import com.rustyclient.module.hud.Keystrokes;
 import com.rustyclient.module.hud.SimpleHuds;
 import com.rustyclient.module.hud.Tablist;
 import com.rustyclient.module.hud.VanillaHuds;
+import com.rustyclient.module.utility.ItemPreviews;
+import com.rustyclient.module.utility.NameProtect;
 import com.rustyclient.module.utility.Utilities;
 import com.rustyclient.module.utility.Waypoints;
 import com.rustyclient.module.visual.HealthIndicator;
@@ -64,6 +66,7 @@ public final class ModuleList {
 		Modules.register(new SimpleHuds.PingDisplay());
 		Modules.register(new InfoHuds.Direction());
 		Modules.register(new InfoHuds.ItemCounter());
+		Modules.register(new InfoHuds.ItemCooldowns());
 		Modules.register(new SimpleHuds.Clock());
 		Modules.register(new SimpleHuds.Speed());
 		Modules.register(new SimpleHuds.Memory());
@@ -90,12 +93,15 @@ public final class ModuleList {
 		Modules.register(new Utilities.Chat());
 		Modules.register(new Waypoints());
 		Modules.register(new Utilities.HotbarLock());
+		Modules.register(new ItemPreviews());
+		Modules.register(new NameProtect());
 		Modules.register(new Utilities.MenuBlur());
 		Modules.register(new CombatHuds.HitDelay());
 		Modules.register(new CombatHuds.TotemPops());
 	}
 
 	public static void registerHudHooks() {
+		ItemPreviews.register();
 		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, old -> (g, delta) -> {
 			Visuals.Crosshair crosshair = Modules.get(Visuals.Crosshair.class);
 			if (crosshair == null || !crosshair.enabled()) {

@@ -5,6 +5,7 @@ import com.rustyclient.core.Config;
 import com.rustyclient.core.HudModule;
 import com.rustyclient.core.Module;
 import com.rustyclient.core.Modules;
+import com.rustyclient.core.Profiles;
 import com.rustyclient.core.Theme;
 import com.rustyclient.gui.HudEditorScreen;
 import com.rustyclient.gui.RustyScreen;
@@ -35,6 +36,7 @@ public final class RustyClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		ModuleList.registerAll();
 		Config.load();
+		Profiles.init();
 		Theme.refresh(true);
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("rustyclient", "hud"), (g, delta) -> renderHud(g));
 		ModuleList.registerHudHooks();
@@ -69,6 +71,7 @@ public final class RustyClient implements ClientModInitializer {
 				LOG.error("module {} failed to tick", module.id, t);
 			}
 		}
+		Profiles.tick(mc);
 		Config.tick();
 	}
 
