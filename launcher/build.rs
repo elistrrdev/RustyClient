@@ -31,7 +31,8 @@ fn main() {
     println!("cargo::rustc-env=RUSTY_RUSTC_VERSION={rustc_version}");
 
     let resource = if setup { "RustyClientSetup.rc" } else { "RustyClient.rc" };
-    embed_resource::compile(resource, embed_resource::NONE)
+    let macros: &[&str] = if portable || setup { &[] } else { &["RUSTY_INSTALLED"] };
+    embed_resource::compile(resource, macros)
         .manifest_required()
         .unwrap();
 

@@ -1,5 +1,9 @@
 #define RT_MANIFEST 24
+#ifdef RUSTY_INSTALLED
+1 ICON "RustyClientWindow.ico"
+#else
 1 ICON "RustyClient.ico"
+#endif
 2 ICON "RustyClientWindow.ico"
 1 RT_MANIFEST "RustyClient.manifest"
 

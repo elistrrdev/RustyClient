@@ -32,6 +32,8 @@ use cef::*;
 fn main() {
     let is_browser = !std::env::args().any(|arg| arg.starts_with("--type="));
     if is_browser {
+        #[cfg(feature = "portable")]
+        win::set_process_app_id();
         win::wait_for_previous_instance();
     }
 

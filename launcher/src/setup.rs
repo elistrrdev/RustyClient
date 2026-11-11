@@ -7,7 +7,7 @@ use cef::MainArgs;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
-use windows_sys::Win32::UI::Shell::ShellExecuteW;
+use windows_sys::Win32::UI::Shell::{SHCNE_ASSOCCHANGED, SHCNF_IDLIST, SHChangeNotify, ShellExecuteW};
 use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, SW_SHOWNORMAL};
 
 use crate::bridge::{Incoming, Reply};
@@ -396,7 +396,11 @@ fn install(target: &Path, desktop: bool, start_menu: bool) -> Result<(), String>
     for (key, value) in &values {
         entries.push((key.as_str(), Value::Text(value)));
     }
-    registry::write(&entries)
+    registry::write(&entries)?;
+    unsafe {
+        SHChangeNotify(SHCNE_ASSOCCHANGED as i32, SHCNF_IDLIST, std::ptr::null(), std::ptr::null());
+    }
+    Ok(())
 }
 
 fn same_folder(a: &Path, b: &Path) -> bool {

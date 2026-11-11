@@ -246,6 +246,74 @@ unsafe fn app_icon(instance: HINSTANCE, cx: SYSTEM_METRICS_INDEX, cy: SYSTEM_MET
     unsafe { LoadImageW(instance, 2 as _, IMAGE_ICON, GetSystemMetrics(cx), GetSystemMetrics(cy), LR_DEFAULTCOLOR) as HICON }
 }
 
+fn set_window_icons(hwnd: HWND, instance: HINSTANCE) {
+    unsafe {
+        let dpi = GetDpiForWindow(hwnd);
+        for (kind, cx, cy) in [(ICON_BIG, SM_CXICON, SM_CYICON), (ICON_SMALL, SM_CXSMICON, SM_CYSMICON)] {
+            let icon = LoadImageW(instance, 2 as _, IMAGE_ICON, GetSystemMetricsForDpi(cx, dpi), GetSystemMetricsForDpi(cy, dpi), LR_DEFAULTCOLOR);
+            if !icon.is_null() {
+                SendMessageW(hwnd, WM_SETICON, kind as usize, icon as isize);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "portable")]
+const APP_ID: &str = "RustyClient.Portable";
+
+#[cfg(feature = "portable")]
+pub fn set_process_app_id() {
+    let id = wide(APP_ID);
+    unsafe {
+        SetCurrentProcessExplicitAppUserModelID(id.as_ptr());
+    }
+}
+
+#[cfg(feature = "portable")]
+fn set_window_app_id(hwnd: HWND) {
+    use windows_sys::Win32::System::Com::StructuredStorage::PROPVARIANT;
+    use windows_sys::Win32::System::Variant::VT_LPWSTR;
+    use windows_sys::Win32::UI::Shell::PropertiesSystem::SHGetPropertyStoreForWindow;
+    use windows_sys::core::{GUID, HRESULT};
+
+    const APP_KEYS: GUID = GUID::from_u128(0x9f4c2855_9f79_4b39_a8d0_e1d42de1d5f3);
+    const IID_PROPERTY_STORE: GUID = GUID::from_u128(0x886d8eeb_8cf2_4446_8d02_cdba1dbdcf99);
+    type SetValue = unsafe extern "system" fn(*mut c_void, *const PROPERTYKEY, *const PROPVARIANT) -> HRESULT;
+    type Commit = unsafe extern "system" fn(*mut c_void) -> HRESULT;
+    type Release = unsafe extern "system" fn(*mut c_void) -> u32;
+
+    let Ok(exe) = std::env::current_exe() else {
+        return;
+    };
+    let exe = exe.to_string_lossy().to_string();
+    let values = [
+        (2, format!("\"{exe}\"")),
+        (3, format!("{exe},-2")),
+        (4, "Rusty Client".to_string()),
+        (5, APP_ID.to_string()),
+    ];
+    unsafe {
+        let mut store: *mut c_void = null_mut();
+        if SHGetPropertyStoreForWindow(hwnd, &IID_PROPERTY_STORE, &mut store) < 0 || store.is_null() {
+            return;
+        }
+        let vtable = *(store as *const *const usize);
+        let set_value: SetValue = std::mem::transmute(*vtable.add(6));
+        let commit: Commit = std::mem::transmute(*vtable.add(7));
+        let release: Release = std::mem::transmute(*vtable.add(2));
+        for (pid, value) in values {
+            let text = wide(&value);
+            let mut variant: PROPVARIANT = std::mem::zeroed();
+            variant.Anonymous.Anonymous.vt = VT_LPWSTR;
+            variant.Anonymous.Anonymous.Anonymous.pwszVal = text.as_ptr() as *mut u16;
+            let key = PROPERTYKEY { fmtid: APP_KEYS, pid };
+            set_value(store, &key, &variant);
+        }
+        commit(store);
+        release(store);
+    }
+}
+
 pub fn create_main_window(spec: &WindowSpec) -> HWND {
     unsafe {
         let instance = GetModuleHandleW(null());
@@ -318,6 +386,9 @@ pub fn create_main_window(spec: &WindowSpec) -> HWND {
             null(),
         );
         MAIN_HWND.store(hwnd as isize, Ordering::SeqCst);
+        set_window_icons(hwnd, instance);
+        #[cfg(feature = "portable")]
+        set_window_app_id(hwnd);
 
         apply_dark_frame(hwnd);
         if is_win11() {
