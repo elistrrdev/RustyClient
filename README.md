@@ -32,11 +32,11 @@ A fast, lightweight Minecraft launcher written in Rust. Sign in with your Micros
 ### Launcher
 
 <p align="center">
-  <a href="assets/screenshots/Launcher-1.png"><img src="assets/screenshots/Launcher-1.png?v=1.0.3" alt="Launcher home page with the version picker and Minecraft news" width="100%"></a>
+  <a href="assets/screenshots/Launcher-1.png"><img src="assets/screenshots/Launcher-1.png?v=1.0.3-2" alt="Launcher home page with the version picker and Minecraft news" width="100%"></a>
 </p>
 <p align="center">
-  <a href="assets/screenshots/Launcher-2.png"><img src="assets/screenshots/Launcher-2.png?v=1.0.3" alt="Launcher settings" width="49%"></a>
-  <a href="assets/screenshots/Launcher-3.png"><img src="assets/screenshots/Launcher-3.png?v=1.0.3" alt="About page with dependencies and folders" width="49%"></a>
+  <a href="assets/screenshots/Launcher-2.png"><img src="assets/screenshots/Launcher-2.png?v=1.0.3-2" alt="Launcher settings" width="49%"></a>
+  <a href="assets/screenshots/Launcher-3.png"><img src="assets/screenshots/Launcher-3.png?v=1.0.3-2" alt="About page with dependencies and folders" width="49%"></a>
 </p>
 
 ### In-game menu
@@ -44,15 +44,15 @@ A fast, lightweight Minecraft launcher written in Rust. Sign in with your Micros
 Every launch also loads the Rusty Client mod. Press Right Shift in game to open its menu with all modules, your profile, the client settings, your config profiles (per version or for all versions), the performance options and your waypoints.
 
 <p align="center">
-  <a href="assets/screenshots/Menu-1.png"><img src="assets/screenshots/Menu-1.png?v=1.0.3" alt="In-game menu with the module grid" width="100%"></a>
+  <a href="assets/screenshots/Menu-1.png"><img src="assets/screenshots/Menu-1.png?v=1.0.3-2" alt="In-game menu with the module grid" width="100%"></a>
 </p>
 <p align="center">
-  <a href="assets/screenshots/Menu-2.png"><img src="assets/screenshots/Menu-2.png?v=1.0.3" alt="Profile page of the in-game menu" width="49%"></a>
-  <a href="assets/screenshots/Menu-3.png"><img src="assets/screenshots/Menu-3.png?v=1.0.3" alt="Settings page of the in-game menu" width="49%"></a>
+  <a href="assets/screenshots/Menu-2.png"><img src="assets/screenshots/Menu-2.png?v=1.0.3-2" alt="Profile page of the in-game menu" width="49%"></a>
+  <a href="assets/screenshots/Menu-3.png"><img src="assets/screenshots/Menu-3.png?v=1.0.3-2" alt="Settings page of the in-game menu" width="49%"></a>
 </p>
 <p align="center">
-  <a href="assets/screenshots/Menu-4.png"><img src="assets/screenshots/Menu-4.png?v=1.0.3" alt="Performance page with FPS limits, particle toggles and entity distances" width="49%"></a>
-  <a href="assets/screenshots/Menu-5.png"><img src="assets/screenshots/Menu-5.png?v=1.0.3" alt="Waypoints page of the in-game menu" width="49%"></a>
+  <a href="assets/screenshots/Menu-4.png"><img src="assets/screenshots/Menu-4.png?v=1.0.3-2" alt="Profiles page with the default profile of the version, its look and the parts it includes" width="49%"></a>
+  <a href="assets/screenshots/Menu-5.png"><img src="assets/screenshots/Menu-5.png?v=1.0.3-2" alt="Performance page with FPS limits, particle toggles and entity distances" width="49%"></a>
 </p>
 
 ## Download
