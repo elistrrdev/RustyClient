@@ -27,6 +27,13 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.nio.charset.StandardCharsets;
@@ -34,6 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
 
@@ -63,6 +72,7 @@ public final class Waypoints extends Module {
 	public static final int[] COLORS = {0xFF1AB0DD, 0xFFF2C14E, 0xFF6CCB8C, 0xFFF07EA8, 0xFFEF5B52, 0xFFA78BFA, 0xFFFF9F43, 0xFFF2EEEA};
 	private static final int DEATH_COLOR = 0xFFEF5B52;
 	private static final String LABEL = "Label";
+	private static final String DRAW_OVER = "Draw over";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	private final KeySetting addKey = key("Add waypoint key", KEYBIND, "key.keyboard.n");
@@ -85,6 +95,16 @@ public final class Waypoints extends Module {
 	private final ColorSetting classicBack = colorAlpha("Background", LABEL, 0x90000000);
 	private final BoolSetting classicShadow = bool("Text shadow", LABEL, false);
 	private final BoolSetting classicBrackets = bool("Distance in brackets", LABEL, true);
+	private final BoolSetting overBlocks = bool("Blocks", DRAW_OVER, true);
+	private final BoolSetting overPlayers = bool("Players", DRAW_OVER, false);
+	private final BoolSetting overHostile = bool("Hostile mobs", DRAW_OVER, false);
+	private final BoolSetting overFriendly = bool("Friendly mobs", DRAW_OVER, false);
+	private final BoolSetting overOther = bool("Other entities", DRAW_OVER, true);
+	private final ChoiceSetting whenCovered = choice("When covered", DRAW_OVER, "Hide", "Hide", "Dim");
+	private final Map<Point, Float> coverFade = new HashMap<>();
+	private final Map<Point, Long> blockCheckAt = new HashMap<>();
+	private final Map<Point, Boolean> blockHidden = new HashMap<>();
+	private long lastDraw = System.nanoTime();
 	private final List<Point> points = new ArrayList<>();
 	private boolean loaded;
 	private boolean addWas;
@@ -94,6 +114,7 @@ public final class Waypoints extends Module {
 
 	public Waypoints() {
 		super("Waypoints", "map-pin", Category.UTILITY, false);
+		whenCovered.visibleWhen(() -> !overBlocks.on() || !overPlayers.on() || !overHostile.on() || !overFriendly.on() || !overOther.on());
 		classicText.visibleWhen(this::classic);
 		classicBorder.visibleWhen(this::classic);
 		classicBack.visibleWhen(this::classic);
@@ -212,6 +233,9 @@ public final class Waypoints extends Module {
 	public void remove(Point point) {
 		load();
 		points.remove(point);
+		coverFade.remove(point);
+		blockCheckAt.remove(point);
+		blockHidden.remove(point);
 		save();
 	}
 
@@ -364,6 +388,12 @@ public final class Waypoints extends Module {
 		double rx = -Math.cos(yaw), ry = 0, rz = -Math.sin(yaw);
 		double ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
 		double focal = (screenH / 2.0) / Math.tan(Math.toRadians(camera.getFov()) / 2.0);
+		double[] view = {fx, fy, fz, rx, ry, rz, ux, uy, uz, focal, screenW, screenH};
+		long now = System.nanoTime();
+		float dt = Math.min(0.1f, (now - lastDraw) / 1e9f);
+		lastDraw = now;
+		boolean checkEntities = !overPlayers.on() || !overHostile.on() || !overFriendly.on() || !overOther.on();
+		float partial = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 		String here = world();
 		for (Point p : points) {
 			if (!p.visible || !p.world.equals(here)) {
@@ -387,11 +417,26 @@ public final class Waypoints extends Module {
 			if (k <= 0f) {
 				continue;
 			}
-			float before = d.alpha();
-			d.alpha(before * k);
 			float x = (float) sx / d.s, y = (float) sy / d.s;
 			String meters = distance.on() ? String.format(Locale.ROOT, "%.0fm", dist) : "";
 			float sc = labelSize.f();
+			float halfW = labelWidth(d, p, meters, sc) / 2f * d.s, halfH = (classic() ? 12 : 13) * sc / 2f * d.s;
+			boolean covered = !overBlocks.on() && behindBlocks(p, cam, new Vec3(p.x, p.y + 1.6, p.z), now);
+			if (!covered && checkEntities) {
+				covered = coveredByEntity(cam, dist, view, partial, sx - halfW, sy - halfH, sx + halfW, sy + halfH);
+			}
+			float target = covered ? (whenCovered.is("Dim") ? 0.3f : 0f) : 1f;
+			float shown = coverFade.getOrDefault(p, target);
+			shown += (target - shown) * Math.min(1f, dt * 14f);
+			if (Math.abs(target - shown) < 0.01f) {
+				shown = target;
+			}
+			coverFade.put(p, shown);
+			if (shown <= 0f) {
+				continue;
+			}
+			float before = d.alpha();
+			d.alpha(before * k * shown);
 			if (classic()) {
 				classicLabel(d, p, meters, x, y, sc);
 				d.hudText(settings == null || settings.hudFont.is("Vanilla"));
@@ -411,12 +456,87 @@ public final class Waypoints extends Module {
 		}
 	}
 
+	private float labelWidth(Draw d, Point p, String meters, float sc) {
+		if (classic()) {
+			boolean was = d.vanillaFont();
+			d.hudText(true);
+			float w = d.width(classicText(p, meters), Fonts.Style.SEMIBOLD, 9 * sc) + 7 * sc;
+			d.hudText(was);
+			return w;
+		}
+		float nameW = d.width(p.name, Fonts.Style.SEMIBOLD, 8 * sc);
+		float distW = meters.isEmpty() ? 0 : d.width(meters, Fonts.Style.MEDIUM, 7.5f * sc) + 5 * sc;
+		return nameW + distW + 18 * sc;
+	}
+
+	private String classicText(Point p, String meters) {
+		if (meters.isEmpty()) {
+			return p.name;
+		}
+		return p.name + (classicBrackets.on() ? " [" + meters + "]" : " " + meters);
+	}
+
+	private boolean behindBlocks(Point p, Vec3 cam, Vec3 target, long now) {
+		Long at = blockCheckAt.get(p);
+		if (at == null || now - at > 100_000_000L) {
+			blockCheckAt.put(p, now);
+			HitResult hit = mc.level.clip(new ClipContext(cam, target, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, mc.player));
+			blockHidden.put(p, hit.getType() != HitResult.Type.MISS);
+		}
+		return blockHidden.getOrDefault(p, false);
+	}
+
+	private boolean drawsOver(Entity e) {
+		if (e instanceof Player) {
+			return overPlayers.on();
+		}
+		if (e instanceof Enemy) {
+			return overHostile.on();
+		}
+		if (e instanceof Mob) {
+			return overFriendly.on();
+		}
+		return overOther.on();
+	}
+
+	private boolean coveredByEntity(Vec3 cam, double dist, double[] v, float partial, double left, double top, double right, double bottom) {
+		for (Entity e : mc.level.entitiesForRendering()) {
+			if (e.isInvisible() || drawsOver(e)) {
+				continue;
+			}
+			Vec3 pos = e.getPosition(partial);
+			if (pos.distanceTo(cam) >= dist) {
+				continue;
+			}
+			AABB box = e.getBoundingBox().move(pos.subtract(e.position()));
+			double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+			boolean behind = false;
+			for (int i = 0; i < 8 && !behind; i++) {
+				double dx = ((i & 1) == 0 ? box.minX : box.maxX) - cam.x;
+				double dy = ((i & 2) == 0 ? box.minY : box.maxY) - cam.y;
+				double dz = ((i & 4) == 0 ? box.minZ : box.maxZ) - cam.z;
+				double depth = dx * v[0] + dy * v[1] + dz * v[2];
+				if (depth < 0.05) {
+					behind = true;
+					break;
+				}
+				double sx = v[10] / 2.0 + (dx * v[3] + dy * v[4] + dz * v[5]) / depth * v[9];
+				double sy = v[11] / 2.0 - (dx * v[6] + dy * v[7] + dz * v[8]) / depth * v[9];
+				minX = Math.min(minX, sx);
+				maxX = Math.max(maxX, sx);
+				minY = Math.min(minY, sy);
+				maxY = Math.max(maxY, sy);
+			}
+			if (!behind && maxX > left && minX < right && maxY > top && minY < bottom) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private void classicLabel(Draw d, Point p, String meters, float x, float y, float sc) {
 		d.hudText(true);
-		String text = p.name;
-		if (!meters.isEmpty()) {
-			text += classicBrackets.on() ? " [" + meters + "]" : " " + meters;
-		}
+		String text = classicText(p, meters);
 		float size = 9 * sc;
 		float tw = d.width(text, Fonts.Style.SEMIBOLD, size);
 		float w = snap(d, tw + 5 * sc), h = snap(d, 11 * sc);
