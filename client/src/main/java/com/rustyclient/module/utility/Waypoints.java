@@ -12,6 +12,8 @@ import com.rustyclient.core.Category;
 import com.rustyclient.core.Module;
 import com.rustyclient.core.Theme;
 import com.rustyclient.core.setting.BoolSetting;
+import com.rustyclient.core.setting.ChoiceSetting;
+import com.rustyclient.core.setting.ColorSetting;
 import com.rustyclient.core.setting.KeySetting;
 import com.rustyclient.core.setting.NumberSetting;
 import com.rustyclient.gui.RustyScreen;
@@ -60,6 +62,7 @@ public final class Waypoints extends Module {
 
 	public static final int[] COLORS = {0xFF1AB0DD, 0xFFF2C14E, 0xFF6CCB8C, 0xFFF07EA8, 0xFFEF5B52, 0xFFA78BFA, 0xFFFF9F43, 0xFFF2EEEA};
 	private static final int DEATH_COLOR = 0xFFEF5B52;
+	private static final String LABEL = "Label";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	private final KeySetting addKey = key("Add waypoint key", KEYBIND, "key.keyboard.n");
@@ -75,6 +78,13 @@ public final class Waypoints extends Module {
 	private final BoolSetting fade = bool("Fade beam and label when close", GENERAL, true);
 	private final NumberSetting fadeFull = number("Fully visible from", APPEARANCE, 32, 4, 128, 1, NumberSetting.integer(" blocks"));
 	private final NumberSetting fadeHidden = number("Hidden closer than", APPEARANCE, 4, 0, 64, 1, NumberSetting.integer(" blocks"));
+	private final ChoiceSetting labelStyle = choice("Label style", LABEL, "Rusty", "Rusty", "Classic");
+	private final NumberSetting labelSize = number("Label size", LABEL, 1, 0.5, 2.5, 0.05, NumberSetting.percent());
+	private final ChoiceSetting classicText = choice("Text color", LABEL, "White", "White", "Waypoint color");
+	private final ChoiceSetting classicBorder = choice("Border", LABEL, "Dark", "Dark", "Waypoint color", "None");
+	private final ColorSetting classicBack = colorAlpha("Background", LABEL, 0x90000000);
+	private final BoolSetting classicShadow = bool("Text shadow", LABEL, false);
+	private final BoolSetting classicBrackets = bool("Distance in brackets", LABEL, true);
 	private final List<Point> points = new ArrayList<>();
 	private boolean loaded;
 	private boolean addWas;
@@ -84,6 +94,15 @@ public final class Waypoints extends Module {
 
 	public Waypoints() {
 		super("Waypoints", "map-pin", Category.UTILITY, false);
+		classicText.visibleWhen(this::classic);
+		classicBorder.visibleWhen(this::classic);
+		classicBack.visibleWhen(this::classic);
+		classicShadow.visibleWhen(this::classic);
+		classicBrackets.visibleWhen(() -> classic() && distance.on());
+	}
+
+	private boolean classic() {
+		return labelStyle.is("Classic");
 	}
 
 	private Path file() {
@@ -347,17 +366,46 @@ public final class Waypoints extends Module {
 			d.alpha(before * k);
 			float x = (float) sx / d.s, y = (float) sy / d.s;
 			String meters = distance.on() ? String.format(Locale.ROOT, "%.0fm", dist) : "";
-			float nameW = d.width(p.name, Fonts.Style.SEMIBOLD, 8);
-			float distW = meters.isEmpty() ? 0 : d.width(meters, Fonts.Style.MEDIUM, 7.5f) + 5;
-			float w = nameW + distW + 18, h = 13;
-			float left = x - w / 2f, topY = y - h / 2f;
-			d.round(left, topY, w, h, 4, 0xC00F0E0D);
-			d.circle(left + 7, y, 2.5f, p.color);
-			d.textMid(p.name, left + 12, y, Fonts.Style.SEMIBOLD, 8, Theme.TEXT);
-			if (!meters.isEmpty()) {
-				d.textMid(meters, left + 12 + nameW + 5, y, Fonts.Style.MEDIUM, 7.5f, Theme.MUTED);
+			float sc = labelSize.f();
+			if (classic()) {
+				classicLabel(d, p, meters, x, y, sc);
+				d.hudText(settings == null || settings.hudFont.is("Vanilla"));
+			} else {
+				float nameW = d.width(p.name, Fonts.Style.SEMIBOLD, 8 * sc);
+				float distW = meters.isEmpty() ? 0 : d.width(meters, Fonts.Style.MEDIUM, 7.5f * sc) + 5 * sc;
+				float w = nameW + distW + 18 * sc, h = 13 * sc;
+				float left = x - w / 2f, topY = y - h / 2f;
+				d.round(left, topY, w, h, 4 * sc, 0xC00F0E0D);
+				d.circle(left + 7 * sc, y, 2.5f * sc, p.color);
+				d.textMid(p.name, left + 12 * sc, y, Fonts.Style.SEMIBOLD, 8 * sc, Theme.TEXT);
+				if (!meters.isEmpty()) {
+					d.textMid(meters, left + 12 * sc + nameW + 5 * sc, y, Fonts.Style.MEDIUM, 7.5f * sc, Theme.MUTED);
+				}
 			}
 			d.alpha(before);
 		}
+	}
+
+	private void classicLabel(Draw d, Point p, String meters, float x, float y, float sc) {
+		d.hudText(true);
+		String text = p.name;
+		if (!meters.isEmpty()) {
+			text += classicBrackets.on() ? " [" + meters + "]" : " " + meters;
+		}
+		float size = 9 * sc;
+		float tw = d.width(text, Fonts.Style.SEMIBOLD, size);
+		float w = Math.round(tw + 5 * sc), h = Math.round(11 * sc);
+		float left = Math.round(x - w / 2f), top = Math.round(y - h / 2f);
+		d.rect(left, top, w, h, classicBack.argb());
+		if (!classicBorder.is("None")) {
+			int border = classicBorder.is("Waypoint color") ? p.color : 0xC0000000;
+			float t = Math.max(1f, Math.round(sc));
+			d.rect(left - t, top - t, w + 2 * t, t, border);
+			d.rect(left - t, top + h, w + 2 * t, t, border);
+			d.rect(left - t, top, t, h, border);
+			d.rect(left + w, top, t, h, border);
+		}
+		int color = classicText.is("Waypoint color") ? (p.color | 0xFF000000) : 0xFFFFFFFF;
+		d.textShadowed(text, left + 3 * sc, top + h / 2f, Fonts.Style.SEMIBOLD, size, color, classicShadow.on());
 	}
 }

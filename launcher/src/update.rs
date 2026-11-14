@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -16,9 +16,6 @@ use crate::{paths, win};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const LATEST: &str = "https://api.github.com/repos/elistrrdev/RustyClient/releases/latest";
-#[cfg(feature = "portable")]
-const ASSET: &str = "RustyClient.exe";
-#[cfg(not(feature = "portable"))]
 const ASSET: &str = "RustyClient-Setup.exe";
 const STILL_ACTIVE: u32 = 259;
 
@@ -55,6 +52,10 @@ fn set(state: &str, version: &str, progress: f64, error: &str) {
 }
 
 pub fn start() {
+    if cfg!(feature = "test") {
+        set("test", "", 0.0, "");
+        return;
+    }
     runtime().spawn(async {
         clean_leftovers().await;
         if game_running_elsewhere() {
@@ -96,28 +97,8 @@ fn newer(latest: &str) -> bool {
     }
 }
 
-fn exe_path() -> Option<PathBuf> {
-    std::env::current_exe().ok()
-}
-
-fn leftover(exe: &Path, suffix: &str) -> PathBuf {
-    let name = exe.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-    exe.with_file_name(format!("{name}.{suffix}"))
-}
-
 async fn clean_leftovers() {
     let _ = tokio::fs::remove_file(std::env::temp_dir().join("RustyClient-Setup-update.exe")).await;
-    let Some(exe) = exe_path() else {
-        return;
-    };
-    let _ = tokio::fs::remove_file(leftover(&exe, "download")).await;
-    let old = leftover(&exe, "old");
-    for _ in 0..40 {
-        if !old.exists() || tokio::fs::remove_file(&old).await.is_ok() {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(500)).await;
-    }
 }
 
 pub fn game_running_elsewhere() -> bool {
@@ -151,7 +132,6 @@ fn game_busy() -> bool {
     core.game.lock().unwrap().running || core.task.lock().unwrap().active
 }
 
-#[cfg(not(feature = "portable"))]
 fn installed_here() -> bool {
     let Some(location) = crate::registry::read("InstallLocation") else {
         return false;
@@ -162,7 +142,6 @@ fn installed_here() -> bool {
 }
 
 async fn run() -> Result<Option<String>, String> {
-    #[cfg(not(feature = "portable"))]
     if !installed_here() {
         return Ok(None);
     }
@@ -200,10 +179,6 @@ async fn run() -> Result<Option<String>, String> {
         return Ok(None);
     }
 
-    let exe = exe_path().ok_or("Could not find the running launcher.")?;
-    #[cfg(feature = "portable")]
-    let download = leftover(&exe, "download");
-    #[cfg(not(feature = "portable"))]
     let download = std::env::temp_dir().join("RustyClient-Setup-update.exe");
 
     set("downloading", &version, 0.0, "");
@@ -217,7 +192,7 @@ async fn run() -> Result<Option<String>, String> {
         return Ok(None);
     }
     set("installing", &version, 1.0, "");
-    if let Err(error) = apply(&exe, &download) {
+    if let Err(error) = apply(&download) {
         let _ = std::fs::remove_file(&download);
         return Err(error);
     }
@@ -259,30 +234,7 @@ async fn fetch(url: &str, size: u64, target: &Path, version: &str) -> Result<(),
     Ok(())
 }
 
-#[cfg(feature = "portable")]
-fn apply(exe: &Path, download: &Path) -> Result<(), String> {
-    let old = leftover(exe, "old");
-    let _ = std::fs::remove_file(&old);
-    std::fs::rename(exe, &old).map_err(|_| "Could not replace the launcher file.".to_string())?;
-    if std::fs::rename(download, exe).is_err() {
-        let _ = std::fs::rename(&old, exe);
-        return Err("Could not replace the launcher file.".into());
-    }
-    let spawned = std::process::Command::new(exe)
-        .arg(format!("--after-update={}", std::process::id()))
-        .current_dir(exe.parent().unwrap_or(Path::new(".")))
-        .spawn();
-    if spawned.is_err() {
-        let _ = std::fs::remove_file(exe);
-        let _ = std::fs::rename(&old, exe);
-        return Err("Could not start the updated launcher.".into());
-    }
-    win::post(win::WM_APP_CLOSE);
-    Ok(())
-}
-
-#[cfg(not(feature = "portable"))]
-fn apply(_exe: &Path, download: &Path) -> Result<(), String> {
+fn apply(download: &Path) -> Result<(), String> {
     if !win::shell_run(download, &format!("--update --after-update={}", std::process::id())) {
         return Err("The update was cancelled. It will be offered again on the next start.".into());
     }

@@ -493,6 +493,17 @@ public final class Draw {
 		g.pose().popMatrix();
 	}
 
+	public void textureRegion(net.minecraft.resources.Identifier texture, int texW, int texH, float u, float v, float x, float y, int w, int h, int argb) {
+		if (alpha <= 0f || w <= 0 || h <= 0) {
+			return;
+		}
+		g.pose().pushMatrix();
+		g.pose().translate(ox + x * s, oy + y * s);
+		g.pose().scale(s, s);
+		g.blit(RenderPipelines.GUI_TEXTURED, texture, 0, 0, u, v, w, h, texW, texH, col(argb));
+		g.pose().popMatrix();
+	}
+
 	public void spriteAt(net.minecraft.resources.Identifier sprite, float x, float y, int w, int h, int argb) {
 		if (alpha <= 0f) {
 			return;

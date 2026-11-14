@@ -172,7 +172,6 @@ pub fn shell_open(target: &str) -> bool {
     }
 }
 
-#[cfg(not(feature = "portable"))]
 pub fn shell_run(file: &std::path::Path, parameters: &str) -> bool {
     unsafe {
         let verb = wide("open");
@@ -258,10 +257,10 @@ fn set_window_icons(hwnd: HWND, instance: HINSTANCE) {
     }
 }
 
-#[cfg(feature = "portable")]
-const APP_ID: &str = "RustyClient.Portable";
+#[cfg(feature = "test")]
+const APP_ID: &str = "RustyClient.Test";
 
-#[cfg(feature = "portable")]
+#[cfg(feature = "test")]
 pub fn set_process_app_id() {
     let id = wide(APP_ID);
     unsafe {
@@ -269,7 +268,7 @@ pub fn set_process_app_id() {
     }
 }
 
-#[cfg(feature = "portable")]
+#[cfg(feature = "test")]
 fn set_window_app_id(hwnd: HWND) {
     use windows_sys::Win32::System::Com::StructuredStorage::PROPVARIANT;
     use windows_sys::Win32::System::Variant::VT_LPWSTR;
@@ -387,7 +386,7 @@ pub fn create_main_window(spec: &WindowSpec) -> HWND {
         );
         MAIN_HWND.store(hwnd as isize, Ordering::SeqCst);
         set_window_icons(hwnd, instance);
-        #[cfg(feature = "portable")]
+        #[cfg(feature = "test")]
         set_window_app_id(hwnd);
 
         apply_dark_frame(hwnd);

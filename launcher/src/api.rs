@@ -184,7 +184,7 @@ fn about(request: &Incoming) -> Reply {
     );
     Reply::json(json!({
         "launcher": update::VERSION,
-        "build": if cfg!(feature = "portable") { "Portable" } else { "Installed" },
+        "build": if cfg!(feature = "test") { "Test" } else { "Installed" },
         "cef": cef.split('+').next().unwrap_or_default(),
         "chromium": chromium,
         "rust": env!("RUSTY_RUSTC_VERSION"),

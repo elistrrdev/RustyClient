@@ -6,18 +6,18 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBo
 use crate::win::wide;
 
 pub fn dir() -> PathBuf {
-    #[cfg(any(feature = "portable", feature = "setup"))]
+    #[cfg(any(feature = "test", feature = "setup"))]
     {
         downloaded::dir()
     }
-    #[cfg(not(any(feature = "portable", feature = "setup")))]
+    #[cfg(not(any(feature = "test", feature = "setup")))]
     {
         crate::paths::exe_dir()
     }
 }
 
 pub fn load(is_browser: bool) -> bool {
-    #[cfg(any(feature = "portable", feature = "setup"))]
+    #[cfg(any(feature = "test", feature = "setup"))]
     if !downloaded::ensure(is_browser) {
         return false;
     }
@@ -40,7 +40,7 @@ pub fn load(is_browser: bool) -> bool {
             return false;
         }
     }
-    #[cfg(any(feature = "portable", feature = "setup"))]
+    #[cfg(any(feature = "test", feature = "setup"))]
     if is_browser {
         downloaded::clean_old();
     }
@@ -55,7 +55,7 @@ pub fn fail(message: &str) {
     }
 }
 
-#[cfg(any(feature = "portable", feature = "setup"))]
+#[cfg(any(feature = "test", feature = "setup"))]
 pub mod downloaded {
     use std::collections::HashMap;
     use std::fs::File;

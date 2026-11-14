@@ -1,9 +1,9 @@
 [package]
 name = "RustyClient"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2024"
 publish = false
-license = "GPL-3.0-only"
+license-file = "../LICENSE"
 
 [[bin]]
 name = "RustyClient"
@@ -11,7 +11,7 @@ path = "src/main.rs"
 
 [features]
 default = []
-portable = ["dep:bzip2", "dep:tar"]
+test = ["dep:bzip2", "dep:tar"]
 setup = ["dep:windows", "dep:bzip2", "dep:tar"]
 
 [dependencies]

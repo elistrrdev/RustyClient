@@ -11,6 +11,7 @@ import com.rustyclient.core.Modules;
 import com.rustyclient.gui.HudEditorScreen;
 import com.rustyclient.module.combat.CombatHuds;
 import com.rustyclient.module.hud.InfoHuds;
+import com.rustyclient.module.hud.InventoryView;
 import com.rustyclient.module.hud.Keystrokes;
 import com.rustyclient.module.hud.SimpleHuds;
 import com.rustyclient.module.hud.Tablist;
@@ -67,6 +68,7 @@ public final class ModuleList {
 		Modules.register(new InfoHuds.Direction());
 		Modules.register(new InfoHuds.ItemCounter());
 		Modules.register(new InfoHuds.ItemCooldowns());
+		Modules.register(new InventoryView());
 		Modules.register(new SimpleHuds.Clock());
 		Modules.register(new SimpleHuds.Speed());
 		Modules.register(new SimpleHuds.Memory());

@@ -794,6 +794,8 @@ function updateText(update) {
       return "Could not update";
     case "skipped":
       return "Update check skipped while Minecraft runs";
+    case "test":
+      return "Test build, does not update itself";
     default:
       return "";
   }
@@ -859,7 +861,7 @@ async function renderAbout() {
   <div class="about-grid">
     ${LINKS.map(([glyph, label, url]) => `<button class="about-button" data-link="${url}">${icon(glyph, 16)}<span>${label}</span>${icon("external-link", 13)}</button>`).join("")}
   </div>
-  <p class="about-foot">Rusty Client is free software under the GPL-3.0 license. Not affiliated with Mojang Studios or Microsoft.</p>`;
+  <p class="about-foot">Rusty Client is proprietary software by elistrrdev, see the license. Not affiliated with Mojang Studios or Microsoft.</p>`;
 }
 
 function anchorMoved(popup) {

@@ -80,6 +80,7 @@ pub fn read(name: &str) -> Option<String> {
     }
 }
 
+#[cfg(not(feature = "test"))]
 pub fn remove() {
     unsafe {
         let key_name = wide(UNINSTALL_KEY);

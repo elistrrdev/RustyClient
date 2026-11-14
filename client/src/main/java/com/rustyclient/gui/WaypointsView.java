@@ -15,10 +15,15 @@ import java.util.Map;
 final class WaypointsView {
 	private final RustyScreen screen;
 	private final Map<Waypoints.Point, TextInput> names = new IdentityHashMap<>();
-	private boolean allWorlds;
+	private static boolean savedAllWorlds;
+	private boolean allWorlds = savedAllWorlds;
 
 	WaypointsView(RustyScreen screen) {
 		this.screen = screen;
+	}
+
+	void remember() {
+		savedAllWorlds = allWorlds;
 	}
 
 	void draw() {

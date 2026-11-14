@@ -55,6 +55,11 @@ public final class RustyScreen extends Screen {
 	float scroll;
 	float scrollTarget;
 	private static float modulesScroll;
+	private static Page savedPage;
+	private static Module savedConfig;
+	private static float savedScroll;
+	private static float savedContent;
+	private static float savedView;
 	float contentHeight;
 	float viewHeight;
 	private long lastFrame = System.nanoTime();
@@ -76,6 +81,16 @@ public final class RustyScreen extends Screen {
 			page = Page.CONFIG;
 			configModule = reopenConfig;
 		}
+		restoreScroll();
+	}
+
+	private void restoreScroll() {
+		boolean same = page == savedPage && configModule == savedConfig;
+		scroll = same ? savedScroll : 0;
+		scrollTarget = scroll;
+		contentHeight = same ? savedContent : 0;
+		viewHeight = same ? savedView : 0;
+		ui.setAnim("scroll", scroll);
 	}
 
 	public static void open() {
@@ -89,6 +104,7 @@ public final class RustyScreen extends Screen {
 		RustyScreen screen = new RustyScreen();
 		screen.page = start;
 		screen.configModule = null;
+		screen.restoreScroll();
 		lastPage = start;
 		Compat.setScreen(screen);
 	}
@@ -564,6 +580,13 @@ public final class RustyScreen extends Screen {
 
 	@Override
 	public void removed() {
+		savedPage = page;
+		savedConfig = page == Page.CONFIG ? configModule : null;
+		boolean keep = page != Page.PROFILES || profilesView.remember();
+		savedScroll = keep ? scrollTarget : 0;
+		savedContent = contentHeight;
+		savedView = viewHeight;
+		waypointsView.remember();
 		Compat.textInput(this, false);
 		Config.save();
 	}

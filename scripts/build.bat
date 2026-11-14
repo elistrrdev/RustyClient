@@ -1,6 +1,6 @@
 @echo off
 setlocal
-rem builds build\portable\RustyClient.exe and build\installer\RustyClient-Setup.exe
+rem builds build\test\Test-RustyClient.exe and build\installer\RustyClient-Setup.exe
 
 call "%~dp0env.bat"
 if errorlevel 1 exit /b 1
@@ -8,7 +8,7 @@ if errorlevel 1 exit /b 1
 pushd "%~dp0.."
 if not exist target\stage mkdir target\stage
 
-rem in-game client jars, embedded into the installed and portable launcher
+rem in-game client jars, embedded into the installed and test launcher
 echo building the in-game client
 if not defined RUSTY_CLIENT_JDK set "RUSTY_CLIENT_JDK=%ProgramFiles%\BellSoft\LibericaJDK-25"
 if not exist "%RUSTY_CLIENT_JDK%\bin\java.exe" (
@@ -34,11 +34,11 @@ if errorlevel 1 goto failed
 copy /y target\release\RustyClient.exe target\stage\RustyClient.exe >nul
 if errorlevel 1 goto failed
 
-rem portable build with the cef runtime packed inside
-echo building the portable launcher
-cargo build --release -p RustyClient --features portable
+rem test build for trying things out, gets the cef runtime on first start and never updates itself
+echo building the test launcher
+cargo build --release -p RustyClient --features test
 if errorlevel 1 goto failed
-copy /y target\release\RustyClient.exe target\stage\RustyClient-portable.exe >nul
+copy /y target\release\RustyClient.exe target\stage\Test-RustyClient.exe >nul
 if errorlevel 1 goto failed
 
 rem installer with the cef runtime and the installed build packed inside
@@ -50,15 +50,15 @@ copy /y target\release\RustyClient.exe target\stage\RustyClient-Setup.exe >nul
 if errorlevel 1 goto failed
 
 if exist build rmdir /s /q build
-mkdir build\portable
+mkdir build\test
 mkdir build\installer
-copy /y target\stage\RustyClient-portable.exe build\portable\RustyClient.exe >nul
+copy /y target\stage\Test-RustyClient.exe build\test\Test-RustyClient.exe >nul
 if errorlevel 1 goto failed
 copy /y target\stage\RustyClient-Setup.exe build\installer\RustyClient-Setup.exe >nul
 if errorlevel 1 goto failed
 
 popd
-echo built build\portable\RustyClient.exe
+echo built build\test\Test-RustyClient.exe
 echo built build\installer\RustyClient-Setup.exe
 exit /b 0
 

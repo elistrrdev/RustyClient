@@ -13,9 +13,8 @@ mod install;
 mod launch;
 mod mods;
 mod paths;
-#[cfg(any(feature = "portable", feature = "setup"))]
+#[cfg(any(feature = "test", feature = "setup"))]
 mod progress;
-#[cfg(not(feature = "portable"))]
 mod registry;
 mod runtime;
 #[cfg(feature = "setup")]
@@ -23,7 +22,7 @@ mod setup;
 mod state;
 mod storage;
 mod update;
-#[cfg(not(any(feature = "portable", feature = "setup")))]
+#[cfg(not(any(feature = "test", feature = "setup")))]
 mod uninstall;
 mod win;
 
@@ -32,12 +31,12 @@ use cef::*;
 fn main() {
     let is_browser = !std::env::args().any(|arg| arg.starts_with("--type="));
     if is_browser {
-        #[cfg(feature = "portable")]
+        #[cfg(feature = "test")]
         win::set_process_app_id();
         win::wait_for_previous_instance();
     }
 
-    #[cfg(not(any(feature = "portable", feature = "setup")))]
+    #[cfg(not(any(feature = "test", feature = "setup")))]
     if is_browser && std::env::args().any(|arg| arg == "--uninstall") {
         uninstall::run();
         return;

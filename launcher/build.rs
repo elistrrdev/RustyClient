@@ -7,7 +7,7 @@ use sha1::{Digest, Sha1};
 const RUNTIME_EXTENSIONS: [&str; 4] = ["dll", "dat", "bin", "pak"];
 
 fn main() {
-    let portable = std::env::var_os("CARGO_FEATURE_PORTABLE").is_some();
+    let test = std::env::var_os("CARGO_FEATURE_TEST").is_some();
     let setup = std::env::var_os("CARGO_FEATURE_SETUP").is_some();
 
     println!("cargo::rerun-if-changed=RustyClient.rc");
@@ -31,7 +31,7 @@ fn main() {
     println!("cargo::rustc-env=RUSTY_RUSTC_VERSION={rustc_version}");
 
     let resource = if setup { "RustyClientSetup.rc" } else { "RustyClient.rc" };
-    let macros: &[&str] = if portable || setup { &[] } else { &["RUSTY_INSTALLED"] };
+    let macros: &[&str] = if test || setup { &[] } else { &["RUSTY_INSTALLED"] };
     embed_resource::compile(resource, macros)
         .manifest_required()
         .unwrap();
@@ -41,7 +41,7 @@ fn main() {
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
 
-    if portable || setup {
+    if test || setup {
         let cef_dir = PathBuf::from(std::env::var("DEP_CEF_DLL_WRAPPER_CEF_DIR").expect("cef directory from cef-dll-sys"));
         let archive_json = cef_dir.join("archive.json");
         println!("cargo::rerun-if-changed={}", archive_json.display());

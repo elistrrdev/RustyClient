@@ -9,7 +9,7 @@
 		"homepage": "https://github.com/elistrrdev/RustyClient",
 		"sources": "https://github.com/elistrrdev/RustyClient"
 	},
-	"license": "GPL-3.0-only",
+	"license": "LicenseRef-Rusty-Client-EULA",
 	"environment": "client",
 	"entrypoints": {
 		"client": ["com.rustyclient.RustyClient"]

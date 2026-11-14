@@ -65,6 +65,10 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## XtremeUtilities
+
+Copyright (c) no1qq. Licensed under the GNU Lesser General Public License v3.0 (https://github.com/no1qq/XtremeUtilities). Toggle Sprint, Freelook, Fadeless and Black Loading Screen are ported from XtremeUtilities 1.0.5. These parts stay under the LGPL-3.0 and are not covered by the Rusty Client license restrictions, see Appendix A.5 of `LICENSE`.
+
 ## Build tools
 
 Gradle and Fabric Loom build the in-game client. They are build tools only and nothing from them is bundled.

@@ -10,7 +10,7 @@
   <a href="#requirements"><img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=for-the-badge" alt="Windows 10 and 11"></a>
   <a href="https://github.com/elistrrdev/RustyClient/releases/latest"><img src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Felistrrdev%2FRustyClient%2Fmain%2Flauncher%2FCargo.toml&query=%24.package.version&label=version&style=for-the-badge&color=1ab0dd" alt="Version"></a>
   <a href="https://fabricmc.net"><img src="https://img.shields.io/badge/Fabric-Loader%20%2B%20API-c6bca5?style=for-the-badge" alt="Fabric"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-555555?style=for-the-badge" alt="GPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-555555?style=for-the-badge" alt="Proprietary license"></a>
 </p>
 
 A fast, lightweight Minecraft launcher written in Rust. Sign in with your Microsoft account, pick a version and play. Java, Fabric, Fabric API and the optimization mods are all set up for you.
@@ -57,12 +57,7 @@ Every launch also loads the Rusty Client mod. Press Right Shift in game to open 
 
 ## Download
 
-Grab the latest build from the [Releases](../../releases) page. There are two ways to run it:
-
-| File | What it is |
-| --- | --- |
-| `RustyClient-Setup.exe` | Installer. Adds desktop and Start menu shortcuts and an entry in Windows Apps for uninstalling. |
-| `RustyClient.exe` | Portable. A single file, no install needed, run it from anywhere. |
+Grab `RustyClient-Setup.exe` from the [Releases](../../releases) page and run it. It installs Rusty Client, adds desktop and Start menu shortcuts and an entry in Windows Apps for uninstalling. The installed launcher keeps itself up to date.
 
 ## Requirements
 
@@ -80,6 +75,6 @@ Rusty Client is meant for normal play on any server. It does not include, and wi
 
 ## License
 
-Rusty Client is free software under the [GNU General Public License v3.0](LICENSE). Bundled fonts and icons, and the Chromium Embedded Framework that Rusty Client downloads on first start, are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+Rusty Client is proprietary software. Copyright (c) 2026 elistrrdev, all rights reserved. The source code is published so everyone can see how Rusty Client works, but it is not open source: using Rusty Client is covered by the [Rusty Client End User License Agreement](LICENSE). Versions up to 1.0.3 were released under the GPL-3.0. Bundled fonts, icons and adapted code, and the Chromium Embedded Framework that Rusty Client downloads on first start, are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 Rusty Client is not affiliated with Mojang Studios or Microsoft.

@@ -48,8 +48,21 @@ final class ProfilesView {
 	private long toastUntil;
 	private List<Profiles.VersionProfiles> others;
 
+	private static Profiles.Profile savedSelected;
+	private static float savedList;
+
 	ProfilesView(RustyScreen screen) {
 		this.screen = screen;
+		selected = savedSelected;
+		listTarget = savedList;
+		listScroll = savedList;
+		screen.ui.setAnim("plist", savedList);
+	}
+
+	boolean remember() {
+		savedSelected = selected;
+		savedList = listTarget;
+		return mode == Mode.DETAILS;
 	}
 
 	void draw() {
@@ -417,6 +430,21 @@ final class ProfilesView {
 			ly += 70;
 		}
 
+		ly = section(d, "Info", lx, ly);
+		String[][] info = {
+			{"Made for", Profiles.versionLabel(p.createdFor)},
+			{"Created", DATE.format(Instant.ofEpochMilli(p.created))},
+			{"Last saved", DATE.format(Instant.ofEpochMilli(p.updated))},
+			{"Modules on", String.valueOf(p == Profiles.active() ? countEnabled() : p.enabledModules())}
+		};
+		for (String[] row : info) {
+			d.round(lx, ly, colW, 42, 10, Theme.SURFACE);
+			d.textMid(row[0], lx + 12, ly + 21, Fonts.Style.SEMIBOLD, 13, Theme.TEXT_2);
+			d.textRight(row[1], lx + colW - 12, ly + 21, Fonts.Style.MEDIUM, 12, Theme.MUTED);
+			ly += 51;
+		}
+		ly += 15;
+
 		ry = section(d, "Included in this profile", rx, ry);
 		for (Profiles.Part part : Profiles.Part.values()) {
 			toggleRow(d, ui, part.label, p.parts.contains(part), rx, ry, colW, () -> {
@@ -470,21 +498,6 @@ final class ProfilesView {
 		ry = hint(d, "Joining one of these servers switches to this profile. Subdomains count too.", rx, ry, colW) + 15;
 
 		y = Math.max(ly, ry);
-		y = section(d, "Info", x, y);
-		String[][] info = {
-			{"Made for", Profiles.versionLabel(p.createdFor)},
-			{"Created", DATE.format(Instant.ofEpochMilli(p.created))},
-			{"Last saved", DATE.format(Instant.ofEpochMilli(p.updated))},
-			{"Modules on", String.valueOf(p == Profiles.active() ? countEnabled() : p.enabledModules())}
-		};
-		for (int i = 0; i < info.length; i++) {
-			float ix = x + (i % 2) * (colW + 10);
-			float iy = y + (i / 2) * 51;
-			d.round(ix, iy, colW, 42, 10, Theme.SURFACE);
-			d.textMid(info[i][0], ix + 12, iy + 21, Fonts.Style.SEMIBOLD, 13, Theme.TEXT_2);
-			d.textRight(info[i][1], ix + colW - 12, iy + 21, Fonts.Style.MEDIUM, 12, Theme.MUTED);
-		}
-		y += 102;
 		actionRow(d, ui, "Profiles folder", "Open", x, y, colW, false, () -> RustyClient.openFolder(p.file().getParent()));
 		if (!p.locked) {
 			boolean armed = armedReset == p && System.currentTimeMillis() < resetUntil;

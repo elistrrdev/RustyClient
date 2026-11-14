@@ -842,6 +842,7 @@ public final class InfoHuds {
 
 	public static final class ItemCooldowns extends Panel {
 		private static final String BAR = "Bar";
+		private static final String ITEMS = "Items";
 		private final BoolSetting showTime = bool("Show time left", GENERAL, true);
 		private final BoolSetting showNames = bool("Show item names", GENERAL, false);
 		private final BoolSetting showBar = bool("Show progress bar", GENERAL, true);
@@ -857,6 +858,12 @@ public final class InfoHuds {
 		private final ColorSetting barBack = colorAlpha("Bar background", BAR, 0x40FFFFFF);
 		private final BoolSetting warn = bool("Highlight the last second", BAR, true);
 		private final ColorSetting warnColor = color("Last second color", BAR, 0xFFEF5B52);
+		private final BoolSetting pearl = bool("Ender Pearl", ITEMS, true);
+		private final BoolSetting windCharge = bool("Wind Charge", ITEMS, true);
+		private final BoolSetting chorus = bool("Chorus Fruit", ITEMS, true);
+		private final BoolSetting shield = bool("Shield", ITEMS, true);
+		private final BoolSetting goatHorn = bool("Goat Horn", ITEMS, true);
+		private final BoolSetting other = bool("Other items", ITEMS, true);
 
 		public ItemCooldowns() {
 			super("Item Cooldowns", "hourglass", false, 0.5, 0.78);
@@ -881,16 +888,18 @@ public final class InfoHuds {
 					com.rustyclient.mixin.CooldownInstanceAccessor inst = (com.rustyclient.mixin.CooldownInstanceAccessor) e.getValue();
 					float total = Math.max(1, inst.rusty$endTime() - inst.rusty$startTime());
 					float left = inst.rusty$endTime() - now;
-					if (left <= 0) {
+					if (left <= 0 || !shown(e.getKey())) {
 						continue;
 					}
 					list.add(new Entry(stackFor(p, e.getKey()), left / 20f, Math.min(1f, left / total), inst.rusty$startTime()));
 				}
 			}
 			if (list.isEmpty() && editing && samples.on()) {
-				list.add(new Entry(new ItemStack(Items.ENDER_PEARL), 0.6f, 0.6f, 2));
-				list.add(new Entry(new ItemStack(Items.SHIELD), 3.4f, 0.68f, 1));
-				list.add(new Entry(new ItemStack(Items.CHORUS_FRUIT), 0.3f, 0.3f, 0));
+				sample(list, pearl, Items.ENDER_PEARL, 0.6f, 0.6f, 4);
+				sample(list, shield, Items.SHIELD, 3.4f, 0.68f, 3);
+				sample(list, chorus, Items.CHORUS_FRUIT, 0.3f, 0.3f, 2);
+				sample(list, windCharge, Items.WIND_CHARGE, 0.2f, 0.4f, 1);
+				sample(list, goatHorn, Items.GOAT_HORN, 5.1f, 0.73f, 0);
 			}
 			switch (sort.get()) {
 				case "Ending last" -> list.sort((a, b) -> Float.compare(b.seconds(), a.seconds()));
@@ -898,6 +907,26 @@ public final class InfoHuds {
 				default -> list.sort((a, b) -> Float.compare(a.seconds(), b.seconds()));
 			}
 			return list.size() > max.i() ? list.subList(0, max.i()) : list;
+		}
+
+		private void sample(List<Entry> list, BoolSetting setting, net.minecraft.world.item.Item item, float seconds, float fraction, int start) {
+			if (setting.on()) {
+				list.add(new Entry(new ItemStack(item), seconds, fraction, start));
+			}
+		}
+
+		private boolean shown(Identifier group) {
+			if (!group.getNamespace().equals("minecraft")) {
+				return other.on();
+			}
+			return switch (group.getPath()) {
+				case "ender_pearl" -> pearl.on();
+				case "wind_charge" -> windCharge.on();
+				case "chorus_fruit" -> chorus.on();
+				case "shield" -> shield.on();
+				case "goat_horn" -> goatHorn.on();
+				default -> other.on();
+			};
 		}
 
 		private ItemStack stackFor(Player p, Identifier group) {
@@ -1059,13 +1088,7 @@ public final class InfoHuds {
 					vanilla = p;
 					continue;
 				}
-				if (id.startsWith("fabric") || id.equals("rustyclient")) {
-					continue;
-				}
-				if (!builtIn.on() && p.getPackSource() == PackSource.BUILT_IN) {
-					continue;
-				}
-				if (!server.on() && p.getPackSource() == PackSource.SERVER) {
+				if (!userPack(p.getPackSource())) {
 					continue;
 				}
 				list.add(new Entry(id, p, p.getTitle().getString(), p.getTitle(), firstLine(p.getDescription().getString())));
@@ -1085,6 +1108,19 @@ public final class InfoHuds {
 				list.remove(list.size() - 1);
 			}
 			return list;
+		}
+
+		private boolean userPack(PackSource source) {
+			if (source == PackSource.DEFAULT) {
+				return true;
+			}
+			if (source == PackSource.BUILT_IN) {
+				return builtIn.on();
+			}
+			if (source == PackSource.SERVER || source == PackSource.WORLD) {
+				return server.on();
+			}
+			return false;
 		}
 
 		private static String firstLine(String text) {

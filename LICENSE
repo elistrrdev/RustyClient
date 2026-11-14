@@ -1,674 +1,374 @@
-                    GNU GENERAL PUBLIC LICENSE
-                       Version 3, 29 June 2007
-
- Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
- Everyone is permitted to copy and distribute verbatim copies
- of this license document, but changing it is not allowed.
-
-                            Preamble
-
-  The GNU General Public License is a free, copyleft license for
-software and other kinds of works.
-
-  The licenses for most software and other practical works are designed
-to take away your freedom to share and change the works.  By contrast,
-the GNU General Public License is intended to guarantee your freedom to
-share and change all versions of a program--to make sure it remains free
-software for all its users.  We, the Free Software Foundation, use the
-GNU General Public License for most of our software; it applies also to
-any other work released this way by its authors.  You can apply it to
-your programs, too.
-
-  When we speak of free software, we are referring to freedom, not
-price.  Our General Public Licenses are designed to make sure that you
-have the freedom to distribute copies of free software (and charge for
-them if you wish), that you receive source code or can get it if you
-want it, that you can change the software or use pieces of it in new
-free programs, and that you know you can do these things.
-
-  To protect your rights, we need to prevent others from denying you
-these rights or asking you to surrender the rights.  Therefore, you have
-certain responsibilities if you distribute copies of the software, or if
-you modify it: responsibilities to respect the freedom of others.
-
-  For example, if you distribute copies of such a program, whether
-gratis or for a fee, you must pass on to the recipients the same
-freedoms that you received.  You must make sure that they, too, receive
-or can get the source code.  And you must show them these terms so they
-know their rights.
-
-  Developers that use the GNU GPL protect your rights with two steps:
-(1) assert copyright on the software, and (2) offer you this License
-giving you legal permission to copy, distribute and/or modify it.
-
-  For the developers' and authors' protection, the GPL clearly explains
-that there is no warranty for this free software.  For both users' and
-authors' sake, the GPL requires that modified versions be marked as
-changed, so that their problems will not be attributed erroneously to
-authors of previous versions.
-
-  Some devices are designed to deny users access to install or run
-modified versions of the software inside them, although the manufacturer
-can do so.  This is fundamentally incompatible with the aim of
-protecting users' freedom to change the software.  The systematic
-pattern of such abuse occurs in the area of products for individuals to
-use, which is precisely where it is most unacceptable.  Therefore, we
-have designed this version of the GPL to prohibit the practice for those
-products.  If such problems arise substantially in other domains, we
-stand ready to extend this provision to those domains in future versions
-of the GPL, as needed to protect the freedom of users.
-
-  Finally, every program is threatened constantly by software patents.
-States should not allow patents to restrict development and use of
-software on general-purpose computers, but in those that do, we wish to
-avoid the special danger that patents applied to a free program could
-make it effectively proprietary.  To prevent this, the GPL assures that
-patents cannot be used to render the program non-free.
-
-  The precise terms and conditions for copying, distribution and
-modification follow.
-
-                       TERMS AND CONDITIONS
-
-  0. Definitions.
-
-  "This License" refers to version 3 of the GNU General Public License.
-
-  "Copyright" also means copyright-like laws that apply to other kinds of
-works, such as semiconductor masks.
-
-  "The Program" refers to any copyrightable work licensed under this
-License.  Each licensee is addressed as "you".  "Licensees" and
-"recipients" may be individuals or organizations.
-
-  To "modify" a work means to copy from or adapt all or part of the work
-in a fashion requiring copyright permission, other than the making of an
-exact copy.  The resulting work is called a "modified version" of the
-earlier work or a work "based on" the earlier work.
-
-  A "covered work" means either the unmodified Program or a work based
-on the Program.
-
-  To "propagate" a work means to do anything with it that, without
-permission, would make you directly or secondarily liable for
-infringement under applicable copyright law, except executing it on a
-computer or modifying a private copy.  Propagation includes copying,
-distribution (with or without modification), making available to the
-public, and in some countries other activities as well.
-
-  To "convey" a work means any kind of propagation that enables other
-parties to make or receive copies.  Mere interaction with a user through
-a computer network, with no transfer of a copy, is not conveying.
-
-  An interactive user interface displays "Appropriate Legal Notices"
-to the extent that it includes a convenient and prominently visible
-feature that (1) displays an appropriate copyright notice, and (2)
-tells the user that there is no warranty for the work (except to the
-extent that warranties are provided), that licensees may convey the
-work under this License, and how to view a copy of this License.  If
-the interface presents a list of user commands or options, such as a
-menu, a prominent item in the list meets this criterion.
-
-  1. Source Code.
-
-  The "source code" for a work means the preferred form of the work
-for making modifications to it.  "Object code" means any non-source
-form of a work.
-
-  A "Standard Interface" means an interface that either is an official
-standard defined by a recognized standards body, or, in the case of
-interfaces specified for a particular programming language, one that
-is widely used among developers working in that language.
-
-  The "System Libraries" of an executable work include anything, other
-than the work as a whole, that (a) is included in the normal form of
-packaging a Major Component, but which is not part of that Major
-Component, and (b) serves only to enable use of the work with that
-Major Component, or to implement a Standard Interface for which an
-implementation is available to the public in source code form.  A
-"Major Component", in this context, means a major essential component
-(kernel, window system, and so on) of the specific operating system
-(if any) on which the executable work runs, or a compiler used to
-produce the work, or an object code interpreter used to run it.
-
-  The "Corresponding Source" for a work in object code form means all
-the source code needed to generate, install, and (for an executable
-work) run the object code and to modify the work, including scripts to
-control those activities.  However, it does not include the work's
-System Libraries, or general-purpose tools or generally available free
-programs which are used unmodified in performing those activities but
-which are not part of the work.  For example, Corresponding Source
-includes interface definition files associated with source files for
-the work, and the source code for shared libraries and dynamically
-linked subprograms that the work is specifically designed to require,
-such as by intimate data communication or control flow between those
-subprograms and other parts of the work.
-
-  The Corresponding Source need not include anything that users
-can regenerate automatically from other parts of the Corresponding
-Source.
-
-  The Corresponding Source for a work in source code form is that
-same work.
-
-  2. Basic Permissions.
-
-  All rights granted under this License are granted for the term of
-copyright on the Program, and are irrevocable provided the stated
-conditions are met.  This License explicitly affirms your unlimited
-permission to run the unmodified Program.  The output from running a
-covered work is covered by this License only if the output, given its
-content, constitutes a covered work.  This License acknowledges your
-rights of fair use or other equivalent, as provided by copyright law.
-
-  You may make, run and propagate covered works that you do not
-convey, without conditions so long as your license otherwise remains
-in force.  You may convey covered works to others for the sole purpose
-of having them make modifications exclusively for you, or provide you
-with facilities for running those works, provided that you comply with
-the terms of this License in conveying all material for which you do
-not control copyright.  Those thus making or running the covered works
-for you must do so exclusively on your behalf, under your direction
-and control, on terms that prohibit them from making any copies of
-your copyrighted material outside their relationship with you.
-
-  Conveying under any other circumstances is permitted solely under
-the conditions stated below.  Sublicensing is not allowed; section 10
-makes it unnecessary.
-
-  3. Protecting Users' Legal Rights From Anti-Circumvention Law.
-
-  No covered work shall be deemed part of an effective technological
-measure under any applicable law fulfilling obligations under article
-11 of the WIPO copyright treaty adopted on 20 December 1996, or
-similar laws prohibiting or restricting circumvention of such
-measures.
-
-  When you convey a covered work, you waive any legal power to forbid
-circumvention of technological measures to the extent such circumvention
-is effected by exercising rights under this License with respect to
-the covered work, and you disclaim any intention to limit operation or
-modification of the work as a means of enforcing, against the work's
-users, your or third parties' legal rights to forbid circumvention of
-technological measures.
-
-  4. Conveying Verbatim Copies.
-
-  You may convey verbatim copies of the Program's source code as you
-receive it, in any medium, provided that you conspicuously and
-appropriately publish on each copy an appropriate copyright notice;
-keep intact all notices stating that this License and any
-non-permissive terms added in accord with section 7 apply to the code;
-keep intact all notices of the absence of any warranty; and give all
-recipients a copy of this License along with the Program.
-
-  You may charge any price or no price for each copy that you convey,
-and you may offer support or warranty protection for a fee.
-
-  5. Conveying Modified Source Versions.
-
-  You may convey a work based on the Program, or the modifications to
-produce it from the Program, in the form of source code under the
-terms of section 4, provided that you also meet all of these conditions:
-
-    a) The work must carry prominent notices stating that you modified
-    it, and giving a relevant date.
-
-    b) The work must carry prominent notices stating that it is
-    released under this License and any conditions added under section
-    7.  This requirement modifies the requirement in section 4 to
-    "keep intact all notices".
-
-    c) You must license the entire work, as a whole, under this
-    License to anyone who comes into possession of a copy.  This
-    License will therefore apply, along with any applicable section 7
-    additional terms, to the whole of the work, and all its parts,
-    regardless of how they are packaged.  This License gives no
-    permission to license the work in any other way, but it does not
-    invalidate such permission if you have separately received it.
-
-    d) If the work has interactive user interfaces, each must display
-    Appropriate Legal Notices; however, if the Program has interactive
-    interfaces that do not display Appropriate Legal Notices, your
-    work need not make them do so.
-
-  A compilation of a covered work with other separate and independent
-works, which are not by their nature extensions of the covered work,
-and which are not combined with it such as to form a larger program,
-in or on a volume of a storage or distribution medium, is called an
-"aggregate" if the compilation and its resulting copyright are not
-used to limit the access or legal rights of the compilation's users
-beyond what the individual works permit.  Inclusion of a covered work
-in an aggregate does not cause this License to apply to the other
-parts of the aggregate.
-
-  6. Conveying Non-Source Forms.
-
-  You may convey a covered work in object code form under the terms
-of sections 4 and 5, provided that you also convey the
-machine-readable Corresponding Source under the terms of this License,
-in one of these ways:
-
-    a) Convey the object code in, or embodied in, a physical product
-    (including a physical distribution medium), accompanied by the
-    Corresponding Source fixed on a durable physical medium
-    customarily used for software interchange.
-
-    b) Convey the object code in, or embodied in, a physical product
-    (including a physical distribution medium), accompanied by a
-    written offer, valid for at least three years and valid for as
-    long as you offer spare parts or customer support for that product
-    model, to give anyone who possesses the object code either (1) a
-    copy of the Corresponding Source for all the software in the
-    product that is covered by this License, on a durable physical
-    medium customarily used for software interchange, for a price no
-    more than your reasonable cost of physically performing this
-    conveying of source, or (2) access to copy the
-    Corresponding Source from a network server at no charge.
-
-    c) Convey individual copies of the object code with a copy of the
-    written offer to provide the Corresponding Source.  This
-    alternative is allowed only occasionally and noncommercially, and
-    only if you received the object code with such an offer, in accord
-    with subsection 6b.
-
-    d) Convey the object code by offering access from a designated
-    place (gratis or for a charge), and offer equivalent access to the
-    Corresponding Source in the same way through the same place at no
-    further charge.  You need not require recipients to copy the
-    Corresponding Source along with the object code.  If the place to
-    copy the object code is a network server, the Corresponding Source
-    may be on a different server (operated by you or a third party)
-    that supports equivalent copying facilities, provided you maintain
-    clear directions next to the object code saying where to find the
-    Corresponding Source.  Regardless of what server hosts the
-    Corresponding Source, you remain obligated to ensure that it is
-    available for as long as needed to satisfy these requirements.
-
-    e) Convey the object code using peer-to-peer transmission, provided
-    you inform other peers where the object code and Corresponding
-    Source of the work are being offered to the general public at no
-    charge under subsection 6d.
-
-  A separable portion of the object code, whose source code is excluded
-from the Corresponding Source as a System Library, need not be
-included in conveying the object code work.
-
-  A "User Product" is either (1) a "consumer product", which means any
-tangible personal property which is normally used for personal, family,
-or household purposes, or (2) anything designed or sold for incorporation
-into a dwelling.  In determining whether a product is a consumer product,
-doubtful cases shall be resolved in favor of coverage.  For a particular
-product received by a particular user, "normally used" refers to a
-typical or common use of that class of product, regardless of the status
-of the particular user or of the way in which the particular user
-actually uses, or expects or is expected to use, the product.  A product
-is a consumer product regardless of whether the product has substantial
-commercial, industrial or non-consumer uses, unless such uses represent
-the only significant mode of use of the product.
-
-  "Installation Information" for a User Product means any methods,
-procedures, authorization keys, or other information required to install
-and execute modified versions of a covered work in that User Product from
-a modified version of its Corresponding Source.  The information must
-suffice to ensure that the continued functioning of the modified object
-code is in no case prevented or interfered with solely because
-modification has been made.
-
-  If you convey an object code work under this section in, or with, or
-specifically for use in, a User Product, and the conveying occurs as
-part of a transaction in which the right of possession and use of the
-User Product is transferred to the recipient in perpetuity or for a
-fixed term (regardless of how the transaction is characterized), the
-Corresponding Source conveyed under this section must be accompanied
-by the Installation Information.  But this requirement does not apply
-if neither you nor any third party retains the ability to install
-modified object code on the User Product (for example, the work has
-been installed in ROM).
-
-  The requirement to provide Installation Information does not include a
-requirement to continue to provide support service, warranty, or updates
-for a work that has been modified or installed by the recipient, or for
-the User Product in which it has been modified or installed.  Access to a
-network may be denied when the modification itself materially and
-adversely affects the operation of the network or violates the rules and
-protocols for communication across the network.
-
-  Corresponding Source conveyed, and Installation Information provided,
-in accord with this section must be in a format that is publicly
-documented (and with an implementation available to the public in
-source code form), and must require no special password or key for
-unpacking, reading or copying.
-
-  7. Additional Terms.
-
-  "Additional permissions" are terms that supplement the terms of this
-License by making exceptions from one or more of its conditions.
-Additional permissions that are applicable to the entire Program shall
-be treated as though they were included in this License, to the extent
-that they are valid under applicable law.  If additional permissions
-apply only to part of the Program, that part may be used separately
-under those permissions, but the entire Program remains governed by
-this License without regard to the additional permissions.
-
-  When you convey a copy of a covered work, you may at your option
-remove any additional permissions from that copy, or from any part of
-it.  (Additional permissions may be written to require their own
-removal in certain cases when you modify the work.)  You may place
-additional permissions on material, added by you to a covered work,
-for which you have or can give appropriate copyright permission.
-
-  Notwithstanding any other provision of this License, for material you
-add to a covered work, you may (if authorized by the copyright holders of
-that material) supplement the terms of this License with terms:
-
-    a) Disclaiming warranty or limiting liability differently from the
-    terms of sections 15 and 16 of this License; or
-
-    b) Requiring preservation of specified reasonable legal notices or
-    author attributions in that material or in the Appropriate Legal
-    Notices displayed by works containing it; or
-
-    c) Prohibiting misrepresentation of the origin of that material, or
-    requiring that modified versions of such material be marked in
-    reasonable ways as different from the original version; or
-
-    d) Limiting the use for publicity purposes of names of licensors or
-    authors of the material; or
-
-    e) Declining to grant rights under trademark law for use of some
-    trade names, trademarks, or service marks; or
-
-    f) Requiring indemnification of licensors and authors of that
-    material by anyone who conveys the material (or modified versions of
-    it) with contractual assumptions of liability to the recipient, for
-    any liability that these contractual assumptions directly impose on
-    those licensors and authors.
-
-  All other non-permissive additional terms are considered "further
-restrictions" within the meaning of section 10.  If the Program as you
-received it, or any part of it, contains a notice stating that it is
-governed by this License along with a term that is a further
-restriction, you may remove that term.  If a license document contains
-a further restriction but permits relicensing or conveying under this
-License, you may add to a covered work material governed by the terms
-of that license document, provided that the further restriction does
-not survive such relicensing or conveying.
-
-  If you add terms to a covered work in accord with this section, you
-must place, in the relevant source files, a statement of the
-additional terms that apply to those files, or a notice indicating
-where to find the applicable terms.
-
-  Additional terms, permissive or non-permissive, may be stated in the
-form of a separately written license, or stated as exceptions;
-the above requirements apply either way.
-
-  8. Termination.
-
-  You may not propagate or modify a covered work except as expressly
-provided under this License.  Any attempt otherwise to propagate or
-modify it is void, and will automatically terminate your rights under
-this License (including any patent licenses granted under the third
-paragraph of section 11).
-
-  However, if you cease all violation of this License, then your
-license from a particular copyright holder is reinstated (a)
-provisionally, unless and until the copyright holder explicitly and
-finally terminates your license, and (b) permanently, if the copyright
-holder fails to notify you of the violation by some reasonable means
-prior to 60 days after the cessation.
-
-  Moreover, your license from a particular copyright holder is
-reinstated permanently if the copyright holder notifies you of the
-violation by some reasonable means, this is the first time you have
-received notice of violation of this License (for any work) from that
-copyright holder, and you cure the violation prior to 30 days after
-your receipt of the notice.
-
-  Termination of your rights under this section does not terminate the
-licenses of parties who have received copies or rights from you under
-this License.  If your rights have been terminated and not permanently
-reinstated, you do not qualify to receive new licenses for the same
-material under section 10.
-
-  9. Acceptance Not Required for Having Copies.
-
-  You are not required to accept this License in order to receive or
-run a copy of the Program.  Ancillary propagation of a covered work
-occurring solely as a consequence of using peer-to-peer transmission
-to receive a copy likewise does not require acceptance.  However,
-nothing other than this License grants you permission to propagate or
-modify any covered work.  These actions infringe copyright if you do
-not accept this License.  Therefore, by modifying or propagating a
-covered work, you indicate your acceptance of this License to do so.
-
-  10. Automatic Licensing of Downstream Recipients.
-
-  Each time you convey a covered work, the recipient automatically
-receives a license from the original licensors, to run, modify and
-propagate that work, subject to this License.  You are not responsible
-for enforcing compliance by third parties with this License.
-
-  An "entity transaction" is a transaction transferring control of an
-organization, or substantially all assets of one, or subdividing an
-organization, or merging organizations.  If propagation of a covered
-work results from an entity transaction, each party to that
-transaction who receives a copy of the work also receives whatever
-licenses to the work the party's predecessor in interest had or could
-give under the previous paragraph, plus a right to possession of the
-Corresponding Source of the work from the predecessor in interest, if
-the predecessor has it or can get it with reasonable efforts.
-
-  You may not impose any further restrictions on the exercise of the
-rights granted or affirmed under this License.  For example, you may
-not impose a license fee, royalty, or other charge for exercise of
-rights granted under this License, and you may not initiate litigation
-(including a cross-claim or counterclaim in a lawsuit) alleging that
-any patent claim is infringed by making, using, selling, offering for
-sale, or importing the Program or any portion of it.
-
-  11. Patents.
-
-  A "contributor" is a copyright holder who authorizes use under this
-License of the Program or a work on which the Program is based.  The
-work thus licensed is called the contributor's "contributor version".
-
-  A contributor's "essential patent claims" are all patent claims
-owned or controlled by the contributor, whether already acquired or
-hereafter acquired, that would be infringed by some manner, permitted
-by this License, of making, using, or selling its contributor version,
-but do not include claims that would be infringed only as a
-consequence of further modification of the contributor version.  For
-purposes of this definition, "control" includes the right to grant
-patent sublicenses in a manner consistent with the requirements of
-this License.
-
-  Each contributor grants you a non-exclusive, worldwide, royalty-free
-patent license under the contributor's essential patent claims, to
-make, use, sell, offer for sale, import and otherwise run, modify and
-propagate the contents of its contributor version.
-
-  In the following three paragraphs, a "patent license" is any express
-agreement or commitment, however denominated, not to enforce a patent
-(such as an express permission to practice a patent or covenant not to
-sue for patent infringement).  To "grant" such a patent license to a
-party means to make such an agreement or commitment not to enforce a
-patent against the party.
-
-  If you convey a covered work, knowingly relying on a patent license,
-and the Corresponding Source of the work is not available for anyone
-to copy, free of charge and under the terms of this License, through a
-publicly available network server or other readily accessible means,
-then you must either (1) cause the Corresponding Source to be so
-available, or (2) arrange to deprive yourself of the benefit of the
-patent license for this particular work, or (3) arrange, in a manner
-consistent with the requirements of this License, to extend the patent
-license to downstream recipients.  "Knowingly relying" means you have
-actual knowledge that, but for the patent license, your conveying the
-covered work in a country, or your recipient's use of the covered work
-in a country, would infringe one or more identifiable patents in that
-country that you have reason to believe are valid.
-
-  If, pursuant to or in connection with a single transaction or
-arrangement, you convey, or propagate by procuring conveyance of, a
-covered work, and grant a patent license to some of the parties
-receiving the covered work authorizing them to use, propagate, modify
-or convey a specific copy of the covered work, then the patent license
-you grant is automatically extended to all recipients of the covered
-work and works based on it.
-
-  A patent license is "discriminatory" if it does not include within
-the scope of its coverage, prohibits the exercise of, or is
-conditioned on the non-exercise of one or more of the rights that are
-specifically granted under this License.  You may not convey a covered
-work if you are a party to an arrangement with a third party that is
-in the business of distributing software, under which you make payment
-to the third party based on the extent of your activity of conveying
-the work, and under which the third party grants, to any of the
-parties who would receive the covered work from you, a discriminatory
-patent license (a) in connection with copies of the covered work
-conveyed by you (or copies made from those copies), or (b) primarily
-for and in connection with specific products or compilations that
-contain the covered work, unless you entered into that arrangement,
-or that patent license was granted, prior to 28 March 2007.
-
-  Nothing in this License shall be construed as excluding or limiting
-any implied license or other defenses to infringement that may
-otherwise be available to you under applicable patent law.
-
-  12. No Surrender of Others' Freedom.
-
-  If conditions are imposed on you (whether by court order, agreement or
-otherwise) that contradict the conditions of this License, they do not
-excuse you from the conditions of this License.  If you cannot convey a
-covered work so as to satisfy simultaneously your obligations under this
-License and any other pertinent obligations, then as a consequence you may
-not convey it at all.  For example, if you agree to terms that obligate you
-to collect a royalty for further conveying from those to whom you convey
-the Program, the only way you could satisfy both those terms and this
-License would be to refrain entirely from conveying the Program.
-
-  13. Use with the GNU Affero General Public License.
-
-  Notwithstanding any other provision of this License, you have
-permission to link or combine any covered work with a work licensed
-under version 3 of the GNU Affero General Public License into a single
-combined work, and to convey the resulting work.  The terms of this
-License will continue to apply to the part which is the covered work,
-but the special requirements of the GNU Affero General Public License,
-section 13, concerning interaction through a network will apply to the
-combination as such.
-
-  14. Revised Versions of this License.
-
-  The Free Software Foundation may publish revised and/or new versions of
-the GNU General Public License from time to time.  Such new versions will
-be similar in spirit to the present version, but may differ in detail to
-address new problems or concerns.
-
-  Each version is given a distinguishing version number.  If the
-Program specifies that a certain numbered version of the GNU General
-Public License "or any later version" applies to it, you have the
-option of following the terms and conditions either of that numbered
-version or of any later version published by the Free Software
-Foundation.  If the Program does not specify a version number of the
-GNU General Public License, you may choose any version ever published
-by the Free Software Foundation.
-
-  If the Program specifies that a proxy can decide which future
-versions of the GNU General Public License can be used, that proxy's
-public statement of acceptance of a version permanently authorizes you
-to choose that version for the Program.
-
-  Later license versions may give you additional or different
-permissions.  However, no additional obligations are imposed on any
-author or copyright holder as a result of your choosing to follow a
-later version.
-
-  15. Disclaimer of Warranty.
-
-  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
-APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
-HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
-OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
-IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
-ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
-
-  16. Limitation of Liability.
-
-  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
-THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
-GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
-USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
-DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
-PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
-EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
-  17. Interpretation of Sections 15 and 16.
-
-  If the disclaimer of warranty and limitation of liability provided
-above cannot be given local legal effect according to their terms,
-reviewing courts shall apply local law that most closely approximates
-an absolute waiver of all civil liability in connection with the
-Program, unless a warranty or assumption of liability accompanies a
-copy of the Program in return for a fee.
-
-                     END OF TERMS AND CONDITIONS
-
-            How to Apply These Terms to Your New Programs
-
-  If you develop a new program, and you want it to be of the greatest
-possible use to the public, the best way to achieve this is to make it
-free software which everyone can redistribute and change under these terms.
-
-  To do so, attach the following notices to the program.  It is safest
-to attach them to the start of each source file to most effectively
-state the exclusion of warranty; and each file should have at least
-the "copyright" line and a pointer to where the full notice is found.
-
-    Rusty Client - a fast Minecraft launcher and Fabric client for Minecraft 26.1 to 26.3.
-    Copyright (C) 2026  elistrrdev
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-Also add information on how to contact you by electronic and paper mail.
-
-  If the program does terminal interaction, make it output a short
-notice like this when it starts in an interactive mode:
-
-    Rusty Client  Copyright (C) 2026  elistrrdev
-    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
-    This is free software, and you are welcome to redistribute it
-    under certain conditions; type `show c' for details.
-
-The hypothetical commands `show w' and `show c' should show the appropriate
-parts of the General Public License.  Of course, your program's commands
-might be different; for a GUI interface, you would use an "about box".
-
-  You should also get your employer (if you work as a programmer) or school,
-if any, to sign a "copyright disclaimer" for the program, if necessary.
-For more information on this, and how to apply and follow the GNU GPL, see
-<https://www.gnu.org/licenses/>.
-
-  The GNU General Public License does not permit incorporating your program
-into proprietary programs.  If your program is a subroutine library, you
-may consider it more useful to permit linking proprietary applications with
-the library.  If this is what you want to do, use the GNU Lesser General
-Public License instead of this License.  But first, please read
-<https://www.gnu.org/licenses/why-not-lgpl.html>.
+RUSTY CLIENT END USER LICENSE AGREEMENT AND TERMS OF USE
+
+Copyright (c) 2026 elistrrdev. All rights reserved.
+
+Last updated: November 14, 2026
+
+PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING RUSTY CLIENT. BY INSTALLING, COPYING, STARTING OR OTHERWISE USING RUSTY CLIENT, YOU AGREE TO BE BOUND BY THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT INSTALL OR USE RUSTY CLIENT, CANCEL THE SETUP AND DELETE ALL COPIES OF RUSTY CLIENT IN YOUR POSSESSION.
+
+
+1. DEFINITIONS
+
+1.1 "Developer", "we", "us" and "our" mean elistrrdev, the author and sole owner of Rusty Client.
+
+1.2 "You" and "your" mean the natural person who installs, starts or otherwise uses Rusty Client. If you use Rusty Client on behalf of an organization, "you" also means that organization, and you confirm that you are allowed to accept this Agreement for it.
+
+1.3 "Rusty Client" or the "Software" means the Rusty Client launcher, the Rusty Client Setup program (RustyClient-Setup.exe), the uninstaller, the Rusty Client in-game client (the Fabric mod that the launcher loads into Minecraft, rustyclient-26.x.jar), every test build (such as Test-RustyClient.exe) and all of their components, including every update, upgrade, fix, patch, new version, configuration file, image, logo, icon, text, layout, design, documentation and any other material that the Developer provides together with or for Rusty Client, in source code or in object code form.
+
+1.4 "Third-Party Components" means software, fonts, icons and other material that was created by persons other than the Developer and that is included in Rusty Client under its own license terms. They are listed in Section 21 and Appendix A.
+
+1.5 "Minecraft" means Minecraft: Java Edition, its game files, its servers and all related services operated by Mojang AB and Microsoft Corporation ("Mojang" and "Microsoft"). Minecraft is not part of Rusty Client.
+
+1.6 "Downloaded Mods" means Fabric Loader, Fabric API, Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling and any other mod that the launcher downloads from its official source on your computer. Downloaded Mods are not part of Rusty Client.
+
+1.7 "Agreement" means this Rusty Client End User License Agreement and Terms of Use, including Appendix A.
+
+
+2. ACCEPTANCE OF THIS AGREEMENT
+
+2.1 This Agreement is a legal agreement between you and the Developer. You accept it by installing, copying, starting or otherwise using Rusty Client, whichever happens first.
+
+2.2 You confirm that you are old enough to enter into a binding agreement in the country where you live, or that your parent or legal guardian has read and accepted this Agreement on your behalf and agrees to be responsible for your use of Rusty Client.
+
+2.3 You must also be allowed to use Minecraft and your Microsoft account under the Minecraft End User License Agreement, the Minecraft Usage Guidelines and the Microsoft Services Agreement, including their age rules. Rusty Client does not change who may use Minecraft.
+
+
+3. OWNERSHIP, ALL RIGHTS RESERVED
+
+3.1 Rusty Client is licensed to you, not sold. The Developer keeps all rights, title and interest in and to Rusty Client, including all copyrights, trademarks, trade secrets, designs, know-how and every other intellectual property right, in every country.
+
+3.2 The name "Rusty Client", the Rusty Client logos and the Rusty Client icons are identifiers of the Developer. Nothing in this Agreement gives you any right to use them, except to refer to Rusty Client in an honest and accurate way.
+
+3.3 The Developer publishes the source code of Rusty Client on GitHub (https://github.com/elistrrdev/RustyClient) so that anyone can see how Rusty Client works. Rusty Client is not open source software. Being able to read the source code does not give you any license to it, and no source code is licensed to you under this Agreement. You may read the source code, but you must not copy, build, compile, modify, publish, distribute or otherwise use it or any part of it, except for the rights that the GitHub Terms of Service give to GitHub users for public repositories (viewing and forking the repository on GitHub), and only as far as those terms require, and except for the rights that a license in Appendix A gives you for a Third-Party Component.
+
+3.4 Earlier versions of Rusty Client up to and including version 1.0.3 were published under the GNU General Public License, version 3. Copies of those earlier versions that you already received under that license keep the rights that license gave you. Version 1.0.4 and every later version are only available under this Agreement.
+
+3.5 All rights that are not expressly granted to you in this Agreement are reserved by the Developer.
+
+
+4. LICENSE GRANT
+
+4.1 Subject to your continuous compliance with this Agreement, the Developer grants you a personal, limited, non-exclusive, non-transferable, non-sublicensable and revocable license to install and use one copy of Rusty Client in object code form on each computer that you own or lawfully control, only for your own private and non-commercial use, and only in the form in which it was provided by the Developer through an official Rusty Client distribution channel. The official distribution channel is currently the releases page of https://github.com/elistrrdev/RustyClient.
+
+4.2 You may make one backup copy of the Rusty Client Setup program for your own use, provided that the backup keeps all copyright notices and this Agreement.
+
+4.3 A build of Rusty Client that was made from the published source code by anyone other than the Developer is not an official Rusty Client build and is not licensed to you under this Agreement.
+
+4.4 Test builds. Test builds of Rusty Client (such as Test-RustyClient.exe) are made by the Developer for testing only. They are not published as an official release, they do not update themselves and they may only be used by the Developer and by persons the Developer has given them to, and only for testing and giving feedback, for as long as the Developer allows it.
+
+4.5 The in-game client is only licensed for use together with the Rusty Client launcher, which loads it into Minecraft. You must not copy it out of the launcher or its folders, load it in another launcher or modpack, or share it as a separate file.
+
+
+5. RESTRICTIONS
+
+Except as expressly allowed by this Agreement, by a license in Appendix A for a Third-Party Component, or by mandatory law that cannot be excluded by contract, you must not, and you must not allow or help anyone else to:
+
+5.1 copy, reproduce, publish, upload, share, mirror, sell, resell, rent, lease, lend, sublicense, distribute or otherwise make Rusty Client or any part of it available to any other person, including through websites, file hosting services, torrents, chat services, game communities, modpacks, mod hosting sites or app stores;
+
+5.2 reverse engineer, decompile, disassemble, decrypt, unpack, debug, trace, analyze or otherwise try to find out the source code, structure, algorithms, internal workings, file formats or protocols of Rusty Client, other than by reading the source code that the Developer publishes (Section 3.3);
+
+5.3 modify, adapt, translate, patch, crack, hook into, inject code into or create derivative works of Rusty Client, or combine Rusty Client with other software in a way that changes how Rusty Client works. Adding your own Minecraft mods to an instance through the mod manager of the launcher is allowed;
+
+5.4 remove, hide, change or bypass any copyright notice, trademark, label, license notice, version information, digital signature, integrity check or other protection measure in or around Rusty Client;
+
+5.5 tell anyone, or let anyone believe, that a modified, unofficial, older or fake version of Rusty Client is the official Rusty Client;
+
+5.6 use Rusty Client, or any information you learned from Rusty Client, to create, test, sell, share or improve cheats, hacked clients, exploits, bots, macros, auto clickers, injectors or other tools that give an unfair advantage in Minecraft or in any other game, or that harm other players;
+
+5.7 use Rusty Client in any way that breaks the Minecraft End User License Agreement, the Minecraft Usage Guidelines, the Microsoft Services Agreement, the rules of a Minecraft server or realm you play on, or any law;
+
+5.8 use Rusty Client to attack, overload, scrape, spam or harm Mojang, Microsoft, Minecraft servers, GitHub, Modrinth, FabricMC or any other service, network or person;
+
+5.9 use Rusty Client for any commercial purpose, including offering it as part of a paid service, a paid bundle, a paid modpack, a paid community, a paid account service or advertising, without prior written permission from the Developer;
+
+5.10 use Rusty Client or its name, logos, look or design to build or promote a competing product, or to train, test or improve any artificial intelligence or machine learning model.
+
+Where a law that cannot be excluded allows you to do any of the above (for example decompiling in a narrow case to make Rusty Client work together with other software), you may do it only to the exact extent that the law requires, and only after first asking the Developer in writing for the needed information. Where a license in Appendix A requires that you may modify a Third-Party Component, or the parts of Rusty Client that are combined with it, for your own use and reverse engineer them to debug such modifications, you may do so to the extent that license requires.
+
+
+6. ADMINISTRATOR RIGHTS
+
+6.1 The Rusty Client launcher does not ask for administrator rights. It runs with the normal rights of your Windows account and starts Minecraft without administrator rights. Only the Rusty Client Setup program and the uninstaller ask Windows for administrator rights, because they install Rusty Client into the Program Files folder, create shortcuts for all users and register Rusty Client in Windows Apps. This also applies when Rusty Client updates itself (Section 10.5): the update is installed by the Rusty Client Setup program, so Windows asks for administrator rights at that moment.
+
+6.2 You should only run official Rusty Client builds. Running a modified or unofficial build, especially with administrator rights, can seriously harm your computer, your files and your accounts. The Developer is not responsible for any version of Rusty Client that was not provided by the Developer.
+
+
+7. MINECRAFT, MICROSOFT AND OTHER THIRD-PARTY SERVICES
+
+7.1 Rusty Client is an independent project. Rusty Client and the Developer are not affiliated with, endorsed by, sponsored by or connected to Mojang, Microsoft, FabricMC, Modrinth or the authors of any Downloaded Mod in any way. "Minecraft" is a trademark of Mojang and Microsoft. It is used only to describe what Rusty Client works with. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
+
+7.2 Rusty Client does not contain Minecraft. When you play, the launcher downloads the official Minecraft game files, libraries, assets and Java runtime directly from the servers of Mojang, checks them with the checksums that Mojang publishes, places them in the Rusty Client folder on your computer and starts Minecraft. Minecraft, its content and all Minecraft services stay the property of Mojang and Microsoft and are subject only to their terms. You need your own Microsoft account that owns Minecraft: Java Edition.
+
+7.3 Downloaded Mods. The launcher downloads Fabric Loader and Fabric API from FabricMC and Modrinth, and the performance mods Sodium, Lithium, FerriteCore, ImmediatelyFast and EntityCulling from Modrinth, directly onto your computer and keeps them up to date. Downloaded Mods are not part of Rusty Client and are not licensed to you under this Agreement. Each of them is licensed to you by its own authors under its own license. Mods that you add yourself are your own responsibility.
+
+7.4 Your use of Minecraft is governed by the Minecraft End User License Agreement, the Minecraft Usage Guidelines, the Microsoft Services Agreement and all other rules of Mojang and Microsoft, which you accept directly with them, and by the rules of each server you join. You are solely responsible for following them. The Developer has no control over Minecraft or any server, cannot change your Microsoft account, cannot lift bans, cannot recover worlds or items, and gives no promise about what Mojang, Microsoft or any server owner does.
+
+7.5 Fair play. Rusty Client is made for fair play. It does not include features that are meant to give an unfair advantage. Even so, some servers do not allow any modified client, or do not allow some features of Rusty Client (for example the HUD, zoom, freelook, waypoints or Toggle Sprint). It is your responsibility to check the rules of every server you join and to turn off any feature that is not allowed there. The Developer is not responsible if a server punishes or bans you.
+
+7.6 Microsoft accounts. You sign in with your Microsoft account in a Microsoft sign-in window. Rusty Client never sees, asks for or stores your Microsoft password. After the sign-in, Rusty Client receives sign-in tokens from Microsoft, Xbox Live and the Minecraft services and uses them only to check that you own Minecraft and to start Minecraft with your account. You may only add accounts that you own or that you are clearly allowed to use, and you are responsible for everything that happens with them. Microsoft decides whether this sign-in keeps working and can end any sign-in at any time.
+
+7.7 Rusty Client users. To show the Rusty Client logo next to the names of other Rusty Client users, the in-game client marks one otherwise unused bit in the skin settings that Minecraft sends to the server you play on. The server and every player who can see you can therefore see that you use Rusty Client. You can turn this off at any time in the in-game Settings page ("Show others that I use Rusty Client").
+
+7.8 Mojang, Microsoft, FabricMC, Modrinth or a server owner can change or stop their services, files, download servers or rules at any time. This can stop Rusty Client from working, fully or partly, until Rusty Client is updated, or forever. The Developer is not responsible for this.
+
+7.9 Rusty Client can open or use other third-party services, such as GitHub (to check for and download Rusty Client updates and to open the project page) and the official Chromium Embedded Framework download server. These services belong to their owners and have their own terms and privacy rules. The Developer is not responsible for them.
+
+
+8. YOUR DATA AND PRIVACY
+
+8.1 Rusty Client does not have its own user accounts, never asks for your Microsoft password, does not show advertising and does not contain tracking or telemetry. Rusty Client does not send any personal data to the Developer. Your Microsoft account tokens are only sent to Microsoft, Xbox Live and the Minecraft services.
+
+8.2 Rusty Client connects to the internet only for its own functions. In version 1.0.4 these are: the Microsoft, Xbox Live and Minecraft sign-in services (login.live.com, user.auth.xboxlive.com, xsts.auth.xboxlive.com and api.minecraftservices.com); the Mojang version, game file, library, asset, Java runtime and news services (piston-meta.mojang.com, piston-data.mojang.com, launchermeta.mojang.com, libraries.minecraft.net, resources.download.minecraft.net and launchercontent.mojang.com) and www.minecraft.net for the version pictures; the FabricMC services (meta.fabricmc.net and maven.fabricmc.net); Modrinth (api.modrinth.com and cdn.modrinth.com) for Fabric API and the performance mods; the official Chromium Embedded Framework download server (cef-builds.spotifycdn.com), once, for the browser runtime that draws the launcher; and, for automatic updates, the GitHub release service and download servers (api.github.com, github.com and the GitHub file servers that github.com sends the download to, such as *.githubusercontent.com). Minecraft itself also connects to the servers you join and to the services of Mojang and Microsoft. Like any internet connection, these services can see your IP address and that a request was made. Their own privacy rules apply.
+
+8.3 Rusty Client stores its files only on your computer, mainly in the folder %APPDATA%\.rustyclient. These are your launcher settings (settings.json), your accounts (accounts.dat), the Minecraft game files, libraries, assets and Java runtime, the downloaded browser runtime, the in-game client, one game folder per Minecraft version with its worlds, resource packs, screenshots, mods, configuration and logs, and your in-game client profiles. accounts.dat contains the name, id, skin information and sign-in tokens of every added account. It is encrypted with Windows (DPAPI) so that only your Windows user account on this computer can read it. When Minecraft starts, the launcher writes a launch log (rustyclient-launch.log) into the logs folder of that version. The access token is replaced by <hidden> in that log.
+
+8.4 When the installed launcher downloads an update, it saves the new Rusty Client Setup program in your temporary folder (%TEMP%) and removes it again later. Crash reports and logs that Minecraft writes stay on your computer. They are never sent automatically. You decide whether you want to send them to the Developer, and if you do, you agree that the Developer may use them to find and fix problems.
+
+8.5 The Profile page of the in-game client shows your name, UUID, skin, session time and similar information. It is only shown to you, and the UUID is hidden until you click it. Rusty Client does not send it anywhere.
+
+8.6 You can remove all data that Rusty Client created by uninstalling Rusty Client and then deleting the folder %APPDATA%\.rustyclient yourself. Uninstalling keeps this folder on purpose, so your worlds are not lost.
+
+8.7 If a later version of Rusty Client needs to process more or other data, the Developer will describe this in that version and, where the law requires it, ask for your consent first.
+
+
+9. ACCEPTABLE USE OF THE IN-GAME CLIENT
+
+9.1 The in-game client only changes what Minecraft shows on your own screen and how you control it. Everything it draws is only visible to you, except the Rusty Client marker described in Section 7.7.
+
+9.2 You must not use Name Protect, screenshots, waypoints, profiles or any other feature of Rusty Client to deceive, harass, impersonate or harm other players, or to break the rules of a server.
+
+
+10. UPDATES AND CHANGES
+
+10.1 The Developer may, but does not have to, provide updates, fixes or new versions of Rusty Client. The Developer may add, change or remove features at any time, including features that you liked or used.
+
+10.2 Each update or new version of Rusty Client is part of the Software and is covered by this Agreement, unless it comes with its own agreement, which then applies instead.
+
+10.3 The Developer may change this Agreement for future versions of Rusty Client. The version of this Agreement that comes with a version of Rusty Client applies to that version. If you do not accept a changed Agreement, do not install or use the version that comes with it.
+
+10.4 Rusty Client may stop working with older versions of Windows, with older versions of Rusty Client, with older or newer versions of Minecraft, or with changes made by Mojang, Microsoft, FabricMC or Modrinth. The Developer does not promise that any version of Rusty Client will keep working for any period of time.
+
+10.5 Automatic updates. When the installed launcher starts, it checks the official Rusty Client releases on GitHub (https://github.com/elistrrdev/RustyClient/releases) for a newer version. If there is one, it downloads the Rusty Client Setup program of that version, checks it, closes itself and starts the Setup program, which installs the update into the folder where Rusty Client is already installed and then starts Rusty Client again. This happens automatically and Rusty Client does not ask you first, except for the administrator prompt of Windows. Automatic updates can not be turned off. If you do not want them, do not use Rusty Client. Only an installed copy of Rusty Client updates itself, test builds never do. Updates are not checked while Minecraft is running. By keeping Rusty Client installed and using it after an update, you accept the version of this Agreement that comes with that update. The current version of this Agreement is always available at https://github.com/elistrrdev/RustyClient/blob/main/LICENSE.
+
+
+11. FEEDBACK
+
+If you send the Developer ideas, suggestions, bug reports, crash reports or other feedback about Rusty Client, you allow the Developer to use, change and include them in Rusty Client or in any other project, for free, without any duty to you, and without having to name you. You do not have to send feedback.
+
+
+12. SUPPORT
+
+The Developer does not have to provide support, maintenance or help of any kind. Any support that the Developer gives is voluntary and can stop at any time.
+
+
+13. TERM AND TERMINATION
+
+13.1 This Agreement starts when you accept it and stays in force until it ends.
+
+13.2 You can end this Agreement at any time by uninstalling Rusty Client and deleting all copies of Rusty Client in your possession.
+
+13.3 This Agreement, and all rights that it gives you, end automatically and immediately, without notice, if you break any part of it. The Developer can also end this Agreement, or stop offering Rusty Client, at any time and for any reason.
+
+13.4 When this Agreement ends, you must stop using Rusty Client and delete all copies of it. Sections 3, 5, 6.2, 7, 8.4, 11 and 13 to 23 stay in force after the end of this Agreement.
+
+
+14. DISCLAIMER OF WARRANTIES
+
+14.1 TO THE MAXIMUM EXTENT ALLOWED BY APPLICABLE LAW, RUSTY CLIENT IS PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND WITHOUT ANY WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY OR OTHERWISE.
+
+14.2 TO THE MAXIMUM EXTENT ALLOWED BY APPLICABLE LAW, THE DEVELOPER DISCLAIMS ALL WARRANTIES AND CONDITIONS, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY, SATISFACTORY QUALITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, QUIET ENJOYMENT, AND ANY WARRANTY THAT MAY ARISE FROM A COURSE OF DEALING OR USAGE OF TRADE.
+
+14.3 WITHOUT LIMITING THE ABOVE, THE DEVELOPER DOES NOT PROMISE THAT RUSTY CLIENT WILL MEET YOUR NEEDS, WORK WITHOUT INTERRUPTION OR ERRORS, BE SECURE, BE FREE OF HARMFUL CODE, WORK WITH YOUR COMPUTER OR WITH ANY VERSION OF MINECRAFT, WINDOWS OR ANY MOD, BE ALLOWED ON ANY SERVER, KEEP YOUR MICROSOFT ACCOUNT OR YOUR WORLDS SAFE, OR THAT ANY ERROR WILL BE FIXED.
+
+14.4 YOU USE RUSTY CLIENT AT YOUR OWN RISK. YOU ARE RESPONSIBLE FOR BACKING UP YOUR DATA AND YOUR WORLDS AND FOR ANY DAMAGE TO YOUR COMPUTER, LOSS OF DATA, OR CONSEQUENCES FOR YOUR MICROSOFT ACCOUNT OR ON ANY SERVER THAT RESULT FROM USING RUSTY CLIENT.
+
+14.5 SOME COUNTRIES DO NOT ALLOW THE EXCLUSION OF CERTAIN WARRANTIES. IN THAT CASE THE ABOVE EXCLUSIONS APPLY ONLY TO THE EXTENT ALLOWED BY THE LAW OF YOUR COUNTRY.
+
+
+15. LIMITATION OF LIABILITY
+
+15.1 TO THE MAXIMUM EXTENT ALLOWED BY APPLICABLE LAW, IN NO EVENT WILL THE DEVELOPER BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF DATA, LOSS OF WORLDS, LOSS OF PROFITS, LOSS OF REVENUE, LOSS OF GOODWILL, LOSS OF VIRTUAL ITEMS OR VIRTUAL CURRENCY, LOSS OR SUSPENSION OF ANY ACCOUNT (INCLUDING ANY MICROSOFT ACCOUNT) OR ANY BAN ON ANY SERVER, COMPUTER FAILURE OR MALFUNCTION, OR COST OF REPLACEMENT SOFTWARE OR SERVICES, ARISING OUT OF OR IN CONNECTION WITH RUSTY CLIENT OR THIS AGREEMENT, HOWEVER CAUSED AND UNDER ANY THEORY OF LIABILITY, EVEN IF THE DEVELOPER WAS TOLD ABOUT THE POSSIBILITY OF SUCH DAMAGES.
+
+15.2 TO THE MAXIMUM EXTENT ALLOWED BY APPLICABLE LAW, THE TOTAL LIABILITY OF THE DEVELOPER FOR ALL CLAIMS ARISING OUT OF OR IN CONNECTION WITH RUSTY CLIENT OR THIS AGREEMENT IS LIMITED TO THE AMOUNT THAT YOU PAID TO THE DEVELOPER FOR RUSTY CLIENT IN THE TWELVE MONTHS BEFORE THE CLAIM AROSE. IF RUSTY CLIENT WAS PROVIDED TO YOU FOR FREE, THIS AMOUNT IS ZERO, TO THE EXTENT THE LAW ALLOWS IT.
+
+15.3 NOTHING IN THIS AGREEMENT LIMITS OR EXCLUDES ANY LIABILITY THAT CANNOT BE LIMITED OR EXCLUDED BY LAW, SUCH AS LIABILITY FOR INTENT, FOR GROSS NEGLIGENCE WHERE THE LAW REQUIRES IT, FOR DEATH OR PERSONAL INJURY CAUSED BY NEGLIGENCE, FOR FRAUD, OR UNDER MANDATORY PRODUCT LIABILITY LAW.
+
+15.4 THE LIMITATIONS IN THIS SECTION APPLY EVEN IF A REMEDY FAILS OF ITS ESSENTIAL PURPOSE.
+
+
+16. INDEMNITY
+
+To the extent allowed by applicable law, you agree to defend and hold the Developer harmless from any claim, demand, loss, damage, cost and expense (including reasonable legal fees) that a third party, including Mojang, Microsoft or a server owner, brings or causes against the Developer because of your breach of this Agreement, your breach of the Minecraft End User License Agreement or the rules of a server, your misuse of Rusty Client, or your breach of any law or of the rights of another person.
+
+
+17. COMPLIANCE WITH LAWS AND EXPORT
+
+You must use Rusty Client in line with all laws that apply to you, including laws about computers, data protection, consumer protection and export control. You must not use or export Rusty Client in or to any country, person or organization where this is not allowed by applicable export control or sanctions laws.
+
+
+18. CONSUMER RIGHTS
+
+If you are a consumer, you may have rights under the mandatory law of the country where you live that this Agreement cannot change or remove. Nothing in this Agreement limits those rights. If any part of this Agreement is not allowed under such law, that part applies only as far as the law allows.
+
+
+19. GOVERNING LAW AND DISPUTES
+
+19.1 This Agreement is governed by the law of the country of the Developer's habitual residence, excluding its rules on conflict of laws and excluding the United Nations Convention on Contracts for the International Sale of Goods. If you are a consumer, this choice of law does not take away the protection given to you by the mandatory law of the country where you live.
+
+19.2 Before starting any formal dispute, you agree to first contact the Developer and try to solve the problem in good faith.
+
+19.3 To the extent allowed by applicable law, the courts at the habitual residence of the Developer have jurisdiction for all disputes arising out of or in connection with this Agreement. If you are a consumer, you may also use the courts of the country where you live, where the law gives you that right.
+
+
+20. TRADEMARKS
+
+Minecraft is a trademark of Mojang AB. Microsoft, Windows and Xbox are trademarks of Microsoft Corporation. Chromium is a trademark of Google LLC. Rust is a trademark of the Rust Foundation. Java is a trademark of Oracle and its affiliates. Fabric is a project of FabricMC. All other names, logos and trademarks belong to their owners and are only used to name the software and services that Rusty Client works with. Their use does not mean that their owners endorse Rusty Client.
+
+
+21. THIRD-PARTY COMPONENTS
+
+21.1 Rusty Client includes Third-Party Components. They are listed, together with their copyright notices and license terms, in Appendix A of this Agreement and in the file THIRD_PARTY.md of the Rusty Client repository.
+
+21.2 Each Third-Party Component is licensed to you by its own authors under its own license, as shown in Appendix A, and not under Sections 4 and 5 of this Agreement. Nothing in this Agreement limits any right that a license in Appendix A gives you for that Third-Party Component itself.
+
+21.3 The authors of the Third-Party Components are not responsible for Rusty Client, do not endorse Rusty Client and are not parties to this Agreement. Their names are shown only because their licenses require it.
+
+
+22. GENERAL TERMS
+
+22.1 Entire agreement. This Agreement, including Appendix A, is the entire agreement between you and the Developer about Rusty Client and replaces all earlier statements or agreements about it, except as stated in Section 3.4.
+
+22.2 Severability. If any part of this Agreement is found to be invalid or not enforceable, that part will be applied as far as possible to reflect the original intent, and the rest of this Agreement stays in full force.
+
+22.3 No waiver. If the Developer does not enforce a right or a part of this Agreement, this does not mean that the Developer gives up that right or that part.
+
+22.4 Assignment. You may not transfer this Agreement or any rights under it to anyone else. The Developer may transfer this Agreement, fully or partly, to another person or company, for example together with the Rusty Client project.
+
+22.5 Language. This Agreement is written in English. If it is translated, the English version wins in case of any difference, unless mandatory law says otherwise.
+
+22.6 Headings. Headings are only for easier reading and do not change the meaning of this Agreement.
+
+
+23. CONTACT
+
+Questions about this Agreement or about Rusty Client can be sent to the Developer through the official Rusty Client channels. The main contact is the issue tracker of the Rusty Client repository at https://github.com/elistrrdev/RustyClient/issues. Rusty Client can also be found on GitHub at https://github.com/elistrrdev.
+
+
+BY INSTALLING OR USING RUSTY CLIENT, YOU CONFIRM THAT YOU HAVE READ THIS AGREEMENT, THAT YOU UNDERSTAND IT, AND THAT YOU AGREE TO BE BOUND BY IT.
+
+
+APPENDIX A - THIRD-PARTY NOTICES
+
+Rusty Client includes the Third-Party Components listed below. They are used under the licenses shown here. These licenses apply only to the named components, not to Rusty Client as a whole. Software that the launcher only downloads onto your computer (Minecraft, the Java runtime, the Chromium Embedded Framework runtime and the Downloaded Mods) is not included in Rusty Client and is listed in Section A.8 for information only.
+
+
+A.1 Outfit font
+
+Copyright 2021 The Outfit Project Authors (https://github.com/Outfitio/Outfit-Fonts)
+
+Used in the launcher (outfit.woff2) and in the in-game client (Outfit Medium, SemiBold and Bold, static instances of the variable font).
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is copied below, and is also available with a FAQ at: https://openfontlicense.org
+
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide development of collaborative font projects, to support the font creation efforts of academic and linguistic communities, and to provide a free and open framework in which fonts may be shared and improved in partnership with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and redistributed freely as long as they are not sold by themselves. The fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software provided that any reserved names are not used by derivative works. The fonts and derivatives, however, cannot be released under any other type of license. The requirement for fonts to remain under this license does not apply to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright Holder(s) under this license and clearly marked as such. This may include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting, or substituting -- in part or in whole -- any of the components of the Original Version, by changing formats or by porting the Font Software to a new environment.
+
+"Author" refers to any designer, engineer, programmer, technical writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Font Software, to use, study, copy, merge, embed, modify, redistribute, and sell modified and unmodified copies of the Font Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components, in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled, redistributed and/or sold with any software, provided that each copy contains the above copyright notice and this license. These can be included either as stand-alone text files, human-readable headers or in the appropriate machine-readable metadata fields within text or binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font Name(s) unless explicit written permission is granted by the corresponding Copyright Holder. This restriction only applies to the primary font name as presented to the users.
+
+4) The name(s) of the Copyright Holder(s) and the Author(s) of the Font Software shall not be used to promote, endorse or advertise any Modified Version, except to acknowledge the contribution(s) of the Copyright Holder(s) and the Author(s) or with their explicit written permission.
+
+5) The Font Software, modified or unmodified, in part or in whole, must be distributed entirely under this license, and must not be distributed under any other license. The requirement for fonts to remain under this license does not apply to any document created using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.
+
+
+A.2 Lucide icons
+
+Copyright (c) Lucide Contributors (https://lucide.dev). Icon paths from lucide-static 0.460.0, used in the launcher and in the in-game client.
+
+ISC License
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+A.3 armor-hud
+
+Copyright (c) 2021 BerdinskiyBear. https://github.com/uku3lig/armor-hud
+The Armor Status module of the in-game client adapts its slot rendering, anchors and options.
+
+A.4 PlayerHealthIndicators
+
+Copyright (c) 2022 Gaider10. https://github.com/Gaider10/PlayerHealthIndicators
+The Health Indicator module of the in-game client adapts its heart layout above players.
+
+A.3 and A.4 are used under the MIT License:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+A.5 XtremeUtilities
+
+Copyright (c) no1qq. https://github.com/no1qq/XtremeUtilities
+The Toggle Sprint, Freelook, Fadeless and Black Loading Screen modules of the in-game client are ported from XtremeUtilities 1.0.5. These parts are licensed under the GNU Lesser General Public License, version 3 (LGPL-3.0), and not under Sections 4 and 5 of this Agreement. Their source code is available in the Rusty Client repository (client/src/main/java/com/rustyclient). The full text of the LGPL-3.0 is available at https://www.gnu.org/licenses/lgpl-3.0.txt, and the GNU General Public License, version 3, that it refers to at https://www.gnu.org/licenses/gpl-3.0.txt.
+
+
+A.6 Rust crates
+
+The launcher is built with Rust crates from crates.io, among them cef, cef-dll-sys, tokio, reqwest, serde, serde_json, zstd, zip, bzip2, tar, sha1, hex, uuid, base64, url, futures-util, windows and windows-sys. They are used under their own licenses, mainly the MIT License, the Apache License 2.0 and the BSD licenses. The complete list with exact versions is in the file Cargo.lock of the Rusty Client repository, and each crate's license is available on https://crates.io.
+
+
+A.7 Dependency logos
+
+The About page of the launcher shows the logos of Chromium (The Chromium Authors, from Wikimedia Commons), Rust (the Rust Foundation, CC-BY 4.0, recolored), Java (Oracle, SVG from devicon, MIT License), Minecraft (Mojang Studios, the pack.png of the Minecraft client), Fabric (FabricMC, from the Fabric Loader jar, Apache License 2.0) and Windows (Microsoft, SVGs from devicon, MIT License). They are trademarks of their owners and are only used to name that software.
+
+
+A.8 Downloaded on your computer, not included
+
+- Minecraft: Java Edition and its libraries and assets, by Mojang and Microsoft, under the Minecraft End User License Agreement.
+- The Java runtime that Mojang provides for Minecraft, under its own license terms.
+- The Chromium Embedded Framework runtime, Copyright (c) 2008-2026 Marshall A. Greenblatt, under the BSD 3-Clause License, with Chromium under its own licenses. It is downloaded once from cef-builds.spotifycdn.com and checked against its checksum.
+- Fabric Loader and Fabric API by FabricMC, Apache License 2.0.
+- Sodium by CaffeineMC, PolyForm Shield License 1.0.0.
+- Lithium by CaffeineMC, LGPL-3.0-only.
+- FerriteCore by malte0811, MIT License.
+- ImmediatelyFast by RaphiMC, LGPL-3.0-or-later.
+- EntityCulling by tr7zw, tr7zw Protective License.
+
+
+A.9 Microsoft Windows components
+
+Rusty Client uses programming interfaces that are part of Microsoft Windows (for example the Windows Shell, DPAPI, DWM and the Win32 window functions). These are part of your Windows installation, are not included in Rusty Client, and are licensed to you by Microsoft under the Windows license terms. The C and C++ runtime code that the Microsoft Visual C++ compiler links into Rusty Client is used under the license terms of Microsoft Visual Studio.
+
+End of the Rusty Client End User License Agreement and Terms of Use.
