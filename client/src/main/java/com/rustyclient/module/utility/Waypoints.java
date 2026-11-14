@@ -501,7 +501,10 @@ public final class Waypoints extends Module {
 
 	private boolean coveredByEntity(Vec3 cam, double dist, double[] v, float partial, double left, double top, double right, double bottom) {
 		for (Entity e : mc.level.entitiesForRendering()) {
-			if (e.isInvisible() || drawsOver(e)) {
+			if (drawsOver(e) || e.isInvisibleTo(mc.player) || e.isSpectator() && !mc.player.isSpectator()) {
+				continue;
+			}
+			if (com.rustyclient.module.Performance.hideEntity(e, cam.x, cam.y, cam.z)) {
 				continue;
 			}
 			Vec3 pos = e.getPosition(partial);
@@ -527,7 +530,28 @@ public final class Waypoints extends Module {
 				minY = Math.min(minY, sy);
 				maxY = Math.max(maxY, sy);
 			}
-			if (!behind && maxX > left && minX < right && maxY > top && minY < bottom) {
+			if (!behind && maxX > left && minX < right && maxY > top && minY < bottom && inSight(cam, box)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean inSight(Vec3 cam, AABB box) {
+		Vec3 center = box.getCenter();
+		double h = box.maxY - box.minY;
+		Vec3[] targets = {
+			center,
+			new Vec3(center.x, box.maxY - h * 0.1, center.z),
+			new Vec3(center.x, box.minY + h * 0.1, center.z),
+			new Vec3(box.minX, center.y, box.minZ),
+			new Vec3(box.maxX, center.y, box.maxZ),
+			new Vec3(box.minX, center.y, box.maxZ),
+			new Vec3(box.maxX, center.y, box.minZ)
+		};
+		for (Vec3 target : targets) {
+			HitResult hit = mc.level.clip(new ClipContext(cam, target, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, mc.player));
+			if (hit.getType() == HitResult.Type.MISS || hit.getLocation().distanceToSqr(cam) >= target.distanceToSqr(cam) - 1e-4) {
 				return true;
 			}
 		}
