@@ -78,10 +78,10 @@ public final class Waypoints extends Module {
 	private final BoolSetting fade = bool("Fade beam and label when close", GENERAL, true);
 	private final NumberSetting fadeFull = number("Fully visible from", APPEARANCE, 32, 4, 128, 1, NumberSetting.integer(" blocks"));
 	private final NumberSetting fadeHidden = number("Hidden closer than", APPEARANCE, 4, 0, 64, 1, NumberSetting.integer(" blocks"));
-	private final ChoiceSetting labelStyle = choice("Label style", LABEL, "Rusty", "Rusty", "Classic");
+	private final ChoiceSetting labelStyle = choice("Label design", LABEL, "Classic", "Classic", "Rusty");
 	private final NumberSetting labelSize = number("Label size", LABEL, 1, 0.5, 2.5, 0.05, NumberSetting.percent());
 	private final ChoiceSetting classicText = choice("Text color", LABEL, "White", "White", "Waypoint color");
-	private final ChoiceSetting classicBorder = choice("Border", LABEL, "Dark", "Dark", "Waypoint color", "None");
+	private final ChoiceSetting classicBorder = choice("Border color", LABEL, "Waypoint color", "Waypoint color", "Dark", "None");
 	private final ColorSetting classicBack = colorAlpha("Background", LABEL, 0x90000000);
 	private final BoolSetting classicShadow = bool("Text shadow", LABEL, false);
 	private final BoolSetting classicBrackets = bool("Distance in brackets", LABEL, true);
@@ -297,6 +297,15 @@ public final class Waypoints extends Module {
 				column(p, buffer, x, y, z, top, half * 2.2f, Theme.withAlpha(point.color, Math.round(glowAlpha * k)));
 			}
 		});
+		collector.submitCustomGeometry(pose, RenderTypes.lightning(), (p, buffer) -> {
+			for (Point point : shown) {
+				float x = (float) (point.x - cam.x), y = (float) (point.y - cam.y), z = (float) (point.z - cam.z);
+				if (fade.on() && closeness(Math.sqrt(x * x + z * z)) < 0.5f) {
+					continue;
+				}
+				depthColumn(p, buffer, x, y, z, y + 384f, half);
+			}
+		});
 	}
 
 	private float closeness(double distance) {
@@ -311,6 +320,22 @@ public final class Waypoints extends Module {
 		face(p, b, x1, z0, x1, z1, y0, y1, c);
 		face(p, b, x1, z1, x0, z1, y0, y1, c);
 		face(p, b, x0, z1, x0, z0, y0, y1, c);
+	}
+
+	private static void depthColumn(PoseStack.Pose p, VertexConsumer b, float cx, float y0, float cz, float y1, float r) {
+		float x0 = cx - r, x1 = cx + r, z0 = cz - r, z1 = cz + r;
+		if (z0 <= 0) {
+			face(p, b, x0, z0, x1, z0, y0, y1, 0);
+		}
+		if (x1 >= 0) {
+			face(p, b, x1, z0, x1, z1, y0, y1, 0);
+		}
+		if (z1 >= 0) {
+			face(p, b, x1, z1, x0, z1, y0, y1, 0);
+		}
+		if (x0 <= 0) {
+			face(p, b, x0, z1, x0, z0, y0, y1, 0);
+		}
 	}
 
 	private static void face(PoseStack.Pose p, VertexConsumer b, float ax, float az, float bx, float bz, float y0, float y1, int c) {
@@ -394,18 +419,22 @@ public final class Waypoints extends Module {
 		}
 		float size = 9 * sc;
 		float tw = d.width(text, Fonts.Style.SEMIBOLD, size);
-		float w = Math.round(tw + 5 * sc), h = Math.round(11 * sc);
-		float left = Math.round(x - w / 2f), top = Math.round(y - h / 2f);
+		float w = snap(d, tw + 5 * sc), h = snap(d, 11 * sc);
+		float left = snap(d, x - w / 2f), top = snap(d, y - h / 2f);
 		d.rect(left, top, w, h, classicBack.argb());
 		if (!classicBorder.is("None")) {
 			int border = classicBorder.is("Waypoint color") ? p.color : 0xC0000000;
-			float t = Math.max(1f, Math.round(sc));
+			float t = Math.max(1f, snap(d, sc));
 			d.rect(left - t, top - t, w + 2 * t, t, border);
 			d.rect(left - t, top + h, w + 2 * t, t, border);
 			d.rect(left - t, top, t, h, border);
 			d.rect(left + w, top, t, h, border);
 		}
 		int color = classicText.is("Waypoint color") ? (p.color | 0xFF000000) : 0xFFFFFFFF;
-		d.textShadowed(text, left + 3 * sc, top + h / 2f, Fonts.Style.SEMIBOLD, size, color, classicShadow.on());
+		d.textShadowed(text, left + snap(d, 3 * sc), top + h / 2f, Fonts.Style.SEMIBOLD, size, color, classicShadow.on());
+	}
+
+	private static float snap(Draw d, float units) {
+		return Math.round(units * d.s) / d.s;
 	}
 }

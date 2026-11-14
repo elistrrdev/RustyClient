@@ -342,7 +342,24 @@ public final class RustyScreen extends Screen {
 		float bh = Math.max(30, h * ratio);
 		float max = contentHeight - viewHeight;
 		float by = y + (h - bh) * (scroll / max);
-		ui.d.round(x, by, 4, bh, 2, Theme.SURFACE_3);
+		boolean active = ui.dragging(x - 5, y, 14, h);
+		boolean hover = active || ui.hover(x - 5, y, 14, h);
+		ui.d.round(x, by, 4, bh, 2, active ? Theme.MUTED : hover ? 0xFF45423F : Theme.SURFACE_3);
+		float track = Math.max(1, h - bh);
+		ui.drag(x - 5, y, 14, h, new Ui.Drag() {
+			private float grab = Float.NaN;
+
+			@Override
+			public void update(float mx, float my) {
+				if (Float.isNaN(grab)) {
+					grab = my >= by && my <= by + bh ? my - by : bh / 2f;
+				}
+				float fraction = Math.max(0, Math.min(1, (my - grab - y) / track));
+				scrollTarget = fraction * max;
+				scroll = scrollTarget;
+				ui.setAnim("scroll", scroll);
+			}
+		});
 	}
 
 	void clampScroll() {
