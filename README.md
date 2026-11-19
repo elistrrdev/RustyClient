@@ -32,13 +32,13 @@ A fast, lightweight Minecraft launcher written in Rust. Sign in with your Micros
 ### Launcher
 
 <p align="center">
-  <a href="assets/screenshots/Launcher-1.png"><img src="assets/screenshots/Launcher-1.png?v=1.0.3-2" alt="Launcher home page with the version picker and Minecraft news" width="100%"></a>
+  <a href="assets/screenshots/Launcher.png"><img src="assets/screenshots/Launcher.png?v=1.0.5" alt="Launcher home page with the version picker and Minecraft news" width="100%"></a>
 </p>
 
 ### In-game menu
 
 <p align="center">
-  <a href="assets/screenshots/Menu-1.png"><img src="assets/screenshots/Menu-1.png?v=1.0.3-2" alt="In-game menu with the module grid" width="100%"></a>
+  <a href="assets/screenshots/Menu.png"><img src="assets/screenshots/Menu.png?v=1.0.5" alt="In-game menu with the module grid" width="100%"></a>
 </p>
 
 ## Download
