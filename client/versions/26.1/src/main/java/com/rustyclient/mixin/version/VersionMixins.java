@@ -130,4 +130,57 @@ public final class VersionMixins {
 			}
 		}
 	}
+
+	@Mixin(com.mojang.blaze3d.platform.Window.class)
+	public interface WindowAccess {
+		@org.spongepowered.asm.mixin.gen.Invoker("setMode")
+		void rusty$setMode();
+	}
+
+	@Mixin(com.mojang.blaze3d.platform.Window.class)
+	public abstract static class Borderless {
+		@Shadow
+		private int x;
+		@Shadow
+		private int y;
+		@Shadow
+		private int width;
+		@Shadow
+		private int height;
+
+		@org.spongepowered.asm.mixin.injection.Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwGetWindowMonitor(J)J"))
+		private long rusty$monitor(long window) {
+			return com.rustyclient.platform.Compat.borderless ? 1L : org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(window);
+		}
+
+		@org.spongepowered.asm.mixin.injection.Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowMonitor(JJIIIII)V", ordinal = 0))
+		private void rusty$fullscreen(long window, long monitor, int px, int py, int w, int h, int rate) {
+			org.lwjgl.glfw.GLFWVidMode mode = com.rustyclient.module.Performance.borderlessFullscreen() ? org.lwjgl.glfw.GLFW.glfwGetVideoMode(monitor) : null;
+			if (mode == null) {
+				org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window, org.lwjgl.glfw.GLFW.GLFW_DECORATED, org.lwjgl.glfw.GLFW.GLFW_TRUE);
+				com.rustyclient.platform.Compat.borderless = false;
+				org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, monitor, px, py, w, h, rate);
+				return;
+			}
+			int[] mx = new int[1];
+			int[] my = new int[1];
+			org.lwjgl.glfw.GLFW.glfwGetMonitorPos(monitor, mx, my);
+			org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window, org.lwjgl.glfw.GLFW.GLFW_DECORATED, org.lwjgl.glfw.GLFW.GLFW_FALSE);
+			org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, 0L, mx[0], my[0], mode.width(), mode.height(), org.lwjgl.glfw.GLFW.GLFW_DONT_CARE);
+			x = mx[0];
+			y = my[0];
+			width = mode.width();
+			height = mode.height();
+			com.rustyclient.platform.Compat.borderless = true;
+		}
+
+		@org.spongepowered.asm.mixin.injection.Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowMonitor(JJIIIII)V", ordinal = 1))
+		private void rusty$windowed(long window, long monitor, int px, int py, int w, int h, int rate) {
+			if (com.rustyclient.platform.Compat.borderless) {
+				org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window, org.lwjgl.glfw.GLFW.GLFW_DECORATED, org.lwjgl.glfw.GLFW.GLFW_TRUE);
+				com.rustyclient.platform.Compat.borderless = false;
+			}
+			org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, monitor, px, py, w, h, rate);
+		}
+	}
 }

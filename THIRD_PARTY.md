@@ -67,7 +67,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## XtremeUtilities
 
-Copyright (c) no1qq. Licensed under the GNU Lesser General Public License v3.0 (https://github.com/no1qq/XtremeUtilities). Toggle Sprint, Freelook, Fadeless and Black Loading Screen are ported from XtremeUtilities 1.0.5. These parts stay under the LGPL-3.0 and are not covered by the Rusty Client license restrictions, see Appendix A.5 of `LICENSE`.
+Copyright (c) no1qq. Licensed under the GNU Lesser General Public License v3.0 (https://github.com/no1qq/XtremeUtilities). Toggle Sprint, Freelook, Fadeless and Dark Loading Screen (formerly Black Loading Screen) are ported from XtremeUtilities 1.0.5. These parts stay under the LGPL-3.0 and are not covered by the Rusty Client license restrictions, see Appendix A.5 of `LICENSE`.
 
 ## Build tools
 

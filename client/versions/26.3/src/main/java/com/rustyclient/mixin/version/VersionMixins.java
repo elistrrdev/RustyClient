@@ -117,4 +117,29 @@ public final class VersionMixins {
 			}
 		}
 	}
+
+	@Mixin(com.mojang.blaze3d.platform.Window.class)
+	public interface WindowAccess {
+		@org.spongepowered.asm.mixin.gen.Invoker("setMode")
+		void rusty$setMode();
+
+		@org.spongepowered.asm.mixin.gen.Accessor("fullscreenRequested")
+		boolean rusty$fullscreenRequested();
+
+		@org.spongepowered.asm.mixin.gen.Accessor("borderlessFullscreen")
+		boolean rusty$borderless();
+
+		@org.spongepowered.asm.mixin.gen.Accessor("exclusiveFullscreen")
+		boolean rusty$exclusive();
+	}
+
+	@Mixin(com.mojang.blaze3d.platform.Window.class)
+	public abstract static class Borderless {
+		@Inject(method = "useBorderlessFullscreenWindow", at = @At("HEAD"), cancellable = true)
+		private void rusty$borderless(CallbackInfoReturnable<Boolean> cir) {
+			if (com.rustyclient.module.Performance.borderlessFullscreen()) {
+				cir.setReturnValue(true);
+			}
+		}
+	}
 }

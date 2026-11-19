@@ -2,6 +2,7 @@ package com.rustyclient.mixin;
 
 import com.mojang.blaze3d.platform.FramerateLimitTracker;
 import com.rustyclient.module.Performance;
+import com.rustyclient.module.visual.Visuals;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.TerrainParticle;
@@ -28,9 +29,14 @@ public final class PerformanceMixins {
 	public abstract static class Particles {
 		@Inject(method = "createParticle", at = @At("HEAD"), cancellable = true)
 		private void rusty$type(ParticleOptions options, double x, double y, double z, double xa, double ya, double za, CallbackInfoReturnable<Particle> cir) {
-			if (Performance.hideParticle(options)) {
+			if (Performance.hideParticle(options) || Visuals.Particles.hides(options)) {
 				cir.setReturnValue(null);
 			}
+		}
+
+		@Inject(method = "createParticle", at = @At("RETURN"))
+		private void rusty$style(ParticleOptions options, double x, double y, double z, double xa, double ya, double za, CallbackInfoReturnable<Particle> cir) {
+			Visuals.Particles.style(options, cir.getReturnValue());
 		}
 
 		@Inject(method = "add", at = @At("HEAD"), cancellable = true)

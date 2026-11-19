@@ -4,13 +4,15 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"VersionMixins$BlockEntityDistance",
+		"VersionMixins$Borderless",
 		"VersionMixins$Clock",
 		"VersionMixins$EntityDistance",
 		"VersionMixins$Fire",
 		"VersionMixins$Hand",
 		"VersionMixins$Motion",
 		"VersionMixins$NameShadow",
-		"VersionMixins$Names"
+		"VersionMixins$Names",
+		"VersionMixins$WindowAccess"
 	],
 	"injectors": {
 		"defaultRequire": 1

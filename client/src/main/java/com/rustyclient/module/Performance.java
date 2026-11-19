@@ -26,6 +26,7 @@ import java.util.function.DoubleFunction;
 
 public final class Performance extends Module {
 	public static final String FRAME_RATE = "Frame rate";
+	public static final String WINDOW = "Window";
 	public static final String ENTITIES = "Entity distance";
 	public static final String PARTICLES = "Particles";
 	public static final String MODS = "Optimization mods";
@@ -43,6 +44,7 @@ public final class Performance extends Module {
 	public final NumberSetting unfocusedFps = number("Unfocused FPS", FRAME_RATE, 30, 5, 120, 5, NumberSetting.integer(" FPS"));
 	public final BoolSetting limitMenus = bool("Limit FPS in menus", FRAME_RATE, false);
 	public final NumberSetting menuFps = number("Menu FPS", FRAME_RATE, 60, 10, 240, 5, NumberSetting.integer(" FPS"));
+	public final BoolSetting borderless = bool("Borderless fullscreen", WINDOW, false);
 	public final NumberSetting players = number("Players", ENTITIES, FAR, 8, FAR, 1, blocks());
 	public final NumberSetting mobs = number("Mobs", ENTITIES, FAR, 8, FAR, 1, blocks());
 	public final NumberSetting items = number("Dropped items", ENTITIES, FAR, 8, FAR, 1, blocks());
@@ -63,6 +65,7 @@ public final class Performance extends Module {
 		super("Performance", "gauge", Category.UTILITY, true);
 		unfocusedFps.visibleWhen(limitUnfocused::on);
 		menuFps.visibleWhen(limitMenus::on);
+		borderless.onChange(Compat::refreshFullscreen);
 	}
 
 	private static DoubleFunction<String> blocks() {
@@ -162,6 +165,11 @@ public final class Performance extends Module {
 			|| (!p.drips.on() && DRIPS.contains(type))
 			|| (!p.fireworks.on() && type == ParticleTypes.FIREWORK)
 			|| (!p.totems.on() && type == ParticleTypes.TOTEM_OF_UNDYING);
+	}
+
+	public static boolean borderlessFullscreen() {
+		Performance p = get();
+		return p != null && p.borderless.on();
 	}
 
 	public static boolean hideBlockParticles() {

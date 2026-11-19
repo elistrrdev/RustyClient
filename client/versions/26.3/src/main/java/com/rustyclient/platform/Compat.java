@@ -106,4 +106,19 @@ public final class Compat {
 		Minecraft mc = Minecraft.getInstance();
 		return mc.getConnection() != null && mc.getConnection().onlineMode();
 	}
+
+	public static void refreshFullscreen() {
+		Minecraft mc = Minecraft.getInstance();
+		com.mojang.blaze3d.platform.Window window = mc == null ? null : mc.getWindow();
+		if (window == null) {
+			return;
+		}
+		com.rustyclient.mixin.version.VersionMixins.WindowAccess access = (com.rustyclient.mixin.version.VersionMixins.WindowAccess) (Object) window;
+		boolean wanted = com.rustyclient.module.Performance.borderlessFullscreen() || (net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.WINDOWS && !access.rusty$exclusive());
+		if (!access.rusty$fullscreenRequested() || access.rusty$borderless() == wanted) {
+			return;
+		}
+		access.rusty$setMode();
+		mc.framebufferSizeChanged();
+	}
 }

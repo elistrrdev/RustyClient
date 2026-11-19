@@ -408,7 +408,12 @@ public final class Visuals {
 		private final ColorSetting background = color("Background color", APPEARANCE, 0xFF000000);
 
 		public LoadingScreen() {
-			super("Black Loading Screen", "loader-circle", Category.VISUAL, false);
+			super("Dark Loading Screen", "loader-circle", Category.VISUAL, false);
+		}
+
+		@Override
+		protected String legacyId() {
+			return "black_loading_screen";
 		}
 
 		public static Integer color() {
@@ -591,27 +596,93 @@ public final class Visuals {
 	}
 
 	public static final class Particles extends Module {
-		public final NumberSetting multiplier = number("Crit multiplier", APPEARANCE, 2, 1, 10, 1, NumberSetting.integer("x"));
+		private static final String COLORS = "Colors";
+		private static final String OTHER = "Other particles";
+
 		public final BoolSetting alwaysCrits = bool("Always show crits", GENERAL, true);
 		public final BoolSetting alwaysSharpness = bool("Always show magic crits", GENERAL, false);
+		public final BoolSetting onPlayers = bool("Show on players", GENERAL, true);
+		public final BoolSetting onMobs = bool("Show on mobs", GENERAL, true);
+		public final NumberSetting multiplier = number("Crit multiplier", APPEARANCE, 2, 1, 10, 1, NumberSetting.integer("x"));
+		public final NumberSetting magicMultiplier = number("Magic crit multiplier", APPEARANCE, 1, 1, 10, 1, NumberSetting.integer("x"));
+		public final NumberSetting duration = number("Burst length", APPEARANCE, 3, 1, 20, 1, v -> Math.round(v) == 1 ? "1 tick" : Math.round(v) + " ticks");
+		public final NumberSetting critSize = number("Crit size", APPEARANCE, 1, 0.25, 3, 0.05, NumberSetting.percent());
+		public final BoolSetting customCrit = bool("Custom crit color", COLORS, false);
+		public final ColorSetting critColor = color("Crit color", COLORS, Theme.DEFAULT_ACCENT);
+		public final BoolSetting customMagic = bool("Custom magic crit color", COLORS, false);
+		public final ColorSetting magicColor = color("Magic crit color", COLORS, 0xFFA855F7);
+		public final BoolSetting shading = bool("Keep vanilla shading", COLORS, true);
+		public final BoolSetting sweep = bool("Show sweep attack particles", OTHER, true);
+		public final BoolSetting damage = bool("Show damage indicator hearts", OTHER, true);
+		public final BoolSetting hearts = bool("Show heart particles", OTHER, true);
+		public final BoolSetting angry = bool("Show angry villager particles", OTHER, true);
 
 		public Particles() {
 			super("Particles", "sparkles", Category.VISUAL, false);
+			critColor.visibleWhen(customCrit::on);
+			magicColor.visibleWhen(customMagic::on);
+			shading.visibleWhen(() -> customCrit.on() || customMagic.on());
+		}
+
+		private static Particles active() {
+			Particles p = Modules.get(Particles.class);
+			return p != null && p.enabled() ? p : null;
 		}
 
 		public void onAttack(net.minecraft.world.entity.Entity target) {
-			if (mc.level == null || !(target instanceof net.minecraft.world.entity.LivingEntity)) {
+			if (mc.level == null || mc.player == null || !(target instanceof net.minecraft.world.entity.LivingEntity)) {
 				return;
 			}
-			int n = multiplier.i();
-			for (int i = 0; i < n; i++) {
-				if (alwaysCrits.on() || i > 0) {
-					mc.particleEngine.createTrackingEmitter(target, net.minecraft.core.particles.ParticleTypes.CRIT);
-				}
-				if (alwaysSharpness.on()) {
-					mc.particleEngine.createTrackingEmitter(target, net.minecraft.core.particles.ParticleTypes.ENCHANTED_HIT);
-				}
+			if (!(target instanceof net.minecraft.world.entity.player.Player ? onPlayers.on() : onMobs.on())) {
+				return;
 			}
+			boolean vanillaCrit = mc.player.getAttackStrengthScale(0.5f) > 0.9f && ((com.rustyclient.mixin.CritAccessor) mc.player).rusty$canCriticalAttack(target);
+			int crits = vanillaCrit ? multiplier.i() - 1 : alwaysCrits.on() ? multiplier.i() : 0;
+			int magic = alwaysSharpness.on() ? magicMultiplier.i() : 0;
+			int life = duration.i();
+			for (int i = 0; i < crits; i++) {
+				mc.particleEngine.createTrackingEmitter(target, net.minecraft.core.particles.ParticleTypes.CRIT, life);
+			}
+			for (int i = 0; i < magic; i++) {
+				mc.particleEngine.createTrackingEmitter(target, net.minecraft.core.particles.ParticleTypes.ENCHANTED_HIT, life);
+			}
+		}
+
+		public static boolean hides(net.minecraft.core.particles.ParticleOptions options) {
+			Particles p = active();
+			if (p == null) {
+				return false;
+			}
+			net.minecraft.core.particles.ParticleType<?> type = options.getType();
+			return (!p.sweep.on() && type == net.minecraft.core.particles.ParticleTypes.SWEEP_ATTACK)
+				|| (!p.damage.on() && type == net.minecraft.core.particles.ParticleTypes.DAMAGE_INDICATOR)
+				|| (!p.hearts.on() && type == net.minecraft.core.particles.ParticleTypes.HEART)
+				|| (!p.angry.on() && type == net.minecraft.core.particles.ParticleTypes.ANGRY_VILLAGER);
+		}
+
+		public static void style(net.minecraft.core.particles.ParticleOptions options, net.minecraft.client.particle.Particle particle) {
+			Particles p = active();
+			if (p == null || particle == null) {
+				return;
+			}
+			net.minecraft.core.particles.ParticleType<?> type = options.getType();
+			boolean crit = type == net.minecraft.core.particles.ParticleTypes.CRIT;
+			if (!crit && type != net.minecraft.core.particles.ParticleTypes.ENCHANTED_HIT) {
+				return;
+			}
+			float k = p.critSize.f();
+			if (Math.abs(k - 1f) > 0.001f) {
+				particle.scale(k);
+			}
+			if (!(crit ? p.customCrit.on() : p.customMagic.on()) || !(particle instanceof net.minecraft.client.particle.SingleQuadParticle quad)) {
+				return;
+			}
+			int argb = Theme.hudAccent((crit ? p.critColor : p.magicColor).argb());
+			float shade = 1f;
+			if (p.shading.on() && quad instanceof com.rustyclient.mixin.ParticleColorAccessor c) {
+				shade = Math.min(1f, Math.max(c.rusty$red(), Math.max(c.rusty$green(), c.rusty$blue())) / 0.9f);
+			}
+			quad.setColor((argb >> 16 & 255) / 255f * shade, (argb >> 8 & 255) / 255f * shade, (argb & 255) / 255f * shade);
 		}
 	}
 

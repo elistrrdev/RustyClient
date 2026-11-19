@@ -341,7 +341,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 A.5 XtremeUtilities
 
 Copyright (c) no1qq. https://github.com/no1qq/XtremeUtilities
-The Toggle Sprint, Freelook, Fadeless and Black Loading Screen modules of the in-game client are ported from XtremeUtilities 1.0.5. These parts are licensed under the GNU Lesser General Public License, version 3 (LGPL-3.0), and not under Sections 4 and 5 of this Agreement. Their source code is available in the Rusty Client repository (client/src/main/java/com/rustyclient). The full text of the LGPL-3.0 is available at https://www.gnu.org/licenses/lgpl-3.0.txt, and the GNU General Public License, version 3, that it refers to at https://www.gnu.org/licenses/gpl-3.0.txt.
+The Toggle Sprint, Freelook, Fadeless and Dark Loading Screen (formerly Black Loading Screen) modules of the in-game client are ported from XtremeUtilities 1.0.5. These parts are licensed under the GNU Lesser General Public License, version 3 (LGPL-3.0), and not under Sections 4 and 5 of this Agreement. Their source code is available in the Rusty Client repository (client/src/main/java/com/rustyclient). The full text of the LGPL-3.0 is available at https://www.gnu.org/licenses/lgpl-3.0.txt, and the GNU General Public License, version 3, that it refers to at https://www.gnu.org/licenses/gpl-3.0.txt.
 
 
 A.6 Rust crates

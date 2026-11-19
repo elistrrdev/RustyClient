@@ -101,4 +101,16 @@ public final class Compat {
 		Minecraft mc = Minecraft.getInstance();
 		return mc.isLocalServer() || (mc.getConnection() != null && mc.getConnection().getConnection().isEncrypted());
 	}
+
+	public static boolean borderless;
+
+	public static void refreshFullscreen() {
+		Minecraft mc = Minecraft.getInstance();
+		com.mojang.blaze3d.platform.Window window = mc == null ? null : mc.getWindow();
+		if (window == null || !window.isFullscreen() || borderless == com.rustyclient.module.Performance.borderlessFullscreen()) {
+			return;
+		}
+		((com.rustyclient.mixin.version.VersionMixins.WindowAccess) (Object) window).rusty$setMode();
+		mc.resizeGui();
+	}
 }

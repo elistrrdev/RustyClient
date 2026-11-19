@@ -38,6 +38,7 @@ public final class RustyClient implements ClientModInitializer {
 		Config.load();
 		Profiles.init();
 		Theme.refresh(true);
+		Compat.refreshFullscreen();
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("rustyclient", "hud"), (g, delta) -> renderHud(g));
 		ModuleList.registerHudHooks();
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> tick());
