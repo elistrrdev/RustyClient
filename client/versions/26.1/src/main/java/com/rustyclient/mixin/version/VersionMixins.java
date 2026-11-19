@@ -148,6 +148,11 @@ public final class VersionMixins {
 		@Shadow
 		private int height;
 
+		@org.spongepowered.asm.mixin.injection.ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Window;createWindow(Lcom/mojang/blaze3d/systems/GpuBackend;IILjava/lang/String;J)J"), index = 4)
+		private long rusty$createWindowed(long monitor) {
+			return com.rustyclient.module.Performance.borderlessFullscreen() ? 0L : monitor;
+		}
+
 		@org.spongepowered.asm.mixin.injection.Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwGetWindowMonitor(J)J"))
 		private long rusty$monitor(long window) {
 			return com.rustyclient.platform.Compat.borderless ? 1L : org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(window);
@@ -155,7 +160,11 @@ public final class VersionMixins {
 
 		@org.spongepowered.asm.mixin.injection.Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowMonitor(JJIIIII)V", ordinal = 0))
 		private void rusty$fullscreen(long window, long monitor, int px, int py, int w, int h, int rate) {
-			org.lwjgl.glfw.GLFWVidMode mode = com.rustyclient.module.Performance.borderlessFullscreen() ? org.lwjgl.glfw.GLFW.glfwGetVideoMode(monitor) : null;
+			boolean wanted = com.rustyclient.module.Performance.borderlessFullscreen();
+			if (wanted && org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(window) != 0L) {
+				org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, 0L, px, py, w, h, org.lwjgl.glfw.GLFW.GLFW_DONT_CARE);
+			}
+			org.lwjgl.glfw.GLFWVidMode mode = wanted ? org.lwjgl.glfw.GLFW.glfwGetVideoMode(monitor) : null;
 			if (mode == null) {
 				org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window, org.lwjgl.glfw.GLFW.GLFW_DECORATED, org.lwjgl.glfw.GLFW.GLFW_TRUE);
 				com.rustyclient.platform.Compat.borderless = false;
